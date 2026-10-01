@@ -1,0 +1,29 @@
+# Firebase App Hosting — Next.js sunucusu (KIE + Firebase Admin)
+# Gizli değerler Cloud Secret Manager'da tutulur; değerler ASLA bu dosyaya yazılmaz:
+#   firebase apphosting:secrets:set kie-api-key
+#   firebase apphosting:secrets:set firebase-service-account --data-file firebase-service-account.json
+runConfig:
+  minInstances: 0
+  maxInstances: 3
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
+
+env:
+  - variable: KIE_API_KEY
+    secret: kie-api-key
+    availability: [RUNTIME]
+
+  - variable: FIREBASE_SERVICE_ACCOUNT
+    secret: firebase-service-account
+    availability: [RUNTIME]
+
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: rapper-fcc44.firebasestorage.app
+    availability: [RUNTIME]
+
+  # KIE sonuç bildirimi (callback) için herkese açık adres.
+  # Arka uç adı "soundforge", bölge "europe-west4" değilse güncelleyin.
+  - variable: APP_URL
+    value: https://soundforge--rapper-fcc44.europe-west4.hosted.app
+    availability: [RUNTIME]

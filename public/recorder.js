@@ -2,9 +2,10 @@
    Telefon ses kaydedicisi gibi: kaydet → dinle / sar → sil ya da kaydet (Firebase Storage).
    Durumlar: idle → rec → review → saving → saved
    Kullanım: const r = createRecorder(el, { minSec, maxSec, upload, onChange }); r.start(); r.load(file)
-   Kayıt kaydedilirken WAV'a (mono, 32 kHz, 16-bit) çevrilir — KIE'nin kesin kabul ettiği biçim. */
+   Kayıt kaydedilirken WAV'a (mono, 24 kHz, 16-bit) çevrilir — KIE'nin kesin kabul ettiği biçim. */
 (() => {
-  const SR = 32000;            // WAV örnekleme hızı (ses kalitesi / dosya boyutu dengesi)
+  const SR = 24000;            // WAV örnekleme hızı — 8 dk ≈ 23 MB (Cloud Run istek sınırı 32 MB)
+  const MAX_MB = 30;           // yükleme sınırı (/api/upload ile aynı)
   const BARS = 48;             // dalga çubuğu sayısı
   const OK_TYPES = /audio\/(mpeg|mp3|wav|x-wav|wave|mp4|m4a|x-m4a|aac)/;
 
@@ -168,7 +169,7 @@
       file.value = "";
       file.removeAttribute("capture");
       if (!f) return;
-      if (f.size > 100 * 1024 * 1024) return say("En fazla 100 MB");
+      if (f.size > MAX_MB * 1024 * 1024) return say(`Dosya en fazla ${MAX_MB} MB olabilir`);
       await review(f, f.name || o.label, 0, true);
     });
 

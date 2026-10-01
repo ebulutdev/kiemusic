@@ -27,7 +27,8 @@ export function firebaseApp(): App | null {
     const projectId = sa?.project_id ?? process.env.FIREBASE_PROJECT_ID;
     const storageBucket = process.env.FIREBASE_STORAGE_BUCKET || (projectId ? `${projectId}.firebasestorage.app` : undefined);
     if (sa) app = initializeApp({ credential: cert(sa as any), storageBucket });
-    else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) app = initializeApp({ credential: applicationDefault(), storageBucket });
+    // Google Cloud'da (App Hosting FIREBASE_CONFIG verir) çalışma zamanı hizmet hesabı yedek kimliktir
+    else if (process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.FIREBASE_CONFIG) app = initializeApp({ credential: applicationDefault(), storageBucket });
     else app = null;
   } catch (err) {
     console.error("FIREBASE_ADMIN_INIT_ERROR", err);
