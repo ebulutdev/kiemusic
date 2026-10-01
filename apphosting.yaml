@@ -22,8 +22,7 @@ env:
     value: rapper-fcc44.firebasestorage.app
     availability: [RUNTIME]
 
-  # KIE sonuç bildirimi (callback) için herkese açık adres.
-  # Arka uç adı "soundforge", bölge "europe-west4" değilse güncelleyin.
+  # KIE sonuç bildirimi (callback) için herkese açık adres (arka uç: kiemusic, bölge: us-east4)
   - variable: APP_URL
-    value: https://soundforge--rapper-fcc44.europe-west4.hosted.app
+    value: https://kiemusic--rapper-fcc44.us-east4.hosted.app
     availability: [RUNTIME]
