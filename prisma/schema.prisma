@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Müzik üretim görevleri ────────────────────────────────
+model MusicTask {
+  id               String   @id @default(cuid())
+  providerTaskId   String   @unique
+
+  // Durum: QUEUED | TEXT_READY | FIRST_READY | COMPLETED | FAILED
+  status           String   @default("QUEUED")
+  callbackType     String?
+
+  // Task türü: generate | cover | extend | add-vocals | remove-vocals | replace-section
+  taskType         String   @default("generate")
+
+  // Üretim parametreleri
+  customMode       Boolean
+  instrumental     Boolean
+  model            String
+  title            String?
+  prompt           String?
+  lyrics           String?
+  style            String?
+  negativeTags     String?
+  vocalGender      String?
+  styleWeight      Float?
+  weirdnessConstraint Float?
+  audioWeight      Float?
+  variety          Int?
+  duration         Float?
+
+  // Audio kaynaklı işlemler için
+  sourceAudioUrl   String?
+  sourceAudioId    String?
+  continueAt       Float?
+  infillStartS     Float?
+  infillEndS       Float?
+
+  // Sonuçlar
+  resultsJson      String?
+  storageUrls      String?  // Kendi storage'ımıza kopyaladıktan sonra
+
+  // Hata
+  errorCode        String?
+  errorMessage     String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  completedAt      DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([taskType])
+}
+
+// ── Persona ───────────────────────────────────────────────
+model Persona {
+  id               String   @id @default(cuid())
+  providerPersonaId String?
+  name             String
+  description      String?
+  sourceTaskId     String?
+  sourceAudioId    String?
+  createdAt        DateTime @default(now())
+}
+
+// ── Custom Voice ──────────────────────────────────────────
+model Voice {
+  id               String   @id @default(cuid())
+  providerVoiceId  String?
+  name             String
+  description      String?
+  style            String?
+  skillLevel       String?
+  verifyUrl        String?
+  createdAt        DateTime @default(now())
+}
