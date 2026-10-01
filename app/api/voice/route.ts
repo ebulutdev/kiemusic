@@ -1,40 +1,40 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import crypto from "crypto";
 import { voiceSchema } from "@/lib/validation";
-import { createVoiceTask } from "@/lib/kie";
+import { createKieTask } from "@/lib/kie";
+import { requireUser, errorResponse } from "@/lib/auth";
+import { saveVoice } from "@/lib/data/users";
+import { createTask, getTask } from "@/lib/data/tasks";
 
+// Ses klonu 2. adım — ai-music-api/create-voice
+// task_id: 1. adımın (validation-phrase) görevi · verify_url: kullanıcının cümleyi okuduğu kayıt.
+// voiceId gelince users/{uid}.voices[id] güncellenir (lib/data/extras.ts); üretimde persona_id + voice_persona.
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const parsed = voiceSchema.safeParse(body);
+    const user = await requireUser(request);
+    const parsed = voiceSchema.safeParse(await request.json());
     if (!parsed.success) {
-      return NextResponse.json({ success: false, error: "Validation hatası", details: parsed.error.flatten() }, { status: 400 });
+      return NextResponse.json({ success: false, error: "Geçersiz istek", details: parsed.error.flatten() }, { status: 400 });
     }
     const d = parsed.data;
-    const kie = await createVoiceTask({
-      task_id:          d.validationTaskId,
-      verify_url:       d.verifyUrl,
-      voice_name:       d.voiceName,
-      description:      d.description,
-      style:            d.style,
+    const phrase = await getTask(d.validationTaskId);
+    if (!phrase || phrase.userId !== user.uid || phrase.taskType !== "voice-phrase")
+      return NextResponse.json({ success: false, error: "Doğrulama adımı bulunamadı" }, { status: 404 });
+
+    const id = d.id || crypto.randomUUID();
+    const kie = await createKieTask("voice", {
+      task_id: d.validationTaskId,
+      verify_url: d.verifyUrl,
+      voice_name: d.voiceName,
+      ...(d.description ? { description: d.description } : {}),
+      ...(d.style ? { style: d.style } : {}),
       singer_skill_level: d.singerSkillLevel,
     });
+    await createTask({ providerTaskId: kie.taskId, userId: user.uid, taskType: "voice", cost: 0, params: { recordKey: id, voiceName: d.voiceName } });
+    await saveVoice(user.uid, id, { name: d.voiceName, description: d.description || null, style: d.style || null, skillLevel: d.singerSkillLevel, providerTaskId: kie.taskId, status: "pending", voiceId: null });
 
-    const voice = await db.voice.create({
-      data: { name: d.voiceName, description: d.description || null, style: d.style || null, skillLevel: d.singerSkillLevel, verifyUrl: d.verifyUrl },
-    });
-
-    return NextResponse.json({ success: true, voice: { id: voice.id, name: d.voiceName, providerTaskId: kie.taskId } });
+    return NextResponse.json({ success: true, voice: { id, name: d.voiceName }, task: { id: kie.taskId, providerTaskId: kie.taskId, status: "QUEUED" } });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Hata." }, { status: 500 });
-  }
-}
-
-export async function GET() {
-  try {
-    const voices = await db.voice.findMany({ orderBy: { createdAt: "desc" } });
-    return NextResponse.json({ success: true, voices });
-  } catch (error) {
-    return NextResponse.json({ success: false, error: "Liste alınamadı." }, { status: 500 });
+    return errorResponse(error, "VOICE_ERROR");
   }
 }

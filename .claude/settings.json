@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./package-lock.json)",
+      "Read(./node_modules/**)",
+      "Read(./.next/**)",
+      "Read(./next-env.d.ts)",
+      "Read(./firebase-service-account.json)",
+      "Read(./.env)"
+    ]
+  }
+}

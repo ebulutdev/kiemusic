@@ -73,95 +73,27 @@ function getCallbackUrl() {
   return `${url}/api/callback`;
 }
 
-// ── 1. Müzik Üret ─────────────────────────────────────────
-export async function createMusicTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/generate",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
-  return { taskId: extractTaskId(data), raw: data };
-}
+// ── Görev oluşturma (POST /api/v1/jobs/createTask) ────────
+// İşlem → KIE model kimliği (docs.kie.ai/suno-api/*)
+export const KIE_MODEL = {
+  generate: "ai-music-api/generate",
+  cover: "ai-music-api/upload-and-cover-audio",
+  extend: "ai-music-api/extend",
+  "upload-extend": "ai-music-api/upload-and-extend-audio",
+  "add-vocals": "ai-music-api/add-vocals",
+  "remove-vocals": "ai-music-api/separate-vocals",
+  "replace-section": "ai-music-api/replace-section",
+  persona: "ai-music-api/generate-persona",
+  "voice-phrase": "ai-music-api/validation-phrase",
+  voice: "ai-music-api/create-voice",
+} as const;
+export type KieOp = keyof typeof KIE_MODEL;
 
-// ── 2. Audio Cover ────────────────────────────────────────
-export async function createCoverTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/upload-and-cover-audio",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
+export async function createKieTask(op: KieOp, input: Record<string, unknown>) {
+  const data = await kiePost("/api/v1/jobs/createTask", { model: KIE_MODEL[op], callBackUrl: getCallbackUrl(), input });
   return { taskId: extractTaskId(data), raw: data };
 }
-
-// ── 2b. Upload & Extend (yüklenen ses) ─────────────────
-export async function createUploadExtendTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/upload-and-extend-audio",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
-  return { taskId: extractTaskId(data), raw: data };
-}
-
-// ── 3. Extend ─────────────────────────────────────────────
-export async function createExtendTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/extend",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
-  return { taskId: extractTaskId(data), raw: data };
-}
-
-// ── 4. Add Vocals ─────────────────────────────────────────
-export async function createAddVocalsTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/add-vocals",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
-  return { taskId: extractTaskId(data), raw: data };
-}
-
-// ── 5. Vocal Separation / Stem Ayırma ────────────────────
-export async function createSeparateVocalsTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/separate-vocals",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
-  return { taskId: extractTaskId(data), raw: data };
-}
-
-// ── 6. Replace Section ────────────────────────────────────
-export async function createReplaceSectionTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/replace-section",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
-  return { taskId: extractTaskId(data), raw: data };
-}
-
-// ── 7. Persona Oluştur ────────────────────────────────────
-export async function createPersonaTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/generate-persona",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
-  return { taskId: extractTaskId(data), raw: data };
-}
-
-// ── 8. Custom Voice Oluştur ───────────────────────────────
-export async function createVoiceTask(input: Record<string, unknown>) {
-  const data = await kiePost("/api/v1/jobs/createTask", {
-    model: "ai-music-api/create-voice",
-    callBackUrl: getCallbackUrl(),
-    input,
-  });
-  return { taskId: extractTaskId(data), raw: data };
-}
+export const createMusicTask = (input: Record<string, unknown>) => createKieTask("generate", input);
 
 // ── 9. Task Durumu Sorgula ────────────────────────────────
 export async function getKieTask(taskId: string) {
@@ -173,8 +105,56 @@ export async function getMusicTaskDetail(taskId: string) {
   return kieGet(`/api/v1/generate/record-info?taskId=${encodeURIComponent(taskId)}`);
 }
 
-// ── 11. Download URL ──────────────────────────────────────
-export async function getDownloadUrl(url: string) {
-  const data = await kiePost("/api/v1/common/download-url", { url });
-  return data?.data as string;
+// ── 10b. Zaman damgalı sözler (karaoke senkronu) ──────────
+// KIE: ai-music-api/timeStamped-lyrics → aligned_words[{word,start_s,end_s,success}]
+// Yanıt genelde senkron gelir; taskId dönerse recordInfo ile beklenir.
+// Instrumental parçalarda söz verisi dönmez.
+export type AlignedWord = { w: string; s: number; e: number; ok: boolean };
+
+function pickAligned(v: any): AlignedWord[] | null {
+  if (typeof v === "string") { try { v = JSON.parse(v); } catch { return null; } }
+  if (!v || typeof v !== "object") return null;
+  const arr = v.aligned_words ?? v.alignedWords
+    ?? v.resultObject?.aligned_words ?? v.resultObject?.alignedWords
+    ?? v.data?.aligned_words ?? v.data?.alignedWords;
+  if (!Array.isArray(arr)) return null;
+  return arr
+    .map((x: any) => ({
+      w: String(x.word ?? ""),
+      s: Number(x.start_s ?? x.startS),
+      e: Number(x.end_s ?? x.endS),
+      ok: x.success !== false,
+    }))
+    .filter((x) => x.w && isFinite(x.s) && isFinite(x.e));
+}
+
+export async function getTimestampedLyrics(taskId: string, audioId: string): Promise<AlignedWord[]> {
+  try {
+    const data = await kiePost("/api/v1/jobs/createTask", {
+      model: "ai-music-api/timeStamped-lyrics",
+      input: { task_id: taskId, audio_id: audioId },
+    });
+    const direct = pickAligned(data?.data);
+    if (direct) return direct;
+
+    const jobId = data?.data?.taskId ?? data?.data?.task_id;
+    if (jobId) {
+      for (let i = 0; i < 15; i++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const rec = await getKieTask(jobId);
+        const state = rec?.data?.state;
+        if (state === "fail") throw new Error(rec?.data?.failMsg || "Söz senkronu başarısız");
+        const found = pickAligned(rec?.data?.resultJson);
+        if (found) return found;
+        if (state === "success") break;
+      }
+    }
+  } catch (err) {
+    console.warn("TIMESTAMPED_LYRICS_JOBS_FAILED", err);
+  }
+  // Eski uç nokta (camelCase) — yedek
+  const legacy = await kiePost("/api/v1/generate/get-timestamped-lyrics", { taskId, audioId });
+  const words = pickAligned(legacy?.data);
+  if (!words) throw new Error("KIE söz zamanlaması döndürmedi.");
+  return words;
 }

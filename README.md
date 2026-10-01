@@ -1,6 +1,6 @@
 # SoundForge — KIE + Suno AI Music Studio
 
-Next.js 15 · TypeScript · Prisma · KIE API · PWA · iOS & Android uyumlu
+Next.js 15 · TypeScript · Firebase (Auth · Firestore · Storage) · KIE API · PWA · iOS & Android uyumlu
 
 ---
 
@@ -9,7 +9,8 @@ Next.js 15 · TypeScript · Prisma · KIE API · PWA · iOS & Android uyumlu
 | Özellik | Detay |
 |---|---|
 | Vokalli üretim | Prompt + Lyrics + Style + Gender |
-| Instrumental üretim | Tam kontrol |
+| Beat üretimi | Vokalsiz, davul odaklı (KIE `instrumental: true`) |
+| Senkron sözler | KIE timeStamped-lyrics ile kelime kelime karaoke |
 | Audio Cover | Kayıt/dosyadan cover |
 | Extend | Müziği devam ettir |
 | Add Vocals | Mevcut müziğe vokal ekle |
@@ -38,15 +39,21 @@ npm install
 cp .env.example .env
 # .env dosyasını düzenle
 
-# 4. Veritabanı
-npm run db:push
-npm run db:generate
+# 4. Firebase servis hesabı anahtarı (Console > Proje ayarları > Hizmet hesapları)
+#    → proje köküne firebase-service-account.json olarak koyun (git'e girmez)
 
 # 5. Çalıştır
 npm run dev
 ```
 
 Aç: http://localhost:3000
+
+### Firebase Console kurulumu
+
+1. **Authentication → Sign-in method → Anonymous** açık olmalı
+2. **Firestore** oluşturun → Rules: `firestore.rules` içeriği · Indexes: `firestore.indexes.json`
+3. **Storage** (Blaze plan) → Rules: `storage.rules` içeriği
+4. CLI ile tek komut: `firebase deploy --only firestore,storage`
 
 ---
 
@@ -56,10 +63,30 @@ Aç: http://localhost:3000
 KIE_API_KEY=kie_xxxxxxxxxxxxxxxx
 KIE_WEBHOOK_HMAC_KEY=xxxxxxxxxxxxxxxx
 APP_URL=https://your-domain.com
-DATABASE_URL="file:./dev.db"
+FIREBASE_SERVICE_ACCOUNT=./firebase-service-account.json   # ya da JSON içeriği tek satır
+FIREBASE_STORAGE_BUCKET=rapper-fcc44.firebasestorage.app
 ```
 
-**Önemli:** `KIE_API_KEY` asla `NEXT_PUBLIC_` ile başlamamalı.
+**Önemli:** `KIE_API_KEY` ve servis hesabı anahtarı asla istemciye / git'e gitmemeli.
+
+---
+
+## Veritabanı (Firebase)
+
+Şema tek yerde: `lib/data/schema.ts` (istemci `public/fb.js` aynı adları kullanır).
+
+| Yol | İçerik | Yazan |
+|---|---|---|
+| `users/{uid}` | `credits`, `settings` | kredi: sunucu · settings: kullanıcı |
+| `users/{uid}/tracks/{id}` | kütüphane | istemci |
+| `users/{uid}/lyrics/{id}` | zaman damgalı sözler | istemci |
+| `users/{uid}/personas/{id}` · `voices/{id}` | persona / ses | istemci + sunucu |
+| `tasks/{kieTaskId}` | KIE görevi, maliyet, iade, sonuçlar | yalnız sunucu |
+| Storage `uploads/{uid}/…` | kullanıcı ses kayıtları | sunucu |
+| Storage `media/{uid}/{taskId}/…` | MP3 + kapak kopyaları (KIE 14 günde siler) | sunucu |
+
+Kredi düşümü transaction ile atomik; başarısız görevde iade yalnız bir kez yapılır.
+İstemci çevrimdışı önbellekli çalışır, yalnız değişen belgeleri toplu (batch) yazar.
 
 ---
 
@@ -73,20 +100,34 @@ kie-suno-music/
 │   │   ├── music/
 │   │   │   ├── generate/      ← Müzik üretimi
 │   │   │   ├── audio/         ← Cover/Extend/AddVocals/RemoveVocals/ReplaceSection
-│   │   │   └── tasks/[id]/    ← Task durumu + KIE fallback
-│   │   ├── persona/           ← Persona CRUD
-│   │   ├── voice/             ← Custom Voice CRUD
+│   │   │   ├── lyrics/        ← Zaman damgalı sözler (önbellekli)
+│   │   │   └── tasks/[id]/    ← Task durumu + KIE fallback + medya kopyalama
+│   │   ├── me/                ← Kullanıcı belgesi + başlangıç kredisi
+│   │   ├── upload/            ← Ses kaydı → Firebase Storage
+│   │   ├── persona/           ← Persona oluştur
+│   │   ├── voice/             ← Custom Voice oluştur
 │   │   └── health/
-│   ├── page.tsx               ← Mobil SaaS UI
 │   ├── layout.tsx
 │   └── globals.css
 ├── lib/
-│   ├── db.ts                  ← Prisma singleton
+│   ├── auth.ts                ← Firebase ID token doğrulama, maliyetler, hata yanıtı
+│   ├── firebaseAdmin.ts       ← Firebase Admin (Auth · Firestore · Storage)
+│   ├── data/
+│   │   ├── schema.ts          ← Koleksiyon adları, yollar, tipler
+│   │   ├── users.ts           ← Kredi (atomik düşüm / iade)
+│   │   ├── tasks.ts           ← KIE görevleri
+│   │   ├── storage.ts         ← Yükleme + medya kopyalama
+│   │   ├── mirror.ts          ← Tamamlanan görevin medyasını bir kez kopyala
+│   │   └── library.ts         ← Persona / ses kayıtları
 │   ├── kie.ts                 ← KIE API client (tüm endpointler)
 │   ├── kieInputBuilder.ts     ← KIE input nesne oluşturucu
+│   ├── results.ts             ← KIE sonuç normalizasyonu
 │   ├── validation.ts          ← Zod şemaları
 │   └── webhook.ts             ← HMAC doğrulama
-├── prisma/schema.prisma
+├── public/
+│   ├── soundforge.html        ← Mobil arayüz
+│   └── fb.js                  ← Firebase istemci (Auth + Firestore senkronu)
+├── firestore.rules · firestore.indexes.json · storage.rules · firebase.json
 └── agents/                    ← Agent instruction dosyaları
 ```
 
@@ -99,12 +140,17 @@ kie-suno-music/
 ```
 POST   /api/music/generate          Vokalli / vokalsiz üretim
 POST   /api/music/audio             Cover, Extend, AddVocals, RemoveVocals, ReplaceSection
-GET    /api/music/tasks             Library listesi
-GET    /api/music/tasks/:id         Tek task durumu
+GET    /api/music/tasks             Kullanıcının görevleri
+GET    /api/music/tasks/:id         Tek task durumu (id = KIE taskId)
+POST   /api/music/lyrics            Zaman damgalı sözler
+POST   /api/me                      Kullanıcı belgesi / kredi
+POST   /api/upload                  Ses yükleme (Storage)
 POST   /api/callback                KIE webhook
-POST   /api/persona                 Persona oluştur/listele
-POST   /api/voice                   Voice oluştur/listele
+POST   /api/persona                 Persona oluştur
+POST   /api/voice                   Voice oluştur
 GET    /api/health                  Sağlık kontrolü
+
+Tümü (health ve callback hariç) `Authorization: Bearer <Firebase ID token>` ister.
 ```
 
 ### KIE API (backend'de kullanılır)
@@ -156,13 +202,13 @@ npm start
 
 ## Validation Kuralları
 
-- `instrumental: true` → lyrics, vocal_gender, audio_weight kaldırılır
+- `instrumental: true` (Beat) → lyrics, prompt, vocal_gender, audio_weight kaldırılır; style zorunlu
 - `customMode: false` → duration, sliders kaldırılır
 - Style maks 1000 karakter
 - Lyrics maks 5000 karakter (V6)
 - Title maks 80 karakter
 - Cover audio kaynak maks 8 dakika
-- KIE media 14 gün sonra silinir → production'da S3/R2/Supabase kullanın
+- KIE media 14 gün sonra silinir → tamamlanan görevler Firebase Storage'a kopyalanır
 - Rate limit ~20 req/10sn → 429'da exponential backoff
 
 ---
@@ -187,7 +233,6 @@ MIT
 ```bash
 cp .env.example .env # KIE_API_KEY'i yazın
 npm install
-npm run db:push
 npm run dev          # http://localhost:3000 → SoundForge mobil arayüzü
 ```
 
@@ -200,4 +245,4 @@ ngrok http 3000      # çıkan https adresini .env → APP_URL'e yazın, sunucuy
 iPhone'da adresi Safari'de açıp Paylaş → Ana Ekrana Ekle ile uygulama gibi kullanın.
 
 **Vercel'e alırken:** `.env` GitHub'a gitmez (.gitignore). Vercel → Settings → Environment Variables'a
-`KIE_API_KEY`, `APP_URL`, `DATABASE_URL` (Postgres) ekleyin. Yüklenen sesler için diskin yerine S3/R2/Supabase kullanın.
+`KIE_API_KEY`, `APP_URL`, `FIREBASE_SERVICE_ACCOUNT` (JSON içeriği tek satır) ve `FIREBASE_STORAGE_BUCKET` ekleyin.

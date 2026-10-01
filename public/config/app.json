@@ -1,0 +1,218 @@
+{
+ "version": 2,
+ "pricing": {
+  "startCredits": 500,
+  "costs": {
+   "generate": 10,
+   "cover": 10,
+   "extend": 10,
+   "upload-extend": 10,
+   "add-vocals": 10,
+   "remove-vocals": 5,
+   "replace-section": 5,
+   "split-stem": 25
+  }
+ },
+ "catalog": {
+  "styles": [
+   "trap",
+   "hoodtrap",
+   "türkçe rap",
+   "R&B",
+   "indie pop",
+   "lo-fi",
+   "arabesk",
+   "drill",
+   "sinematik",
+   "akustik",
+   "synthwave",
+   "house",
+   "anadolu rock",
+   "funk",
+   "afrobeat",
+   "piyano",
+   "808",
+   "kadın vokal",
+   "erkek vokal"
+  ],
+  "ideas": [
+   "Yağmurlu gece, melankolik trap",
+   "Sabah koşusu için enerjik synth pop",
+   "Piyano ve yaylılarla ağır bir aşk baladı",
+   "Karanlık, sinematik drill",
+   "Yaz akşamı, gitarlı akustik",
+   "90lar nostaljik türkçe rap",
+   "Brezilya funk, yüksek enerji",
+   "Lo-fi çalışma beati"
+  ],
+  "genres": [
+   {
+    "name": "trap",
+    "style": "trap, 808, dark"
+   },
+   {
+    "name": "türkçe hip hop",
+    "style": "türkçe rap, boom bap"
+   },
+   {
+    "name": "pop",
+    "style": "modern pop"
+   },
+   {
+    "name": "nostalji",
+    "style": "90s, retro, nostaljik"
+   },
+   {
+    "name": "arabesk",
+    "style": "arabesk, yaylılar"
+   },
+   {
+    "name": "brezilya funk",
+    "style": "brazilian funk, phonk"
+   },
+   {
+    "name": "lo-fi",
+    "style": "lo-fi hip hop, chill"
+   },
+   {
+    "name": "aggressive",
+    "style": "aggressive drill, dark"
+   },
+   {
+    "name": "energizing",
+    "style": "energetic, dance, synth"
+   },
+   {
+    "name": "punk",
+    "style": "pop punk, gitar"
+   },
+   {
+    "name": "r&b",
+    "style": "R&B, smooth, soul"
+   },
+   {
+    "name": "sinematik",
+    "style": "cinematic, orchestral"
+   },
+   {
+    "name": "drill",
+    "style": "UK drill, sliding 808"
+   },
+   {
+    "name": "hoodtrap",
+    "style": "hoodtrap, trap"
+   },
+   {
+    "name": "anadolu rock",
+    "style": "anadolu rock, bağlama, psychedelic"
+   },
+   {
+    "name": "synthwave",
+    "style": "synthwave, 80s"
+   },
+   {
+    "name": "house",
+    "style": "deep house"
+   },
+   {
+    "name": "afrobeat",
+    "style": "afrobeat, groove"
+   },
+   {
+    "name": "caz",
+    "style": "jazz, smoky, piano"
+   },
+   {
+    "name": "akustik",
+    "style": "acoustic, guitar"
+   },
+   {
+    "name": "phonk",
+    "style": "drift phonk, cowbell"
+   },
+   {
+    "name": "ambient",
+    "style": "ambient, atmospheric"
+   },
+   {
+    "name": "reggaeton",
+    "style": "reggaeton, dembow"
+   },
+   {
+    "name": "hardstyle",
+    "style": "hardstyle, euphoric"
+   },
+   {
+    "name": "techno",
+    "style": "techno, warehouse"
+   },
+   {
+    "name": "balad",
+    "style": "piyano balad"
+   },
+   {
+    "name": "metal",
+    "style": "metalcore, breakdown"
+   },
+   {
+    "name": "gospel",
+    "style": "gospel choir"
+   },
+   {
+    "name": "halk",
+    "style": "türk halk müziği, bağlama"
+   },
+   {
+    "name": "k-pop",
+    "style": "k-pop, bright"
+   }
+  ],
+  "lyrics": [
+   "[Verse]\nŞehrin ışıkları sönerken\nAdını fısıldıyor rüzgâr\nKaldırımlarda yankılanır\nBıraktığın o eski şarkı\n\n[Chorus]\nBu gece bizim, bırakma elimi\nYıldızlar düşse de sen kal benimle\nBu gece bizim, sönmesin bu ışık\nSabaha kadar yan yana",
+   "[Verse]\nPencerede sabah griliği\nKahve soğumuş, sen hâlâ uykuda\nTakvimde işaretli bir gün\nUnutmak istemediğim\n\n[Chorus]\nDön bana, dön bana\nBir yaz gibi, bir ilk gibi\nDön bana, dön bana\nHiç gitmemiş gibi"
+  ],
+  "titles": [
+   "Gece Yarısı Sinyali",
+   "Kırık Neon",
+   "Sahil Yolu",
+   "Son Vapur",
+   "Gri Sabah",
+   "Işık Yılı",
+   "Yavaş Çekim",
+   "Kuzey Rüzgârı",
+   "Beton Çiçek",
+   "Uzak Frekans"
+  ],
+  "beatTags": "instrumental beat, drum-focused, punchy drums, minimal melody, no vocals"
+ },
+ "kie": {
+  "defaultModel": "V6",
+  "models": [
+   {
+    "id": "V6",
+    "label": "V6"
+   },
+   {
+    "id": "V6_MINI",
+    "label": "V6 Mini"
+   },
+   {
+    "id": "V6_WILD",
+    "label": "V6 Wild"
+   }
+  ],
+  "limits": {
+   "title": 80,
+   "style": 1000,
+   "prompt": 3000,
+   "lyrics": 5000,
+   "negativeTags": 1000,
+   "durationMin": 10,
+   "durationMax": 360,
+   "uploadMaxMB": 100
+  },
+  "mediaRetentionDays": 14,
+  "pollIntervalMs": 4000,
+  "pollTimeoutMin": 15
+ }
+}

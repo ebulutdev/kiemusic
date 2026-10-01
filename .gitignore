@@ -3,11 +3,11 @@ node_modules
 .env
 .env.local
 .env.production
-*.db
-*.db-journal
-/prisma/dev.db
-/prisma/migrations
-uploads
 tsconfig.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Firebase servis hesabı anahtarları (gizli — asla commit etmeyin)
+firebase-service-account*.json
+*-firebase-adminsdk-*.json
+.firebase/

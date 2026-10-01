@@ -1,0 +1,11 @@
+rules_version = '2';
+// Dosyalar sunucu (Admin SDK) tarafından yazılır; indirme token'lı URL ile okunur.
+// İstemci doğrudan yalnız kendi klasörünü okuyabilir.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{area}/{uid}/{rest=**} {
+      allow read: if request.auth != null && request.auth.uid == uid && area in ['uploads', 'media'];
+      allow write: if false;
+    }
+  }
+}

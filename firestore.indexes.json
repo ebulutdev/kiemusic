@@ -1,0 +1,10 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    { "collectionGroup": "tasks", "fieldPath": "results", "indexes": [] },
+    { "collectionGroup": "tasks", "fieldPath": "params", "indexes": [] },
+    { "collectionGroup": "lyrics", "fieldPath": "words", "indexes": [] },
+    { "collectionGroup": "tracks", "fieldPath": "lyrics", "indexes": [] },
+    { "collectionGroup": "tracks", "fieldPath": "prompt", "indexes": [] }
+  ]
+}

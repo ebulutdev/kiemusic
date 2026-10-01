@@ -1,0 +1,114 @@
+/* ── Giriş / kayıt ekranı (public/auth.js) ─────────────────
+   Sade, tek tonlu (siyah + beyaz tonları), gotik (blackletter) başlık. Uygulama temasından bağımsız. */
+.au{
+  --au-bg:#0B0A09;--au-line:rgba(255,255,255,.14);--au-text:#F3EEE6;--au-muted:#A39C91;--au-faint:#5E5850;--au-good:#F3EEE6;--au-bad:#E07A7A;--au-gold:#F5B83D;
+  --au-display:'Grenze Gotisch',ui-serif,Georgia,serif;
+  position:fixed;inset:0;z-index:58;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--au-bg);color:var(--au-text);font-family:var(--sans);color-scheme:dark;
+  transition:opacity .5s ease,visibility .5s;
+}
+.au.out{opacity:0;visibility:hidden;pointer-events:none}
+.au button{color:inherit}
+
+/* arka plan: siyah üzerinde tek tonlu, çok hafif bir ışık */
+.au-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.au-glow{position:absolute;width:120vmax;height:120vmax;left:50%;top:-70vmax;margin-left:-60vmax;border-radius:50%;
+  background:radial-gradient(circle,rgba(245,184,61,.32) 0,rgba(255,122,47,.12) 32%,transparent 62%);animation:au-breathe 12s ease-in-out infinite alternate}
+
+/* yerleşim: içerik alta yaslı, tek sütun */
+.au-scroll{position:relative;flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 24px calc(env(safe-area-inset-bottom,0px) + 20px)}
+.au-col{width:100%;max-width:380px;flex:1;display:flex;flex-direction:column}
+.au-x{align-self:flex-end;width:40px;height:40px;margin-right:-8px;border-radius:50%;display:grid;place-items:center;color:var(--au-muted)!important}
+.au-x svg{width:22px;height:22px}
+.au-body{margin-top:auto;padding-top:24px}
+@media (min-width:700px){.au-body{margin:auto 0}}
+
+.au-h{margin:0 0 34px;font:600 60px/.92 var(--au-display);letter-spacing:-.01em}
+.au-h em{font-style:normal;color:var(--au-gold)}
+h2.au-h{font-size:52px;margin-bottom:22px}
+
+/* görünümler */
+.au[data-view=main] .au-email,.au[data-view=main] .au-reset,
+.au[data-view=email] .au-main,.au[data-view=email] .au-reset,
+.au[data-view=reset] .au-main,.au[data-view=reset] .au-email{display:none}
+.au[data-mode=signin] [data-only=signup],.au[data-mode=signup] [data-only=signin]{display:none!important}
+.au-main,.au-email,.au-reset{animation:au-in .35s ease both}
+.au[data-state=splash] .au-body{visibility:hidden}
+.au>.au-wait{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);margin-left:-13px;display:none}
+.au[data-state=splash]>.au-wait{display:block}
+
+/* düğmeler */
+.au-stack{display:flex;flex-direction:column;gap:12px}
+.au-btn{position:relative;width:100%;height:54px;border-radius:99px;display:flex;align-items:center;justify-content:center;gap:10px;
+  font:500 15px/1 var(--sans);letter-spacing:-.005em;border:1px solid var(--au-line);transition:transform .15s,background .2s,border-color .2s}
+.au-btn:hover{border-color:rgba(255,255,255,.28)}
+.au-btn:active{transform:scale(.985)}
+.au-btn svg{width:19px;height:19px;flex-shrink:0}
+.au-apple{background:#fff;border-color:#fff;color:#000!important}
+.au-apple:hover{border-color:#fff;background:#ECECEC}
+.au-btn .au-spin{position:absolute;right:18px;width:18px;height:18px}
+.au-cta{background:var(--au-text);border-color:var(--au-text);color:var(--au-bg)!important;margin-top:8px}
+.au-cta:hover{border-color:var(--au-text);background:#fff}
+.au-cta .au-spin{position:absolute;left:50%;top:50%;margin:-9px 0 0 -9px;display:none}
+.au-cta.busy span{opacity:0}
+.au-cta.busy .au-spin{display:block}
+.au [disabled]{opacity:.5;pointer-events:none}
+
+.au-quiet{display:block;margin:22px auto 0;padding:8px 10px;font-size:14px;font-weight:500;color:var(--au-muted)!important}
+.au-quiet:hover{color:var(--au-text)!important}
+.au-quiet b{font-weight:600;color:var(--au-text)}
+
+/* e-posta formu */
+.au-back{display:inline-flex;align-items:center;gap:6px;margin:0 0 22px -2px;font-size:14px;font-weight:500;color:var(--au-muted)!important}
+.au-back svg{width:18px;height:18px}
+.au-form{display:flex;flex-direction:column}
+.au-f{position:relative;display:block;height:58px;border-bottom:1px solid var(--au-line);transition:border-color .2s}
+.au-f+.au-f,.au-meter+.au-f{margin-top:6px}
+.au-f:focus-within{border-color:var(--au-text)}
+.au-f.bad{border-color:var(--au-bad)}
+.au-f input{position:absolute;inset:0;width:100%;height:100%;padding:22px 44px 4px 0;border:0;outline:0;background:transparent;color:var(--au-text);font:500 16px/1.2 var(--sans)}
+.au-f input:-webkit-autofill{-webkit-text-fill-color:var(--au-text);-webkit-box-shadow:0 0 0 40px var(--au-bg) inset;caret-color:var(--au-text)}
+.au-l{position:absolute;left:0;top:50%;transform:translateY(-35%);color:var(--au-muted);font-size:15.5px;pointer-events:none;transition:top .18s ease,font-size .18s ease,color .18s,transform .18s}
+.au-l small{color:var(--au-faint);font-size:.85em}
+.au-f input:focus~.au-l,.au-f input:not(:placeholder-shown)~.au-l,.au-f input:-webkit-autofill~.au-l{top:12px;transform:none;font-size:12px;color:var(--au-faint)}
+.au-eye{position:absolute;right:-8px;bottom:4px;width:40px;height:40px;display:grid;place-items:center;color:var(--au-faint)!important}
+.au-eye svg,.au-match svg{width:19px;height:19px;display:block}
+.au-match{position:absolute;right:2px;bottom:14px;opacity:0;color:var(--au-good);transition:opacity .2s;pointer-events:none}
+.au-f.ok .au-match{opacity:1}
+
+.au-meter{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}
+.au-meter i{height:3px;border-radius:2px;background:rgba(255,255,255,.1);transition:background .25s}
+.au-meter[data-s="1"] i:nth-child(1){background:rgba(255,255,255,.35)}
+.au-meter[data-s="2"] i:nth-child(-n+2){background:rgba(255,255,255,.55)}
+.au-meter[data-s="3"] i:nth-child(-n+3){background:rgba(255,255,255,.78)}
+.au-meter[data-s="4"] i{background:var(--au-text)}
+
+.au-forgot{align-self:flex-end;margin-top:12px;font-size:13.5px;font-weight:500;color:var(--au-muted)!important}
+.au-err{margin-top:14px;color:var(--au-bad);font-size:13.5px;line-height:1.45}
+.au-err:empty{display:none}
+.au-ok{margin-top:14px;color:var(--au-good);font-size:13.5px;line-height:1.45}
+
+.au-spin{display:inline-block;width:26px;height:26px;border-radius:50%;border:2.5px solid currentColor;border-right-color:transparent;animation:au-rot .7s linear infinite}
+.au-wait{color:var(--au-muted)}
+
+@keyframes au-breathe{to{opacity:.6;transform:scale(1.06)}}
+@keyframes au-in{from{opacity:0;transform:translateY(8px)}}
+@keyframes au-rot{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.au *,.au{animation:none!important;transition:none!important}}
+
+/* ── Profil: hesap kartı ── */
+.acct{display:flex;flex-direction:column;gap:14px;max-width:520px;margin-bottom:26px;padding:18px;border-radius:22px;background:var(--surface)}
+.acct-row{display:flex;align-items:center;gap:12px;min-width:0}
+.acct-av{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;overflow:hidden;background:var(--surface2);color:var(--text);font:600 18px/1 var(--sans)}
+.acct-av img{width:100%;height:100%;object-fit:cover}
+.acct-t{min-width:0;flex:1}
+.acct-t b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-t small{display:block;color:var(--muted);font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-warn{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--muted)}
+.acct-warn button{font-weight:600;color:var(--accent)}
+.acct-p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
+.acct-act{display:flex;gap:10px}
+.acct-btn{flex:1;height:46px;border-radius:99px;font-weight:600;font-size:14.5px;background:var(--surface2)}
+.acct-btn.main{background:var(--text);color:var(--bg)}
+.acct-btn.danger{color:var(--danger)}
