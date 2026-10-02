@@ -1,6 +1,7 @@
 # Firebase App Hosting — Next.js sunucusu (KIE + Firebase Admin)
 # Gizli değerler Cloud Secret Manager'da tutulur; değerler ASLA bu dosyaya yazılmaz:
 #   firebase apphosting:secrets:set kie-api-key
+#   firebase apphosting:secrets:set kie-webhook-hmac-key        # KIE dashboard > Webhook Settings > HMAC Secret
 #   firebase apphosting:secrets:set firebase-service-account --data-file firebase-service-account.json
 runConfig:
   minInstances: 0
@@ -12,6 +13,11 @@ runConfig:
 env:
   - variable: KIE_API_KEY
     secret: kie-api-key
+    availability: [RUNTIME]
+
+  # Webhook imzası (zorunlu): tanımlı değilse /api/callback tüm bildirimleri reddeder
+  - variable: KIE_WEBHOOK_HMAC_KEY
+    secret: kie-webhook-hmac-key
     availability: [RUNTIME]
 
   - variable: FIREBASE_SERVICE_ACCOUNT

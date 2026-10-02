@@ -69,6 +69,8 @@ export const audioTaskSchema = z
     infillStartS:       z.number().min(0).optional(),                 // replace-section
     infillEndS:         z.number().min(0).optional(),
     stemType:           z.enum(["separate_vocal", "split_stem"]).optional(),
+    sourceTaskId:       z.string().max(128).optional(),               // uploadUrl kütüphanedeki bir parçaysa: o parçanın görevi
+    rightsConfirmed:    z.boolean().optional(),                       // yüklenen kayıt: "haklarına sahibim" onayı
     ...personaFields,
   })
   .superRefine((d, ctx) => {
@@ -117,8 +119,13 @@ export const personaSchema = z.object({
   vocalEnd:    z.number().min(0).optional(),
 });
 
+// Ses klonu izni: kullanıcı sesin kendisine ait olduğunu (ya da sahibinin açık iznini) onaylar
+const CONSENT = z.literal(true, { errorMap: () => ({ message: "Sesin sana ait olduğunu onaylaman gerekiyor." }) });
+export const VOICE_CONSENT_VERSION = "2026-10-voice-v1";
+
 // ── Ses klonu: 1) doğrulama cümlesi (ai-music-api/validation-phrase) ──
 export const voicePhraseSchema = z.object({
+  consent:    CONSENT,
   voiceUrl:   z.string().url(),
   vocalStart: z.number().int().min(0),
   vocalEnd:   z.number().int().min(1),
@@ -127,6 +134,7 @@ export const voicePhraseSchema = z.object({
 
 // ── Ses klonu: 2) ses oluştur (ai-music-api/create-voice) ──
 export const voiceSchema = z.object({
+  consent:          CONSENT,
   id:               z.string().max(64).optional(),
   validationTaskId: z.string(),
   verifyUrl:        z.string().url(),
@@ -134,4 +142,14 @@ export const voiceSchema = z.object({
   description:      z.string().max(500).optional(),
   style:            z.string().max(200).optional(),
   singerSkillLevel: z.enum(["beginner", "intermediate", "advanced", "professional"]).default("intermediate"),
+});
+
+// ── Şikâyet / içerik bildirimi ────────────────────────────
+export const REPORT_REASONS = ["offensive", "copyright", "impersonation", "sexual", "other"] as const;
+export const reportSchema = z.object({
+  taskId:  z.string().trim().min(1).max(128).optional(),   // KIE görev id'si (parçanın providerTaskId'si)
+  audioId: z.string().trim().max(128).optional(),
+  title:   z.string().trim().max(120).optional(),
+  reason:  z.enum(REPORT_REASONS),
+  note:    z.string().trim().max(500).optional(),
 });

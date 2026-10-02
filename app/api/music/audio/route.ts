@@ -9,6 +9,7 @@ import { requireUser, errorResponse } from "@/lib/auth";
 import { getCost } from "@/lib/data/config";
 import { chargeCredits, refundCredits } from "@/lib/data/users";
 import { createTask } from "@/lib/data/tasks";
+import { assertUsableMedia } from "@/lib/data/media";
 
 // İşlem → KIE input oluşturucu (zorunlu alan kontrolü: lib/validation.ts)
 const BUILD: Record<AudioTaskInput["taskType"], (d: AudioTaskInput) => Record<string, unknown>> = {
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
     }
     const data = parsed.data;
 
+    // Ses kaynağı kullanıcıya ait olmalı; yüklenen kayıtta hak (telif) onayı zorunlu
+    let mediaKind: string | undefined;
+    if (data.uploadUrl) {
+      mediaKind = await assertUsableMedia(data.uploadUrl, user.uid, { sourceTaskId: data.sourceTaskId, rightsConfirmed: data.rightsConfirmed });
+    }
+
     // Çoklu stem ayırma KIE'de daha pahalı → ayrı fiyat anahtarı
     const cost = await getCost(data.taskType === "remove-vocals" && data.stemType === "split_stem" ? "split-stem" : data.taskType);
     await chargeCredits(user.uid, cost);
@@ -40,7 +47,7 @@ export async function POST(request: Request) {
       throw err;
     }
 
-    await createTask({ providerTaskId, userId: user.uid, taskType: data.taskType, cost, params: data });
+    await createTask({ providerTaskId, userId: user.uid, taskType: data.taskType, cost, params: { ...data, ...(mediaKind ? { mediaKind } : {}), ...(data.rightsConfirmed ? { rightsConfirmedAt: new Date().toISOString() } : {}) } });
 
     return NextResponse.json({
       success: true,

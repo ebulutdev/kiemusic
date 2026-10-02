@@ -21,14 +21,23 @@ export async function POST(request: Request) {
     const taskId: string | undefined = d.task_id ?? d.taskId;
     if (!taskId) return NextResponse.json({ success: false, error: "task_id eksik" });
 
-    // HMAC doğrulama (production'da zorunlu)
-    if (process.env.KIE_WEBHOOK_HMAC_KEY) {
+    // HMAC doğrulama — production'da her zaman zorunlu (anahtar yoksa da reddedilir).
+    // Reddedilen bildirim kaybolmaz: istemcinin durum sorgusu (tasks/[id]) sonucu KIE'den kendisi çeker.
+    const hmacKey = process.env.KIE_WEBHOOK_HMAC_KEY;
+    const mustVerify = !!hmacKey || process.env.NODE_ENV === "production";
+    if (mustVerify) {
+      if (!hmacKey) {
+        console.error("CALLBACK_REJECTED: KIE_WEBHOOK_HMAC_KEY tanımlı değil (apphosting.yaml → kie-webhook-hmac-key)");
+        return NextResponse.json({ success: false, error: "Webhook doğrulaması yapılandırılmamış" }, { status: 401 });
+      }
       const timestamp = request.headers.get("X-Webhook-Timestamp");
       const signature = request.headers.get("X-Webhook-Signature");
       if (!timestamp || !signature)
         return NextResponse.json({ success: false, error: "Webhook imzası eksik" }, { status: 401 });
       if (!verifyKieWebhook(taskId, timestamp, signature))
         return NextResponse.json({ success: false, error: "Geçersiz webhook imzası" }, { status: 401 });
+    } else {
+      console.warn("CALLBACK_UNSIGNED: yerel geliştirme — imza kontrolü atlandı");
     }
 
     // Belge id = KIE taskId → sorgusuz tek okuma

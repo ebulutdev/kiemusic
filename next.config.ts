@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Ana sayfa: mobil SoundForge arayüzü (public/soundforge.html)
+  // Ana sayfa: mobil CookRapper arayüzü (public/index.html)
   async rewrites() {
-    return { beforeFiles: [{ source: "/", destination: "/soundforge.html" }] };
+    return { beforeFiles: [{ source: "/", destination: "/index.html" }] };
   },
 };
 

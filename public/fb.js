@@ -1,4 +1,4 @@
-// ── SoundForge · Firebase istemci katmanı ─────────────────
+// ── CookRapper · Firebase istemci katmanı ─────────────────
 // Kimlik (anonim), Firestore senkronu (çevrimdışı önbellekli) ve API yetkilendirmesi.
 // Şema: lib/data/schema.ts ile aynı yol adları.
 //
@@ -12,18 +12,17 @@
 //   - ayar/persona/ses değişiklikleri tek merge yazımında birleşir
 //   - 1 sn debounce + writeBatch
 //   - söz zamanlamaları istemciden yazılmaz (sunucu önbelleği: tasks/{id}/lyrics)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+// SDK uygulamaya gömülü (CDN yok): npm run vendor → public/vendor/firebase.js
 import {
+  initializeApp,
   getAuth, onAuthStateChanged, signInAnonymously, signOut as fbSignOut,
   GoogleAuthProvider, OAuthProvider, EmailAuthProvider,
   signInWithPopup, signInWithRedirect, linkWithPopup, linkWithRedirect, getRedirectResult,
   signInWithCredential, linkWithCredential, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   sendPasswordResetEmail, sendEmailVerification, updateProfile,
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, collection, onSnapshot, writeBatch, serverTimestamp, deleteField,
-} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+} from "./vendor/firebase.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC86wckNq-pqfYmkfzHhVPZG2mCJbQ2sjM",
@@ -144,7 +143,7 @@ function listen() {
     if (first) {
       first = false;
       // Kredi alanı yoksa sunucu başlangıç kredisini yazar (yalnız ilk açılışta 1 istek)
-      if (typeof d.credits !== "number") headers().then((h) => fetch("/api/me", { method: "POST", headers: h })).catch(() => {});
+      if (typeof d.credits !== "number") headers().then((h) => fetch(window.CR ? window.CR.api("/api/me") : "/api/me", { method: "POST", headers: h })).catch(() => {});
       setTimeout(schedule, 1500); // yereldeki eski kayıtları buluta taşı
     }
     if (snap.metadata.hasPendingWrites) return;

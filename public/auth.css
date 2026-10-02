@@ -112,3 +112,5 @@ h2.au-h{font-size:52px;margin-bottom:22px}
 .acct-btn{flex:1;height:46px;border-radius:99px;font-weight:600;font-size:14.5px;background:var(--surface2)}
 .acct-btn.main{background:var(--text);color:var(--bg)}
 .acct-btn.danger{color:var(--danger)}
+
+.au-brand{margin:0 0 6px;font-family:var(--mono,ui-monospace,monospace);font-size:12px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;opacity:.6}

@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>SoundForge</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Grenze+Gotisch:wght@500..700&display=swap" rel="stylesheet">
+<title>CookRapper</title>
+<meta name="theme-color" content="#0B0A09">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/app.css">
 <link rel="stylesheet" href="/auth.css">
 </head>
@@ -132,6 +134,7 @@
       </div>
       <textarea class="ta" id="aLyrics" rows="5" maxlength="5000" placeholder="Sözler" hidden></textarea>
       <div class="row2"><input class="inp" id="aTitle" maxlength="80" placeholder="Başlık"><input class="inp" id="aStyle" maxlength="1000" placeholder="Stil"></div>
+      <label class="chk" id="aRightsWrap"><input type="checkbox" id="aRights"><span>Bu kaydın haklarına sahibim ya da kullanma iznim var. Telifli bir şarkıyı izinsiz yüklemiyorum.</span></label>
     </div>
   </div>
   <div class="m-foot" id="mFoot"><div class="err" id="createErr"></div><button class="primary" id="createBtn"><span>Oluştur</span><span class="cost" id="createCost"></span></button></div>
@@ -179,6 +182,8 @@
 <div class="toast" id="toast"></div>
 <div class="snack" id="snack" role="status"><span id="snackMsg"></span><button id="snackAct"></button></div>
 
+<script src="/env.js"></script>
+<script src="/native.js"></script>
 <script src="/recorder.js"></script>
 <script src="/app.js"></script>
 <script src="/auth.js"></script>
