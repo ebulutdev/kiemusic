@@ -76,8 +76,10 @@ const S={view:'home',mode:'simple',output:'song',gender:'f',variety:1,aop:'cover
   lib:store.get('sf2_lib',[]),personas:store.get('sf2_personas',[]),voices:store.get('sf2_voices',[]),
   set:Object.assign({credits:MAX,backend:'',key:'',model:'V6',theme:'auto'},store.get('sf2_set',{})),src:null};
 S.lib.forEach(t=>{if(t.output==='instrumental')t.output='beat';if(t.fav&&t.like==null)t.like=1});
-const playable=t=>!!t&&(t.status==='gen'?!!t.taskId:!!t.audioUrl); // sunucu görevi olmayan ya da sesi olmayan kayıt = eski deneme parçası
-S.lib=S.lib.filter(playable);
+// Atılacak kayıtlar: sesi olmayan "hazır" parça (eski deneme sesi) ya da 10 dk'dan eski, sunucu görevi hiç oluşmamış üretim.
+// Yeni başlayan üretim (görev numarası birkaç sn içinde gelir) korunur — başka sekme/cihaz onu silmesin.
+const junk=t=>!t||(t.status==='ready'&&!t.audioUrl)||(t.status==='gen'&&!t.taskId&&Date.now()-(t.created||0)>6e5);
+S.lib=S.lib.filter(t=>!junk(t));
 const save=()=>{store.set('sf2_lib',S.lib);store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);if(window.FB)FB.schedule()};
 /* ---------- Firebase köprüsü (public/fb.js) ---------- */
 const fbWait=()=>window.FB?Promise.resolve(window.FB):new Promise(r=>{const t=setTimeout(()=>r(null),4000);addEventListener('fb-ready',()=>{clearTimeout(t);r(window.FB)},{once:true})});
@@ -106,7 +108,7 @@ window.SF={
     if(personas)S.personas=personas;if(voices)S.voices=voices;
     store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);renderAll();if(personas||voices)renderStudio()},
   applyRemote(kind,changes){const arr=S[kind];
-    changes.forEach(c=>{const i=arr.findIndex(x=>x.id===c.id);if(c.removed||(kind==='lib'&&!playable(c.data))){if(i>=0)arr.splice(i,1);return}
+    changes.forEach(c=>{const i=arr.findIndex(x=>x.id===c.id);if(c.removed||(kind==='lib'&&junk(c.data))){if(i>=0)arr.splice(i,1);return}
       if(i>=0)Object.assign(arr[i],c.data);else arr.push({...c.data,id:c.id})});
     if(kind==='lib')S.lib.sort((a,b)=>(b.created||0)-(a.created||0)||(a.version||0)-(b.version||0));
     store.set('sf2_lib',S.lib);renderAll();
