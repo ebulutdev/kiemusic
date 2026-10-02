@@ -584,3 +584,71 @@ input[type=range]{width:100%;accent-color:var(--accent);height:24px;margin:0}
 .wv-lyr p{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
 #toolBody .adv .sl:not(.set) input{opacity:.45}
 #toolBody .adv .sl:not(.set) output{color:var(--faint)}
+
+/* ── Şu an çalıyor · Hakkında kartı (kompakt) ── */
+#npAboutCard{padding:14px 14px 14px}
+#npAboutCard h3{margin-bottom:6px}
+#npAboutCard .np-date{margin:0 0 10px!important;font-size:12px;color:rgba(255,255,255,.55)!important}
+#npAboutCard .np-tags{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+#npAboutCard .np-tags::-webkit-scrollbar{display:none}
+#npAboutCard .np-tag{flex:none;height:26px;padding:0 10px;font-size:12px;font-weight:500;background:rgba(255,255,255,.1)}
+.fp .src-row{display:flex;align-items:center;gap:10px;width:100%;margin-top:10px;padding:7px 10px 7px 7px;border-radius:12px;background:rgba(255,255,255,.07);color:#fff;text-align:left}
+.src-row .av{flex:none;display:block;width:36px;height:36px;border-radius:8px;overflow:hidden;background:rgba(0,0,0,.3)}
+.src-row .av>*{width:100%;height:100%}
+.src-row .src-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.src-row .src-t small{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.src-row .src-t b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.src-row .ic{flex:none;opacity:.5}
+#npAboutCard .np-acts{gap:6px;margin-top:10px}
+#npAboutCard .np-act{height:32px;padding:0 12px;gap:6px;font-size:12.5px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}
+
+/* araç: uygun parça yok */
+.tool-empty{display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 8px 12px;text-align:center}
+.tool-empty p{margin:0;font-size:14px;color:var(--muted)}
+.tool-empty-acts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.tool-empty .np-act{color:var(--text);box-shadow:inset 0 0 0 1px var(--line),0 0 0 0;background:var(--surface);height:36px;padding:0 14px;border-radius:99px;font-size:13px;font-weight:600}
+.gcard.still{animation:none}
+
+/* ── Oluştur penceresi (sade, düzenli) ── */
+#mCreate .m-top{padding:12px 14px 6px}
+#mCreate .m-tabs{flex:none;gap:2px;margin:0 auto;padding:3px;border-radius:99px;background:var(--surface2)}
+#mCreate .m-tabs button{height:34px;padding:0 16px;border:0;border-radius:99px;font:600 14px var(--sans);color:var(--muted)}
+#mCreate .m-tabs button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+#mCreate .m-body{padding:12px 20px 24px;gap:16px}
+#mCreate .outs{width:max-content;margin:0 auto;gap:2px;padding:3px;border-radius:99px;background:var(--surface2)}
+#mCreate .out{display:flex;align-items:center;gap:6px;height:32px;padding:0 16px;border-radius:99px;box-shadow:none;font-size:13.5px;font-weight:600;color:var(--muted)}
+#mCreate .out.on{background:var(--text);color:var(--bg)}
+.c-form{display:flex;flex-direction:column;gap:18px}
+.fg{display:flex;flex-direction:column;gap:8px}
+.fg-l{display:flex;align-items:center;justify-content:space-between;min-height:24px;padding:0 4px}
+.fg-l>span{font-size:11px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.fg-act{display:flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:99px;font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft)}
+.fg-row{display:flex;gap:8px}
+.fg-row>.inp{flex:1;min-width:0}
+.fg-row>.seg{flex:none;width:168px}
+#mCreate .inp,#mCreate .ta{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);transition:box-shadow .15s}
+#mCreate .inp:focus,#mCreate .ta:focus{box-shadow:inset 0 0 0 1.5px var(--accent),0 0 0 4px var(--accent-soft)}
+#mCreate .inp{height:46px;border-radius:14px;font-size:15px}
+#mCreate .ta{border-radius:18px;padding:14px 16px;font-size:15.5px;line-height:1.6}
+#mCreate .seg{border-radius:14px}
+#mCreate .seg button{height:40px}
+#mCreate .chips.fade{-webkit-mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,transparent,#000 22px,#000 calc(100% - 22px),transparent)}
+#mCreate .chips .chip{height:32px;padding:0 13px;font-size:13px;background:transparent;box-shadow:inset 0 0 0 1px var(--line);color:var(--text)}
+#mCreate .chips .chip.on{background:var(--text);color:var(--bg);box-shadow:none}
+/* Sesten: işlem seçimi segment gibi */
+#mCreate #opChips{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:2px;margin:0;padding:3px;border-radius:14px;background:var(--surface2)}
+#mCreate #opChips .chip{height:38px;border-radius:11px;background:transparent;box-shadow:none;color:var(--muted);font-size:14px;font-weight:600}
+#mCreate #opChips .chip.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+/* Gelişmiş: kart + kapalıyken özet */
+.adv-card{border-radius:18px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);padding:0 14px}
+.adv-card .adv-btn{width:100%;height:50px;padding:0;gap:10px;justify-content:flex-start;font-size:14.5px;font-weight:600}
+.adv-card .adv-btn small{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+.adv-card .adv{padding:2px 0 16px;gap:14px}
+.adv-card .sl{font-size:14px}
+#mCreate .adv-card .inp{background:var(--bg)}
+#mCreate .adv-card .seg{background:var(--bg)}
+/* alt çubuk */
+#mCreate .m-foot{padding:12px 20px 16px;box-shadow:0 -1px 0 var(--line)}
+#mCreate .primary{height:54px}
+#mCreate .primary .cost{padding:4px 9px;border-radius:99px;background:rgba(127,127,127,.22);opacity:1}
+#mCreate .err{font-size:13px;margin-bottom:8px}

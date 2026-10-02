@@ -12,6 +12,10 @@ type Context = { params: Promise<{ id: string }> };
 
 // Ses üretmeyen işlemler: sonuç TaskDoc.extra'da (persona_id, doğrulama cümlesi, voiceId)
 const EXTRA_TYPES = new Set(["persona", "voice-phrase", "voice"]);
+const DETAIL_STAGE: Record<string, TaskStatus> = { PENDING: "QUEUED", TEXT_SUCCESS: "TEXT_READY", FIRST_SUCCESS: "FIRST_READY", SUCCESS: "COMPLETED" };
+const DETAIL_FAIL = new Set(["CREATE_TASK_FAILED", "GENERATE_AUDIO_FAILED", "SENSITIVE_WORD_ERROR"]); // CALLBACK_EXCEPTION üretim hatası değil
+const LAST = new Map<string, number>(); // görev → son servis sorgusu (sunucu örneği başına)
+const RANK: Record<string, number> = { QUEUED: 0, TEXT_READY: 1, FIRST_READY: 2, COMPLETED: 3, FAILED: 4 };
 const sig = (r: TaskResult[]) => r.map((x) => `${x.id}|${x.stem}|${x.audio_url}|${x.stream_audio_url}|${x.image_url}`).join(",");
 
 /** Callback gelmediyse (ör. localhost) durumu KIE'den sor; yalnız değişiklik varsa yaz. */
@@ -40,11 +44,23 @@ async function refresh(task: TaskDoc): Promise<TaskDoc> {
     return out;
   }
 
+  // Aşama: müzik görevlerinde ayrıntı uç noktası gerçek aşamayı verir (PENDING → TEXT_SUCCESS → FIRST_SUCCESS → SUCCESS)
+  // ve ara sonuçları (kapak, başlık, sözler, akış adresi) erkenden döndürür. Yüzde bilgisi yok; istemci aşama + süreden ilerler.
   let found = task.taskType === "remove-vocals" ? stemResults(d.resultJson) : normalizeResults(d.resultJson);
-  if (!found.length && task.taskType !== "remove-vocals") {
-    try { const old = await getMusicTaskDetail(task.providerTaskId); found = normalizeResults(old?.data?.response ?? old?.data); } catch {}
+  let detail: string | undefined;
+  if (task.taskType !== "remove-vocals" && state !== "success") {
+    try {
+      const old = await getMusicTaskDetail(task.providerTaskId);
+      detail = old?.data?.status;
+      const partial = normalizeResults(old?.data?.response ?? old?.data);
+      if (partial.length) found = partial;
+    } catch {}
   }
-  const next: TaskStatus = state === "success" ? "COMPLETED" : found.length ? "FIRST_READY" : state === "generating" ? "TEXT_READY" : task.status;
+  if (detail && DETAIL_FAIL.has(detail)) return fail(detail, detail === "SENSITIVE_WORD_ERROR" ? "İçerik kurallara takıldı; sözleri ya da stili değiştirip tekrar dene." : "Üretim başarısız oldu.");
+  const hasAudio = found.some((r) => r.audio_url || r.stream_audio_url);
+  const seen: TaskStatus = state === "success" ? "COMPLETED"
+    : (detail && DETAIL_STAGE[detail]) || (hasAudio ? "FIRST_READY" : state === "generating" ? "TEXT_READY" : task.status);
+  const next: TaskStatus = RANK[seen] >= RANK[task.status] ? (seen === "COMPLETED" && !hasAudio && state !== "success" ? "FIRST_READY" : seen) : task.status;
   if (next !== task.status || (found.length && sig(found) !== sig(task.results))) {
     await setResults(task.providerTaskId, next, found);
     return { ...task, status: next, results: found.length ? found : task.results };
@@ -60,7 +76,10 @@ export async function GET(request: Request, context: Context) {
     if (!task || task.userId !== user.uid)
       return NextResponse.json({ success: false, error: "Görev bulunamadı" }, { status: 404 });
 
-    if (task.status !== "COMPLETED" && task.status !== "FAILED") {
+    // Üretim servisine aynı görev için en fazla 3 sn'de bir sorulur (birden çok sekme/cihaz → hız sınırı 429 olmasın)
+    if (task.status !== "COMPLETED" && task.status !== "FAILED" && Date.now() - (LAST.get(id) ?? 0) > 3000) {
+      LAST.set(id, Date.now());
+      if (LAST.size > 2000) LAST.clear();
       try { task = await refresh(task); } catch (err) { console.error("FALLBACK_POLL_ERROR", err); }
     }
     task = await mirrorIfNeeded(task);

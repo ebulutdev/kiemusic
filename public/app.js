@@ -28,6 +28,7 @@ const I={
   voice:'<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0"/>',
   trash:'<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l.9 12.5h9.2L17.5 7"/>',
   flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+  beat:'<ellipse cx="12" cy="7.5" rx="8" ry="3"/><path d="M4 7.5v8.5c0 1.7 3.6 3 8 3s8-1.3 8-3V7.5M8 10.3v8.4M16 10.3v8.4"/>',
   code:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>',
   file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>'
 };
@@ -160,7 +161,11 @@ $('#cPlus').innerHTML=ic('plus',22);$('#cMic').innerHTML=ic('mic',20);$('#cSend'
 $$('.chev').forEach(c=>c.innerHTML=ic('chevR',16));
 $$('[data-close]').forEach(b=>b.innerHTML=ic('down',24));
 $('#searchBtn').innerHTML=ic('search',22);
-$('#lyrIdea').innerHTML=ic('dice',16)+'Rastgele';$('#advChev').innerHTML=ic('down',18);
+$('#lyrIdea').innerHTML=ic('dice',14)+'Rastgele';$('#advChev').innerHTML=ic('down',18);
+$$('#outSeg .out').forEach(b=>b.insertAdjacentHTML('afterbegin',ic(b.dataset.v==='song'?'mic':'beat',15)));
+// Gelişmiş özeti: kapalıyken de model ve süre görünür
+function advSummary(){const m=$('#model'),d=$('#dur');if(m&&d)$('#advSum').textContent=modelName(m.value)+' · '+fmt(+d.value)}
+['#model','#dur'].forEach(s=>$(s).addEventListener('input',advSummary));$('#model').addEventListener('change',advSummary);
 $('#fpMore').innerHTML=ic('more',24);$('#fpShuf').innerHTML=ic('shuffle',24);$('#fpRep').innerHTML=ic('repeat',24);$('#fpPrev').innerHTML=ic('prev2',34);$('#fpNext').innerHTML=ic('next2',34);
 $('#styleRemix').innerHTML=ic('cover',18);$('#styleCopy').innerHTML=ic('copy',18);$('#lyrCopy').innerHTML=ic('copy',18);
 
@@ -294,7 +299,7 @@ $('#opChips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(
 const AOP={cover:{type:'cover',cta:'Cover oluştur',lab:'cover'},extend:{type:'upload-extend',cta:'Uzat',lab:'uzun'},vocals:{type:'add-vocals',cta:'Vokal ekle',lab:'vokal'}};
 function syncCreate(){
   const song=S.output==='song',audio=S.mode==='audio',op=AOP[S.aop]||AOP.cover;
-  $('#lyrWrap').hidden=!song;$('#genderSeg').style.visibility=song?'visible':'hidden';$('#awWrap').hidden=!song;
+  $('#lyrWrap').hidden=!song;$('#genderSeg').hidden=!song;$('#awWrap').hidden=!song;advSummary();
   $('#outSeg').hidden=audio&&S.aop==='vocals';      // vokal ekle: sonuç her zaman vokalli
   const aly=audio&&(S.aop==='vocals'||song);$('#aLyrics').hidden=!aly;$('#aLyrics').placeholder=S.aop==='vocals'?'Sözler':'Sözler (isteğe bağlı)';
   $('#createCost').innerHTML=ic('create',14)+(audio?COST[op.type]:COST.generate);
@@ -324,7 +329,7 @@ function spawn(base,count,cost,req,kind){
   if(!API.live||!req){toast('Sunucuya bağlanılamadı');return []}
   if(cost&&!spend(cost))return [];
   const bases=Array.isArray(base)?base:Array.from({length:count},()=>base),now=Date.now();
-  const out=bases.map((b,k)=>{const i=k+1,t=Object.assign({id:uid(),seed:hash(b.title+b.style+now+i+Math.random()),version:i,status:'gen',stage:0,created:now,like:0,model:S.set.model,gender:S.gender,lyrics:'',duration:150},b);if(b.seedFn)t.seed=b.seedFn(i);delete t.seedFn;return t});
+  const out=bases.map((b,k)=>{const i=k+1,t=Object.assign({id:uid(),seed:hash(b.title+b.style+now+i+Math.random()),version:i,status:'gen',stage:0,phase:'QUEUED',phaseAt:now,created:now,like:0,model:S.set.model,gender:S.gender,lyrics:'',duration:150},b);if(b.seedFn)t.seed=b.seedFn(i);delete t.seedFn;return t});
   S.lib.unshift(...out.slice().reverse());save();renderAll();
   runLive(out,req,cost,kind);
   return out;
@@ -346,6 +351,17 @@ async function runLive(tracks,req,cost,kind){
   }catch(e){liveFail(ids,e.message,cost)}
 }
 const STAGE_OF={QUEUED:0,TEXT_READY:1,FIRST_READY:3,COMPLETED:4};
+// Üretim servisi yüzde vermez; yalnız aşama bildirir (sırada → sözler hazır → ilk parça → tamam).
+// Çubuk: aşamanın tabanından bir sonraki aşamaya doğru, aşamada geçen süreyle yavaşlayarak ilerler; gerçek aşama gelince atlar.
+const PH={QUEUED:[.03,.33,16],TEXT_READY:[.36,.8,45],FIRST_READY:[.83,.97,25],COMPLETED:[1,1,1]},PH_RANK={QUEUED:0,TEXT_READY:1,FIRST_READY:2,COMPLETED:3};
+const phaseSec=t=>Math.max(0,(Date.now()-(t.phaseAt||t.created||Date.now()))/1000);
+function progOf(t){const p=PH[t.phase]||PH.QUEUED;return p[0]+(p[1]-p[0])*(1-Math.exp(-phaseSec(t)/p[2]))}
+function stageLabel(t){const el=phaseSec(t),ph=t.phase||'QUEUED';
+  const i=ph==='FIRST_READY'||ph==='COMPLETED'?4:ph==='TEXT_READY'?(el>30?3:2):(el>5?1:0);
+  return i===1&&t.output!=='song'?'Hazırlanıyor':STAGES[i]}
+function setPhase(t,st){if(!PH[st]||(PH_RANK[st]??0)<=(PH_RANK[t.phase]??0))return;t.phase=st;t.phaseAt=Date.now()}
+setInterval(()=>{$$('.is-gen[data-id]').forEach(el=>{const t=findT(el.dataset.id);if(!t)return;const w=(progOf(t)*100).toFixed(1)+'%';
+  el.querySelectorAll('.prog i,.gc-gen i').forEach(i=>{i.style.width=w});const lb=stageLabel(t);el.querySelectorAll('.stage,.gc-s').forEach(x=>{if(x.textContent!==lb)x.textContent=lb})})},500);
 const STEM_TR={Vocals:'Vokal',Instrumental:'Enstrüman',Backing_Vocals:'Arka vokal',Drums:'Davul',Bass:'Bas',Guitar:'Gitar',Keyboard:'Klavye',Percussion:'Perküsyon',Strings:'Yaylılar',Synth:'Synth',FX:'Efekt',Brass:'Bakır nefesli',Woodwinds:'Tahta nefesli'};
 // Stem sonuçları: ilk yer tutucular doldurulur, fazlası için yeni parça eklenir, artanlar silinir
 function applyStems(ids,res){
@@ -357,27 +373,41 @@ function applyStems(ids,res){
   S.lib=S.lib.filter(t=>!(ids.includes(t.id)&&!tracks.includes(t.id)));
   toast('Stemler hazır · '+(base.ptitle||base.title));return true;
 }
+// Görev takibi. Sunucu her istekte üretim servisine sorar → aralık seyrekleşir (4 → 8 → 15 sn),
+// sekme arka plandayken 30 sn; sekmeye dönünce hemen sorar. Aynı görev iki kez takip edilmez.
+// 60 dk sonra takip durur ama parça SİLİNMEZ (sunucu tamamlayabilir); uygulama yeniden açılınca kaldığı yerden sürer.
+const POLLS=new Map();
+const pollDelay=t0=>{if(document.hidden)return 30e3;const a=Date.now()-t0;return a<120e3?4e3:a<600e3?8e3:15e3};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;POLLS.forEach(p=>{clearTimeout(p.timer);p.timer=setTimeout(p.step,300)})});
 function pollLive(tid,ids,t0,kind){
-  const step=async()=>{
-    let j;try{j=await (await api('/api/music/tasks/'+tid,{cache:'no-store'})).json()}catch(e){return setTimeout(step,6000)}
-    const task=j&&j.task;if(!task)return liveFail(ids,errMsg(j)||'Görev bulunamadı');
-    if(task.status==='FAILED')return liveFail(ids,(task.error&&task.error.message)||'Üretim başarısız');
-    const res=task.results||[],done=task.status==='COMPLETED';
+  if(POLLS.has(tid))return;
+  const p={timer:0,step:null};POLLS.set(tid,p);
+  const stop=()=>{clearTimeout(p.timer);POLLS.delete(tid)};
+  const next=()=>{clearTimeout(p.timer);p.timer=setTimeout(p.step,pollDelay(t0))};
+  p.step=async()=>{
+    let j;try{j=await (await api('/api/music/tasks/'+tid,{cache:'no-store'})).json()}catch(e){return next()}
+    const task=j&&j.task;if(!task){stop();return liveFail(ids,errMsg(j)||'Görev bulunamadı')}
+    if(task.status==='FAILED'){stop();return liveFail(ids,(task.error&&task.error.message)||'Üretim başarısız')}
+    const res=task.results||[],done=task.status==='COMPLETED';let vis=false,dirty=false;
     if(kind==='stems'){
-      ids.forEach(id=>{const t=find(id);if(t)t.stage=Math.max(t.stage,STAGE_OF[task.status]??0)});
-      if(done&&!applyStems(ids,res))return liveFail(ids,'Stem bulunamadı');
-    }else ids.forEach((id,i)=>{const t=find(id);if(!t)return;t.stage=Math.max(t.stage,STAGE_OF[task.status]??0);
-      const r=res[i]||{},url=r.audio_url||r.stream_audio_url;if(!url)return;
-      t.audioUrl=url;if(r.image_url)t.image=r.image_url;if(r.duration)t.duration=Math.round(r.duration);if(r.title&&!t.kind)t.title=r.title;if(r.id)t.audioId=r.id;if(r.prompt&&!t.lyrics&&t.output==='song')t.lyrics=r.prompt;
-      if(t.status==='gen'){t.status='ready';if(t.version===1)toast('Hazır · '+t.title)}
+      ids.forEach(id=>{const t=find(id);if(t){const ph=t.phase;t.stage=Math.max(t.stage,STAGE_OF[task.status]??0);setPhase(t,task.status);if(t.phase!==ph)dirty=true}});
+      if(done){if(!applyStems(ids,res)){stop();return liveFail(ids,'Stem bulunamadı')}vis=dirty=true}
+    }else ids.forEach((id,i)=>{const t=find(id);if(!t)return;const before=vsig(t)+'|'+t.audioUrl+'|'+t.lyrics,ph=t.phase;
+      t.stage=Math.max(t.stage,STAGE_OF[task.status]??0);setPhase(t,task.status);if(t.phase!==ph)dirty=true;
+      // ara sonuçlar (kapak, başlık, sözler, süre) ses hazır olmadan da gelir → hemen göster
+      const r=res[i]||{},url=r.audio_url||r.stream_audio_url;
+      if(r.image_url)t.image=r.image_url;if(r.duration)t.duration=Math.round(r.duration);if(r.title&&!t.kind)t.title=r.title;if(r.prompt&&!t.lyrics&&t.output==='song')t.lyrics=r.prompt;
+      if(url){t.audioUrl=url;if(r.id)t.audioId=r.id;if(t.status==='gen'){t.status='ready';if(t.version===1)toast('Hazır · '+t.title)}}
+      if(vsig(t)+'|'+t.audioUrl+'|'+t.lyrics!==before)vis=dirty=true;
     });
-    if(done)ids.forEach(id=>{S.lib=S.lib.filter(x=>!(x.id===id&&x.status==='gen'))});
-    save();renderAll();if(P.cur&&ids.includes(P.cur.id))syncPlayer();
-    if(done)return;
-    if(Date.now()-t0>15*60e3)return liveFail(ids,'Zaman aşımı');
-    setTimeout(step,4000);
+    if(done)ids.forEach(id=>{const n=S.lib.length;S.lib=S.lib.filter(x=>!(x.id===id&&x.status==='gen'));if(S.lib.length!==n)vis=dirty=true});
+    if(dirty)save();
+    if(vis){renderAll();if(P.cur&&ids.includes(P.cur.id))syncPlayer()}   // yalnız görünen bir şey değiştiyse çiz
+    if(done)return stop();
+    if(Date.now()-t0>60*60e3){stop();return toast('Üretim uzun sürüyor; uygulamayı yeniden açınca tekrar kontrol edilir')}
+    next();
   };
-  setTimeout(step,3000);
+  p.timer=setTimeout(p.step,3000);
 }
 // Ses üretmeyen görevler (persona, doğrulama cümlesi, ses klonu) tamamlanana kadar bekle
 async function waitTask(tid,timeout=240e3){const t0=Date.now();
@@ -418,23 +448,36 @@ $('#createBtn').onclick=()=>{
 /* ---------- rows / library ---------- */
 const eq='<span class="eq"><i></i><i></i><i></i><i></i></span>';
 const modelTag=t=>modelName(t.model||'V6');
+const vsig=(t,cur)=>[t.title,t.status,t.image,t.duration,t.style,t.output,t.kind,t.like,t.model,cur?1:0,cur&&P.playing?1:0].join('|');
 function row(t){
   const gen=t.status==='gen',cur=P.cur&&P.cur.id===t.id;
-  const sub=gen?`<span class="stage">${STAGES[t.stage]}</span>`:`${esc(KIND[t.output]||'Şarkı')} • ${esc(t.style||modelTag(t))}`;
-  return `<div class="song${gen?' is-gen':''}${cur?' is-cur':''}" data-id="${t.id}">
+  const sub=gen?`<span class="stage">${stageLabel(t)}</span>`:`${esc(KIND[t.output]||'Şarkı')} • ${esc(t.style||modelTag(t))}`;
+  return `<div class="song${gen?' is-gen':''}${cur?' is-cur':''}" data-id="${t.id}" data-v="${esc(vsig(t,cur))}">
     <button class="thumb cov" data-act="play" aria-label="Oynat">${art(t)}<span class="thumb-ov">${gen?eq:ic(cur&&P.playing?'pause':'play',20)}</span></button>
     <div class="song-body" data-act="open"><div class="song-t"><span class="t">${esc(t.title)}</span>${t.kind==='stem'?'<span class="tag dim">STEM</span>':''}</div>
-      <div class="song-s">${sub}</div>${gen?`<div class="prog"><i style="width:${(t.stage+1)/STAGES.length*100}%"></i></div>`:''}</div>
+      <div class="song-s">${sub}</div>${gen?`<div class="prog"><i style="width:${(progOf(t)*100).toFixed(1)}%"></i></div>`:''}</div>
     <span class="dur">${gen?'':fmt(t.duration)}</span>
     <button class="icon-btn" data-act="more" aria-label="Diğer">${ic('more',20)}</button></div>`;
 }
 function card(t){
   const gen=t.status==='gen',cur=P.cur&&P.cur.id===t.id;
-  return `<div class="gcard${gen?' is-gen':''}${cur?' is-cur':''}" data-id="${t.id}">
-    <div class="gc-art cov" data-act="open">${art(t)}${gen?`<span class="gc-gen">${eq}<i style="width:${(t.stage+1)/STAGES.length*100}%"></i></span>`:`<button class="gc-play" data-act="play" aria-label="Oynat">${ic(cur&&P.playing?'pause':'play',20)}</button>`}</div>
-    <div class="gc-t" data-act="open">${esc(t.title)}</div><div class="gc-s">${gen?esc(STAGES[t.stage]):esc(KIND[t.output]||'Şarkı')+' • '+fmt(t.duration)}</div></div>`;
+  return `<div class="gcard${gen?' is-gen':''}${cur?' is-cur':''}" data-id="${t.id}" data-v="${esc(vsig(t,cur))}">
+    <div class="gc-art cov" data-act="open">${art(t)}${gen?`<span class="gc-gen">${eq}<i style="width:${(progOf(t)*100).toFixed(1)}%"></i></span>`:`<button class="gc-play" data-act="play" aria-label="Oynat">${ic(cur&&P.playing?'pause':'play',20)}</button>`}</div>
+    <div class="gc-t" data-act="open">${esc(t.title)}</div><div class="gc-s">${gen?esc(stageLabel(t)):esc(KIND[t.output]||'Şarkı')+' • '+fmt(t.duration)}</div></div>`;
 }
-function renderFeed(){if(!$('#feed'))return;$('#feed').innerHTML=S.lib.length?S.lib.slice(0,6).map(row).join(''):'<div class="empty">İlk şarkını oluştur</div>'}
+// Listeyi baştan çizmek yerine yamala: aynı imzalı öğe yerinde kalır (kapak yeniden yüklenmez, kart animasyonu tekrarlanmaz)
+const cls=el=>el.className.replace(/\bstill\b/,'').trim();
+function patchList(L,html){
+  const tpl=document.createElement('template');tpl.innerHTML=html;
+  const next=[...tpl.content.children],prev=new Map([...L.children].map(el=>[el.dataset.id||el.id||el.className,el]));
+  const out=next.map(n=>{const k=n.dataset.id||n.id||n.className,o=prev.get(k);
+    if(o&&o.dataset.v&&o.dataset.v===n.dataset.v&&cls(o)===cls(n))return o;
+    if(o)n.classList.add('still');return n});
+  // en az DOM işlemi: yerinde duran öğeye dokunma (yeniden takılan öğe animasyonu baştan başlatır)
+  const keep=new Set(out);[...L.children].forEach(el=>{if(!keep.has(el))el.remove()});
+  out.forEach((n,i)=>{const cur=L.children[i];if(cur!==n)L.insertBefore(n,cur||null)});
+}
+function renderFeed(){if(!$('#feed'))return;patchList($('#feed'),S.lib.length?S.lib.slice(0,6).map(row).join(''):'<div class="empty">İlk şarkını oluştur</div>')}
 const CATS=[['like','Beğenilenler'],['song','Vokal'],['beat','Beat'],['stem','Stem']];
 function renderCats(){$('#cats').innerHTML=(S.filter!=='all'?`<button class="chip x" data-cat="all" aria-label="Temizle">${ic('close',16)}</button>`:'')+CATS.filter(([k])=>S.filter==='all'||S.filter===k).map(([k,l])=>`<button class="chip${S.filter===k?' on':''}" data-cat="${k}">${l}</button>`).join('')}
 $('#cats').addEventListener('click',e=>{const c=e.target.closest('[data-cat]');if(!c)return;S.filter=c.dataset.cat===S.filter?'all':c.dataset.cat;renderLib()});
@@ -446,7 +489,7 @@ function renderLib(){
   const liked=S.lib.filter(t=>t.like===1).length;
   const pin=S.filter==='all'&&!q&&!grid?`<button class="song pin" id="pinLiked"><span class="thumb liked">${ic('like',24)}</span><div class="song-body"><div class="song-t"><span class="t">Beğenilen şarkılar</span></div><div class="song-s">Liste • ${liked} şarkı</div></div></button>`:'';
   const L=$('#libList');L.classList.toggle('lgrid',grid);
-  L.innerHTML=it.length?pin+it.map(grid?card:row).join(''):pin+`<div class="empty">${S.filter==='like'&&!q?'Beğendiğin şarkılar burada görünür':S.lib.length?'Sonuç yok':'Kütüphane boş'}</div>`;
+  patchList(L,it.length?pin+it.map(grid?card:row).join(''):pin+`<div class="empty">${S.filter==='like'&&!q?'Beğendiğin şarkılar burada görünür':S.lib.length?'Sonuç yok':'Kütüphane boş'}</div>`);
 }
 $('#libList').addEventListener('click',e=>{if(e.target.closest('#pinLiked')){S.filter='like';renderLib()}});
 $('#sortBtn').onclick=()=>{S.sort=S.sort==='new'?'old':'new';renderLib()};
@@ -548,7 +591,9 @@ const TOOLS={
     {k:'style',t:'style',ph:'Yeni stil'},
     {k:'lyrics',t:'area',ph:'Sözler',only:'vocal',rows:6},{k:'gender',t:'seg',o:[['f','Kadın'],['m','Erkek']],only:'vocal'},
     {k:'dur',t:'range',l:'Süre',min:10,max:360,v:120},{k:'adv',aw:'Kaynağa bağlılık',persona:true,model:true}]},
-  vocals:{n:'Vokal ekle',ic:'vocals',cta:'Vokal ekle',get cost(){return COST['add-vocals']},f:[{k:'src',only:'inst'},{k:'lyrics',t:'area',ph:'Sözler'},{k:'gender',t:'seg',o:[['m','Erkek'],['f','Kadın']]}]},
+  vocals:{n:'Vokal ekle',ic:'vocals',cta:'Vokal ekle',get cost(){return COST['add-vocals']},f:[{k:'src',only:'inst'},
+    {k:'title',t:'text',ph:'Başlık'},{k:'style',t:'style',ph:'Vokal stili — ör. yakın mikrofon, yavaş flow'},
+    {k:'lyrics',t:'area',ph:'Sözler',rows:5},{k:'gender',t:'seg',o:[['m','Erkek'],['f','Kadın']]},{k:'adv',aw:"Beat'e bağlılık"}]},
   stems:{n:'Stem ayır',ic:'stems',cta:'Ayır',get cost(){return COST['remove-vocals']},f:[{k:'src',only:'nostem'},{k:'type',t:'seg',o:[['separate_vocal','Vokal + enstrüman'],['split_stem','Tüm enstrümanlar']]}]},
   replace:{n:'Bölüm değiştir',ic:'scissors',cta:'Yeniden üret',get cost(){return COST['replace-section']},f:[{k:'src'},
     {k:'wave',mode:'range'},{k:'lyrics',t:'area',ph:'Yeni bölümün sözleri',only:'vocal',rows:3},
@@ -562,10 +607,20 @@ const isVocal=t=>t.output==='song'||t.output==='stemv';
 const fits=(t,only)=>t.status==='ready'&&t.audioId&&(only==='inst'?!isVocal(t):only==='song'?t.output==='song':only==='nostem'?!t.kind:true);
 function personaOptions(){const p=S.personas.filter(x=>x.personaId&&x.status!=='failed'),vo=S.voices.filter(x=>x.voiceId&&x.status!=='failed');
   return '<option value="">Ses karakteri: yok</option>'+p.map(x=>`<option value="p:${esc(x.personaId)}">Persona · ${esc(x.name)}</option>`).join('')+vo.map(x=>`<option value="v:${esc(x.voiceId)}">Sesim · ${esc(x.name)}</option>`).join('')}
+// Araç için uygun parça yoksa: kısa açıklama + yapılabilecekler
+function emptySrc(only){const song=S.lib.find(t=>t.status==='ready'&&t.output==='song'&&t.audioId&&!t.kind);
+  const msg=only==='inst'?'Vokal eklemek için enstrümantal bir parça gerekir.':only==='song'?'Bunun için vokalli bir şarkı gerekir.':'Önce bir parça üret.';
+  const acts=only==='inst'?[['beat','Beat üret'],['upload',"Beat'ini yükle"],...(song?[['stems:'+song.id,"Şarkıdan beat ayır"]]:[])]:[['create',only==='song'?'Şarkı üret':'Oluştur']];
+  return `<div class="tool-empty" data-empty><p>${msg}</p><div class="tool-empty-acts">${acts.map(([k,l])=>`<button type="button" class="np-act" data-ea="${k}">${l}</button>`).join('')}</div></div>`}
+function emptyAct(k){closeLayer($('#mTool'));
+  if(k==='beat'){openCreate('simple');setOut('beat')}
+  else if(k==='upload'){openCreate('audio');$('#opChips [data-v=vocals]')?.click()}
+  else if(k.startsWith('stems:'))openTool('stems',k.slice(6));
+  else openCreate('simple')}
 function fieldHTML(f,sel){
   const only=f.only?` data-only="${f.only}"`:'';
   if(f.k==='src'){const L=S.lib.filter(t=>fits(t,f.only));
-    if(!L.length)return '<div class="empty" style="padding:18px 0">Uygun parça yok — önce bir şarkı üret</div>';
+    if(!L.length)return emptySrc(f.only);
     const cur=L.some(t=>t.id===sel)?sel:L[0].id;
     return `<div class="sp-lbl">Parça seç</div><input type="hidden" name="src" value="${cur}"><div class="scroll-x sp-row">${L.map(t=>`<button type="button" class="sp${t.id===cur?' on':''}" data-sp="${t.id}"><span class="sp-a cov">${art(t)}</span><b>${esc(t.title)}</b><small>${esc(KIND[t.output]||'')} • ${fmt(t.duration)}</small></button>`).join('')}</div>`}
   if(f.k==='note')return `<p class="tool-note">${esc(f.l)}</p>`;
@@ -609,6 +664,7 @@ function syncTool(key){const b=$('#toolBody'),t=find(b.querySelector('[name=src]
     const r=q('[name=dur]');if(r&&!r.dataset.touched){r.value=Math.min(360,Math.max(10,Math.round(t.duration||120)));r.previousElementSibling.textContent=fmt(+r.value)}
     const m=q('[name=model]');if(m&&!m.dataset.touched)m.value=t.model||S.set.model}
   if(key==='extend')fillIf(q('[name=title]'),t.title+' (uzun)');
+  if(key==='vocals')fillIf(q('[name=title]'),t.title+' (vokal)');
   if(key==='replace')fillIf(q('[name=full]'),t.lyrics||'');
   if(WV){WV.load({id:t.id,url:t.audioUrl,taskId:t.providerTaskId,duration:t.duration,lines:lyricLines(t)});
     const p=ensureAlign(t);if(p)p.then(()=>{if(WV&&WV.id===t.id)WV.setLines(lyricLines(t))})}
@@ -619,6 +675,8 @@ function openTool(key,srcId){
   if(WV){WV.destroy();WV=null}
   const b=$('#toolBody');
   $('#toolTitle').textContent=T.n;b.innerHTML=T.f.map(f=>fieldHTML(f,srcId)).join('');$('#toolErr').textContent='';
+  const empty=b.querySelector('[data-empty]');
+  if(empty){b.innerHTML='';b.appendChild(empty);empty.querySelectorAll('[data-ea]').forEach(x=>x.onclick=()=>emptyAct(x.dataset.ea));setToolGo(key);$('#toolGo').disabled=true;openLayer($('#mTool'));return}
   b.querySelectorAll('.seg').forEach(sg=>bindSeg(sg,v=>{sg.dataset.val=v;sg.dataset.touched=1;setToolGo(key);if(sg.getAttribute('name')==='out')syncVocal(key,find(b.querySelector('[name=src]')?.value))}));
   b.querySelector('[name=src]')?.addEventListener('change',()=>syncTool(key));
   b.querySelectorAll('[data-sp]').forEach(x=>x.onclick=()=>{const inp=$('#toolBody [name=src]');if(inp.value===x.dataset.sp)return;inp.value=x.dataset.sp;
@@ -665,7 +723,9 @@ async function runTool(key){
     ok=spawn({...base,title,style:st,output:out,lyrics:ly,gender:voc?v('gender'):src.gender,duration:dur,model},2,COST.cover,
       A({taskType:'cover',model,uploadUrl:src.audioUrl,sourceTaskId:src.providerTaskId,title,style:st,instrumental:!voc,lyrics:ly||undefined,vocalGender:voc?v('gender'):undefined,duration:dur,...advBody(b,voc)}))}
   else if(key==='vocals'){const ly=v('lyrics').trim();if(!ly)return fail('Sözler gerekli');
-    ok=spawn({...base,title:src.title+' (vokal)',output:'song',lyrics:ly,gender:v('gender'),seedFn:()=>src.seed},2,COST['add-vocals'],A({taskType:'add-vocals',uploadUrl:src.audioUrl,sourceTaskId:src.providerTaskId,lyrics:ly,vocalGender:v('gender'),style:src.style||'hip hop'}))}
+    const st=v('style').trim()||src.style||'hip hop',title=(v('title').trim()||src.title+' (vokal)').slice(0,80);
+    ok=spawn({...base,title,output:'song',style:st,lyrics:ly,gender:v('gender'),seedFn:()=>src.seed},2,COST['add-vocals'],
+      A({taskType:'add-vocals',uploadUrl:src.audioUrl,sourceTaskId:src.providerTaskId,title,lyrics:ly,vocalGender:v('gender'),style:st,...advBody(b,true)}))}
   else if(key==='stems'){const type=v('type'),cost=type==='split_stem'?COST['split-stem']:COST['remove-vocals'];
     const ph=[['Vocals','stemv'],['Instrumental','steminst']].map(([st,o])=>({...base,title:src.title+' · '+STEM_TR[st],ptitle:src.title,style:STEM_TR[st],output:o,kind:'stem',seedFn:()=>src.seed}));
     ok=spawn(ph,0,cost,A({taskType:'remove-vocals',taskId:src.providerTaskId,audioId:src.audioId,stemType:type}),'stems')}
@@ -889,8 +949,8 @@ function syncPlayer(dir=0){
   const tags=(t.style||KIND[t.output]||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,8);
   $('#fpStyle').innerHTML=tags.map(x=>`<button class="np-tag" data-tag="${esc(x)}">${esc(x)}</button>`).join('');
   const d=new Date(t.created||Date.now());$('#fpAbout').textContent=`${d.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})} • ${modelTag(t)}${t.duration?' • '+fmt(t.duration):''}`;
-  const par=t.parent&&findT(t.parent);$('#fpParent').innerHTML=par?`<button class="src-row" data-parent="${par.id}"><span class="av">${art(par)}</span><span>${esc(par.title)}</span>${ic('chevR',18)}</button>`:'';
-  $('#fpPills').innerHTML=`<button class="np-act" data-ft="cover">${ic('cover',18)}Cover</button><button class="np-act" data-ft="extend">${ic('extend',18)}Uzat</button>${t.kind?'':`<button class="np-act" data-ft="stems">${ic('stems',18)}Stem</button>`}`;
+  const par=t.parent&&findT(t.parent);$('#fpParent').innerHTML=par?`<button class="src-row" data-parent="${par.id}"><span class="av">${art(par)}</span><span class="src-t"><small>Kaynak</small><b>${esc(par.title)}</b></span>${ic('chevR',16)}</button>`:'';
+  $('#fpPills').innerHTML=`<button class="np-act" data-ft="cover">${ic('cover',16)}Cover</button><button class="np-act" data-ft="extend">${ic('extend',16)}Uzat</button>${t.kind?'':`<button class="np-act" data-ft="stems">${ic('stems',16)}Stem</button>`}`;
   const up=upcoming(3);$('#npNextCard').hidden=!up.length;
   $('#npNext').innerHTML=up.map(({t:x,k})=>`<button class="np-q" data-k="${k}"><span class="np-q-art cov">${art(x)}</span><span class="np-q-t"><b>${esc(x.title)}</b><small>${esc(KIND[x.output]||'')} • ${fmt(x.duration)}</small></span></button>`).join('');
   if(ch){renderLyr(t);ensureAlign(t)}

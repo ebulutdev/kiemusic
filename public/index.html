@@ -107,34 +107,41 @@
       <div class="scroll-x sugs" id="sugs"></div>
     </div>
 
-    <div data-pane="custom" hidden style="display:flex;flex-direction:column;gap:12px">
-      <div class="ta-wrap" id="lyrWrap">
-        <textarea class="ta" id="lyrics" rows="9" maxlength="5000" placeholder="Sözler"></textarea>
-        <button class="ta-btn" id="lyrIdea"></button>
+    <div data-pane="custom" hidden class="c-form">
+      <div class="fg" id="lyrWrap">
+        <div class="fg-l"><span>Sözler</span><button type="button" class="fg-act" id="lyrIdea"></button></div>
+        <textarea class="ta" id="lyrics" rows="8" maxlength="5000" placeholder="Sözlerini yaz ya da yapıştır"></textarea>
       </div>
-      <input class="inp" id="style" maxlength="1000" placeholder="Stil">
-      <div class="scroll-x chips" id="styleChips"></div>
-      <div class="row2"><input class="inp" id="title" maxlength="80" placeholder="Başlık"><div class="seg" id="genderSeg"><button data-v="f" class="on">Kadın</button><button data-v="m">Erkek</button></div></div>
-      <select class="inp" id="persona" hidden aria-label="Ses karakteri"></select>
-      <button class="adv-btn" id="advBtn">Gelişmiş <span id="advChev"></span></button>
-      <div class="adv" id="adv" hidden>
-        <label class="sl">Stil bağlılığı<output id="swO"></output><input type="range" id="sw" min="0" max="100" value="70"></label>
-        <label class="sl">Deneysellik<output id="wcO"></output><input type="range" id="wc" min="0" max="100" value="30"></label>
-        <label class="sl" id="awWrap">Ses ağırlığı<output id="awO"></output><input type="range" id="aw" min="0" max="100" value="60"></label>
-        <label class="sl">Süre<output id="durO">2:00</output><input type="range" id="dur" min="10" max="360" step="5" value="120"></label>
-        <div class="seg" id="varSeg"><button data-v="0">Sabit</button><button data-v="1" class="on">Normal</button><button data-v="2">Yüksek</button><button data-v="4">Maks</button></div>
-        <input class="inp" id="neg" placeholder="Kaçınılacaklar">
-        <select class="inp" id="model"><option value="V6">Cook v1</option><option value="V6_MINI">Cook v2</option><option value="V6_WILD">Cook v3</option></select>
+      <div class="fg">
+        <div class="fg-l"><span>Stil</span></div>
+        <input class="inp" id="style" maxlength="1000" placeholder="trap, karanlık, 808">
+        <div class="scroll-x chips fade" id="styleChips"></div>
+      </div>
+      <div class="fg">
+        <div class="fg-row"><input class="inp" id="title" maxlength="80" placeholder="Başlık"><div class="seg" id="genderSeg"><button data-v="f" class="on">Kadın</button><button data-v="m">Erkek</button></div></div>
+        <select class="inp" id="persona" hidden aria-label="Ses karakteri"></select>
+      </div>
+      <div class="adv-card">
+        <button class="adv-btn" id="advBtn"><span>Gelişmiş</span><small id="advSum"></small><span id="advChev"></span></button>
+        <div class="adv" id="adv" hidden>
+          <label class="sl">Stil bağlılığı<output id="swO"></output><input type="range" id="sw" min="0" max="100" value="70"></label>
+          <label class="sl">Deneysellik<output id="wcO"></output><input type="range" id="wc" min="0" max="100" value="30"></label>
+          <label class="sl" id="awWrap">Ses ağırlığı<output id="awO"></output><input type="range" id="aw" min="0" max="100" value="60"></label>
+          <label class="sl">Süre<output id="durO">2:00</output><input type="range" id="dur" min="10" max="360" step="5" value="120"></label>
+          <div class="seg" id="varSeg"><button data-v="0">Sabit</button><button data-v="1" class="on">Normal</button><button data-v="2">Yüksek</button><button data-v="4">Maks</button></div>
+          <input class="inp" id="neg" placeholder="Kaçınılacaklar">
+          <select class="inp" id="model"><option value="V6">Cook v1</option><option value="V6_MINI">Cook v2</option><option value="V6_WILD">Cook v3</option></select>
+        </div>
       </div>
     </div>
 
-    <div data-pane="audio" hidden style="display:flex;flex-direction:column;gap:12px">
+    <div data-pane="audio" hidden class="c-form">
       <div id="recCard"></div>
-      <div class="scroll-x chips" id="opChips">
+      <div class="chips" id="opChips">
         <button class="chip on" data-v="cover">Cover</button><button class="chip" data-v="extend">Uzat</button><button class="chip" data-v="vocals">Vokal ekle</button>
       </div>
       <textarea class="ta" id="aLyrics" rows="5" maxlength="5000" placeholder="Sözler" hidden></textarea>
-      <div class="row2"><input class="inp" id="aTitle" maxlength="80" placeholder="Başlık"><input class="inp" id="aStyle" maxlength="1000" placeholder="Stil"></div>
+      <div class="fg-row"><input class="inp" id="aTitle" maxlength="80" placeholder="Başlık"><input class="inp" id="aStyle" maxlength="1000" placeholder="Stil"></div>
       <label class="chk" id="aRightsWrap"><input type="checkbox" id="aRights"><span>Bu kaydın haklarına sahibim ya da kullanma iznim var. Telifli bir şarkıyı izinsiz yüklemiyorum.</span></label>
     </div>
   </div>
@@ -167,7 +174,7 @@
     <div class="np-tools"><button class="icon-btn" id="npShare" aria-label="Paylaş"></button><button class="icon-btn" id="npQueue" aria-label="Sıra"></button></div>
     <div class="np-card lyr-card" id="lyrCard"><h3><span>Sözler</span><span class="np-h-act"><span class="lyr-st" id="lyrSt"></span><button class="np-mini" id="lyrCopy" aria-label="Kopyala"></button><button class="np-mini" id="lyrOpen" aria-label="Tam ekran"></button></span></h3><div class="lyr" id="fpLyr"></div></div>
     <div class="np-card" id="npAboutCard"><h3><span>Hakkında</span><span class="np-h-act"><button class="np-mini" id="styleRemix" aria-label="Bu stille üret"></button><button class="np-mini" id="styleCopy" aria-label="Kopyala"></button></span></h3>
-      <div class="np-tags" id="fpStyle"></div><p class="np-date" id="fpAbout"></p><div id="fpParent"></div><div class="np-acts" id="fpPills"></div></div>
+      <p class="np-date" id="fpAbout"></p><div class="np-tags" id="fpStyle"></div><div id="fpParent"></div><div class="np-acts" id="fpPills"></div></div>
     <div class="np-card" id="npNextCard"><h3><span>Sıradaki</span><button class="np-link" id="npQueue2">Sırayı aç</button></h3><div id="npNext"></div></div>
   </div>
 </div>
