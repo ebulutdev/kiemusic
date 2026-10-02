@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { voiceSchema } from "@/lib/validation";
+import { voiceSchema, VOICE_CONSENT_VERSION } from "@/lib/validation";
+import { assertOwnUpload } from "@/lib/data/media";
 import { createKieTask } from "@/lib/kie";
 import { requireUser, errorResponse } from "@/lib/auth";
 import { saveVoice } from "@/lib/data/users";
@@ -20,6 +21,8 @@ export async function POST(request: Request) {
     const phrase = await getTask(d.validationTaskId);
     if (!phrase || phrase.userId !== user.uid || phrase.taskType !== "voice-phrase")
       return NextResponse.json({ success: false, error: "Doğrulama adımı bulunamadı" }, { status: 404 });
+    await assertOwnUpload(d.verifyUrl, user.uid);
+    const consent = { at: new Date().toISOString(), version: VOICE_CONSENT_VERSION };
 
     const id = d.id || crypto.randomUUID();
     const kie = await createKieTask("voice", {
@@ -30,8 +33,8 @@ export async function POST(request: Request) {
       ...(d.style ? { style: d.style } : {}),
       singer_skill_level: d.singerSkillLevel,
     });
-    await createTask({ providerTaskId: kie.taskId, userId: user.uid, taskType: "voice", cost: 0, params: { recordKey: id, voiceName: d.voiceName } });
-    await saveVoice(user.uid, id, { name: d.voiceName, description: d.description || null, style: d.style || null, skillLevel: d.singerSkillLevel, providerTaskId: kie.taskId, status: "pending", voiceId: null });
+    await createTask({ providerTaskId: kie.taskId, userId: user.uid, taskType: "voice", cost: 0, params: { recordKey: id, voiceName: d.voiceName, consent } });
+    await saveVoice(user.uid, id, { name: d.voiceName, description: d.description || null, style: d.style || null, skillLevel: d.singerSkillLevel, providerTaskId: kie.taskId, status: "pending", voiceId: null, consentAt: consent.at });
 
     return NextResponse.json({ success: true, voice: { id, name: d.voiceName }, task: { id: kie.taskId, providerTaskId: kie.taskId, status: "QUEUED" } });
   } catch (error) {

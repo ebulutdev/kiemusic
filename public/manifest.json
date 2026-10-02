@@ -1,14 +1,32 @@
 {
-  "name": "SoundForge — AI Music Studio",
-  "short_name": "SoundForge",
-  "description": "KIE + Suno ile AI müzik üretimi",
+  "name": "CookRapper — Yapay Zekâ Müzik Stüdyosu",
+  "short_name": "CookRapper",
+  "description": "Yapay zekâ ile şarkı, beat ve cover üret",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#080b12",
-  "theme_color": "#080b12",
+  "background_color": "#0B0A09",
+  "theme_color": "#0B0A09",
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "lang": "tr",
+  "id": "/"
 }

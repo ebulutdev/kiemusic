@@ -27,6 +27,7 @@ const I={
   persona:'<circle cx="12" cy="8.5" r="4"/><path d="M4.5 21a7.5 7.5 0 0115 0"/>',
   voice:'<path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 7v10M21 12h0"/>',
   trash:'<path d="M4 7h16M9.5 7V4.5h5V7M6.5 7l.9 12.5h9.2L17.5 7"/>',
+  flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   code:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>',
   file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>'
 };
@@ -74,11 +75,15 @@ const COST={generate:10,cover:10,extend:10,'upload-extend':10,'add-vocals':10,'r
 const S={view:'home',mode:'simple',output:'song',gender:'f',variety:1,aop:'cover',filter:'all',sort:'new',q:'',
   lib:store.get('sf2_lib',[]),personas:store.get('sf2_personas',[]),voices:store.get('sf2_voices',[]),
   set:Object.assign({credits:MAX,backend:'',key:'',model:'V6',theme:'auto'},store.get('sf2_set',{})),src:null};
-S.lib.forEach(t=>{if(t.output==='instrumental')t.output='beat';if(t.status==='gen'&&!t.taskId)t.status='ready';if(t.fav&&t.like==null)t.like=1});
+S.lib.forEach(t=>{if(t.output==='instrumental')t.output='beat';if(t.fav&&t.like==null)t.like=1});
+const playable=t=>!!t&&(t.status==='gen'?!!t.taskId:!!t.audioUrl); // sunucu görevi olmayan ya da sesi olmayan kayıt = eski deneme parçası
+S.lib=S.lib.filter(playable);
 const save=()=>{store.set('sf2_lib',S.lib);store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);if(window.FB)FB.schedule()};
 /* ---------- Firebase köprüsü (public/fb.js) ---------- */
 const fbWait=()=>window.FB?Promise.resolve(window.FB):new Promise(r=>{const t=setTimeout(()=>r(null),4000);addEventListener('fb-ready',()=>{clearTimeout(t);r(window.FB)},{once:true})});
-async function api(url,o={}){const fb=await fbWait();const headers=fb?await fb.headers(o.headers||{}):(o.headers||{});return fetch(url,{...o,headers})}
+// API adresi: web'de aynı sunucu, mobil uygulamada tam adres (public/native.js → CR.api)
+const apiUrl=u=>window.CR?CR.api(u):u;
+async function api(url,o={}){const fb=await fbWait();const headers=fb?await fb.headers(o.headers||{}):(o.headers||{});return fetch(apiUrl(url),{...o,headers})}
 const jpost=(url,body)=>api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 window.SF={
   state:()=>S,
@@ -101,7 +106,7 @@ window.SF={
     if(personas)S.personas=personas;if(voices)S.voices=voices;
     store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);renderAll();if(personas||voices)renderStudio()},
   applyRemote(kind,changes){const arr=S[kind];
-    changes.forEach(c=>{const i=arr.findIndex(x=>x.id===c.id);if(c.removed){if(i>=0)arr.splice(i,1);return}
+    changes.forEach(c=>{const i=arr.findIndex(x=>x.id===c.id);if(c.removed||(kind==='lib'&&!playable(c.data))){if(i>=0)arr.splice(i,1);return}
       if(i>=0)Object.assign(arr[i],c.data);else arr.push({...c.data,id:c.id})});
     if(kind==='lib')S.lib.sort((a,b)=>(b.created||0)-(a.created||0)||(a.version||0)-(b.version||0));
     store.set('sf2_lib',S.lib);renderAll();
@@ -372,7 +377,7 @@ async function waitTask(tid,timeout=240e3){const t0=Date.now();
     const t=j&&j.task;if(!t)throw new Error(errMsg(j));if(t.status==='COMPLETED')return t;
     if(t.status==='FAILED')throw new Error((t.error&&t.error.message)||'İşlem başarısız');if(Date.now()-t0>timeout)throw new Error('Zaman aşımı')}}
 async function detectLive(){
-  try{const r=await fetch('/api/health',{cache:'no-store'});const j=r.ok?await r.json():null;API.live=!!(j&&j.service==='kie-suno-music')}catch(e){API.live=false}
+  try{const r=await fetch(apiUrl('/api/health'),{cache:'no-store'});const j=r.ok?await r.json():null;API.live=!!(j&&j.service==='cookrapper')}catch(e){API.live=false}
   const pend=S.lib.filter(t=>t.status==='gen'&&t.taskId);
   if(API.live){const g={};pend.forEach(t=>(g[t.taskId]=g[t.taskId]||[]).push(t));Object.entries(g).forEach(([tid,ts])=>pollLive(tid,ts.sort((a,b)=>a.version-b.version).map(t=>t.id),Date.now(),ts[0].kind==='stem'?'stems':undefined))}
   save();renderAll();renderProfile();
@@ -392,11 +397,12 @@ $('#createBtn').onclick=()=>{
     if(song)Object.assign(body,{lyrics:ly,vocalGender:S.gender,audioWeight:+$('#aw').value/100});
     ok=spawn({title,style:st,lyrics:song?ly:'',output:out,duration:+$('#dur').value,model:$('#model').value},2,COST.generate,{url:'/api/music/generate',body})}
   else{const src=S.src;if(recLive())return fail('Önce kaydı durdur');if(!src)return fail('Önce ses kaydet ya da yükle');
+    if(!$('#aRights').checked)return fail('Kaydın haklarına sahip olduğunu onayla');
     const op=AOP[S.aop]||AOP.cover,vocal=S.aop==='vocals'||song,title=$('#aTitle').value.trim()||'Kaydım',style=$('#aStyle').value.trim(),lyr=$('#aLyrics').value.trim();
     if(S.aop==='vocals'){if(!style)return fail('Stil gerekli');if(!lyr)return fail('Sözler gerekli')}
     const body={taskType:op.type,model:S.set.model,title:title.slice(0,80),style:style||undefined,instrumental:!vocal,lyrics:vocal&&lyr?lyr:undefined};
     if(S.aop==='cover')body.duration=Math.min(360,Math.max(10,Math.round(src.dur||60)));   // yoksa KIE 20 sn üretir
-    const up=uploader(src),req=async()=>({url:'/api/music/audio',body:{...body,uploadUrl:await up()}});
+    const up=uploader(src),req=async()=>({url:'/api/music/audio',body:{...body,rightsConfirmed:true,uploadUrl:await up()}});
     ok=spawn({title:`${title} (${op.lab})`,style:style||op.lab,lyrics:vocal?lyr:'',output:vocal?'song':'beat',duration:Math.max(30,Math.round(src.dur||90)+(S.aop==='extend'?60:0))},2,COST[op.type],req)}
   if(ok.length){closeLayer($('#mCreate'));$('#desc').value='';go('library')}
 };
@@ -473,12 +479,13 @@ function openMenu(id){
     <div class="tm-sec">Stüdyo'ya gönder</div>
     <div class="tm-tools">${tools.map(k=>`<button class="tm-t" data-m="${k}" ${ready?'':'disabled'}>${ic(TOOLS[k].ic,22)}<span>${TOOLS[k].n}</span>${cost(k)}</button>`).join('')}</div>
     ${live?'':`<p class="tm-note">${ready?'Stüdyo işlemleri sunucuya bağlıyken çalışır.':'Parça hâlâ üretiliyor.'}</p>`}
-    <div class="menu"><button data-m="play" ${ready?'':'disabled'}>${ic('play',22)}Oynat</button>${t.audioUrl?`<button data-m="download">${ic('download',22)}İndir</button>`:''}<button class="del" data-m="delete">${ic('trash',22)}Sil</button></div>`);
+    <div class="menu"><button data-m="play" ${ready?'':'disabled'}>${ic('play',22)}Oynat</button>${t.audioUrl?`<button data-m="download">${ic('download',22)}İndir</button>`:''}<button data-m="report">${ic('flag',22)}Bildir</button><button class="del" data-m="delete">${ic('trash',22)}Sil</button></div>`);
   $('#sheet').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const m=b.dataset.m;
     if(m==='like'){setLike(t,1);b.classList.toggle('on',t.like===1);b.innerHTML=`${ic(t.like===1?'like':'heart',22)}<span>${t.like===1?'Beğenildi':'Beğen'}</span>`;return}
     closeLayer($('#sheet'));
-    if(m==='play')play(id,true);else if(m==='next')playNext(t);else if(m==='share')share(t);else if(m==='download')window.open(t.audioUrl,'_blank');
+    if(m==='play')play(id,true);else if(m==='next')playNext(t);else if(m==='share')share(t);else if(m==='download')download(t);
     else if(m==='delete')removeTrack(t);
+    else if(m==='report')openReport(t);
     else{if(!live)return toast(ready?'Stüdyo işlemleri sunucuya bağlıyken çalışır.':'Hâlâ üretiliyor');if($('#fp').classList.contains('open'))closeLayer($('#fp'));openTool(m,id)}});
 }
 function playNext(t){
@@ -497,8 +504,24 @@ function removeTrack(t){
   S.lib.splice(idx,1);save();renderAll();undoBuf={t,idx};
   snack('Silindi','Geri al',()=>{if(!undoBuf)return;S.lib.splice(Math.min(undoBuf.idx,S.lib.length),0,undoBuf.t);undoBuf=null;save();renderAll()});
 }
+// İçerik bildirimi (Google Play yapay zekâ içerik kuralı): /api/report → Firestore reports (inceleme kuyruğu)
+const REPORT_WHY=[['offensive','Nefret söylemi, şiddet ya da saldırgan içerik'],['sexual','Cinsel ya da uygunsuz içerik'],['copyright','Telif hakkı ihlali'],['impersonation','Başka birinin sesini ya da kimliğini taklit'],['other','Başka bir sebep']];
+function openReport(t){
+  openSheet(`<div class="tm-head"><span class="thumb cov">${art(t)}</span><div><b>${esc(t.title)}</b><small>İçeriği bildir</small></div></div>
+    <div class="rp">${REPORT_WHY.map(([v,l],i)=>`<label class="chk rp-o"><input type="radio" name="rpWhy" value="${v}" ${i?'':'checked'}><span>${l}</span></label>`).join('')}
+    <textarea class="ta" id="rpNote" rows="3" maxlength="500" placeholder="Açıklama (isteğe bağlı)"></textarea>
+    <div class="err" id="rpErr"></div><button class="primary" id="rpGo"><span>Bildir</span></button>
+    <p class="hint">Bildirimler 24 saat içinde incelenir. Kural dışı içerik kaldırılır.</p></div>`);
+  $('#rpGo').onclick=async()=>{const go=$('#rpGo'),why=$('#sheet input[name=rpWhy]:checked')?.value||'other';go.disabled=true;$('#rpErr').textContent='';
+    try{const r=await jpost('/api/report',{taskId:t.providerTaskId||t.taskId||undefined,audioId:t.audioId||undefined,title:(t.title||'').slice(0,120),reason:why,note:$('#rpNote').value.trim()||undefined});
+      const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(errMsg(j));
+      t.reported=Date.now();save();closeLayer($('#sheet'));
+      snack('Bildirimin alındı. Teşekkürler.','Kütüphaneden kaldır',()=>removeTrack(t));
+    }catch(e){$('#rpErr').textContent=e.message||'Gönderilemedi';go.disabled=false}};
+}
 function setLike(t,v){t.like=t.like===v?0:v;save();renderAll();syncPlayer()}
-async function share(t){const txt=`${t.title} — SoundForge`;try{if(navigator.share){await navigator.share({title:t.title,text:txt});return}}catch(e){return}try{await navigator.clipboard.writeText(txt);toast('Kopyalandı')}catch(e){toast(txt)}}
+async function share(t){const r=await CR.share({title:t.title,text:`${t.title} — CookRapper ile üretildi`,url:t.audioUrl||undefined});if(r==='copied')toast('Bağlantı kopyalandı');else if(r==='failed')toast('Paylaşılamadı')}
+async function download(t){if(!t.audioUrl)return toast('Bu parçanın sesi hazır değil');toast('Hazırlanıyor…');try{const r=await CR.save(t.audioUrl,t.title);if(r==='downloaded')toast('İndirildi')}catch(e){toast('Kaydedilemedi')}}
 async function copy(txt){try{await navigator.clipboard.writeText(txt);toast('Kopyalandı')}catch(e){toast('Kopyalanamadı')}}
 
 /* ---------- studio / tools ---------- */
@@ -510,7 +533,7 @@ const TOOLS={
   stems:{n:'Stem ayır',ic:'stems',cta:'Ayır',get cost(){return COST['remove-vocals']},f:[{k:'src',only:'nostem'},{k:'type',t:'seg',o:[['separate_vocal','Vokal + enstrüman'],['split_stem','Tüm enstrümanlar']]}]},
   replace:{n:'Bölüm değiştir',ic:'scissors',cta:'Yeniden üret',get cost(){return COST['replace-section']},f:[{k:'src'},{k:'range2'},{k:'lyrics',t:'area',ph:'Yeni bölümün sözleri',only:'song'},{k:'full',t:'area',ph:'Şarkının tüm sözleri (düzenlenmiş)',only:'song'}]},
   persona:{n:'Persona',ic:'persona',cta:'Persona oluştur',cost:0,f:[{k:'src',only:'song'},{k:'name',t:'text',ph:'Persona adı'}]},
-  voice:{n:'Ses klonu',ic:'voice',cta:'Devam',cost:0,f:[{k:'name',t:'text',ph:'Ses adı'},{k:'rec'}]},
+  voice:{n:'Ses klonu',ic:'voice',cta:'Devam',cost:0,f:[{k:'name',t:'text',ph:'Ses adı'},{k:'rec'},{k:'consent',t:'check',l:'Bu ses bana ait ya da sahibinden açık yazılı iznim var. Başka birini taklit etmek için kullanmayacağım.'}]},
   record:{n:'Kayıttan',ic:'mic',go:()=>openCreate('audio')}
 };
 const isVocal=t=>t.output==='song'||t.output==='stemv';
@@ -523,6 +546,7 @@ function fieldHTML(f,sel){
   if(f.k==='range2')return `<div class="row2"><label class="fl">Başlangıç (sn)<input class="inp" type="number" name="from" value="30" min="0" step="1" inputmode="numeric"></label><label class="fl">Bitiş (sn)<input class="inp" type="number" name="to" value="45" min="0" step="1" inputmode="numeric"></label></div>`;
   if(f.k==='rec')return '<div class="phrase" id="vPhrase" hidden></div><div id="vRec"></div><p class="hint" id="vHint">10–60 sn şarkı söyle ya da rap yap. Arka plan sessiz olsun.</p>';
   const only=f.only?` data-only="${f.only}"`:'';
+  if(f.t==='check')return `<label class="chk"><input type="checkbox" name="${f.k}"><span>${esc(f.l)}</span></label>`;
   if(f.t==='text')return `<input class="inp" name="${f.k}" placeholder="${esc(f.ph)}" maxlength="80">`;
   if(f.t==='area')return `<textarea class="ta" name="${f.k}" rows="4" placeholder="${esc(f.ph)}" maxlength="5000"${only}></textarea>`;
   if(f.t==='range')return `<label class="sl">${f.l}<output>${fmt(f.v)}</output><input type="range" name="${f.k}" min="${f.min}" max="${f.max}" value="${f.v}" oninput="this.previousElementSibling.textContent=fmt(+this.value)"></label>`;
@@ -556,15 +580,15 @@ async function runTool(key){
   $('#toolErr').textContent='';
   if(key==='voice')return runVoice(v('name').trim(),fail);
   const src=find(v('src'));if(TOOLS[key].f.some(f=>f.k==='src')&&!src)return fail('Önce bir parça üret');
-  if(!src.audioId||!src.providerTaskId)return fail('Bu parça KIE işlemi için uygun değil');
+  if(!src.audioId||!src.providerTaskId)return fail('Bu parça bu işlem için uygun değil');
   const vocal=isVocal(src),base={style:src.style,output:src.output,lyrics:src.lyrics,gender:src.gender,duration:src.duration,parent:src.id,image:undefined,model:src.model};
   const A=body=>({url:'/api/music/audio',body:Object.assign({model:src.model||'V6',title:src.title},body)});let ok=[];
   if(key==='extend'){const at=+v('at');if(!(at>0&&at<(src.duration||1e9)))return fail('Devam noktası parça süresinden kısa olmalı');
     ok=spawn({...base,title:src.title+' (uzun)',style:v('style')||src.style,duration:at+120,seedFn:i=>src.seed+i},2,COST.extend,A({taskType:'extend',audioId:src.audioId,continueAt:at,instrumental:!vocal,style:v('style')||src.style}))}
   else if(key==='cover'){const st=v('style')||src.style;
-    ok=spawn({...base,title:src.title+' (cover)',style:st,gender:v('gender')},2,COST.cover,A({taskType:'cover',uploadUrl:src.audioUrl,style:st,instrumental:!vocal,lyrics:vocal&&src.lyrics?src.lyrics:undefined,vocalGender:vocal?v('gender'):undefined,duration:Math.min(360,Math.max(10,Math.round(src.duration||120)))}))}
+    ok=spawn({...base,title:src.title+' (cover)',style:st,gender:v('gender')},2,COST.cover,A({taskType:'cover',uploadUrl:src.audioUrl,sourceTaskId:src.providerTaskId,style:st,instrumental:!vocal,lyrics:vocal&&src.lyrics?src.lyrics:undefined,vocalGender:vocal?v('gender'):undefined,duration:Math.min(360,Math.max(10,Math.round(src.duration||120)))}))}
   else if(key==='vocals'){const ly=v('lyrics').trim();if(!ly)return fail('Sözler gerekli');
-    ok=spawn({...base,title:src.title+' (vokal)',output:'song',lyrics:ly,gender:v('gender'),seedFn:()=>src.seed},2,COST['add-vocals'],A({taskType:'add-vocals',uploadUrl:src.audioUrl,lyrics:ly,vocalGender:v('gender'),style:src.style||'hip hop'}))}
+    ok=spawn({...base,title:src.title+' (vokal)',output:'song',lyrics:ly,gender:v('gender'),seedFn:()=>src.seed},2,COST['add-vocals'],A({taskType:'add-vocals',uploadUrl:src.audioUrl,sourceTaskId:src.providerTaskId,lyrics:ly,vocalGender:v('gender'),style:src.style||'hip hop'}))}
   else if(key==='stems'){const type=v('type'),cost=type==='split_stem'?COST['split-stem']:COST['remove-vocals'];
     const ph=[['Vocals','stemv'],['Instrumental','steminst']].map(([st,o])=>({...base,title:src.title+' · '+STEM_TR[st],ptitle:src.title,style:STEM_TR[st],output:o,kind:'stem',seedFn:()=>src.seed}));
     ok=spawn(ph,0,cost,A({taskType:'remove-vocals',taskId:src.providerTaskId,audioId:src.audioId,stemType:type}),'stems')}
@@ -585,18 +609,19 @@ async function runTool(key){
 // Ses klonu: 1) ses örneği → KIE doğrulama cümlesi  2) cümleyi oku → ses oluştur (voiceId)
 async function runVoice(name,fail){
   if(V.busy)return;if(!name)return fail('Ses adı gerekli');if(VREC.busy())return fail('Önce kaydı durdur');
+  if(!$('#toolBody [name=consent]')?.checked)return fail('Sesin sana ait olduğunu onayla');
   const src=VREC.src();if(!src)return fail(V.step===1?'Önce ses örneği kaydet':'Önce cümleyi okuyup kaydet');
   const go=$('#toolGo');V.busy=true;go.disabled=true;setToolGo('voice',V.step===1?'Cümle hazırlanıyor…':'Gönderiliyor…');
   try{const url=src.url||await src.save();
     if(V.step===1){
-      const r=await jpost('/api/voice/phrase',{voiceUrl:url,vocalStart:0,vocalEnd:Math.max(1,Math.min(30,Math.floor(src.dur||10)))});const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(errMsg(j));
+      const r=await jpost('/api/voice/phrase',{consent:true,voiceUrl:url,vocalStart:0,vocalEnd:Math.max(1,Math.min(30,Math.floor(src.dur||10)))});const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(errMsg(j));
       const t=await waitTask(j.task.id,180e3),phrase=t.extra&&t.extra.phrase;if(!phrase)throw new Error('Doğrulama cümlesi alınamadı');
       V.step=2;V.phraseTask=j.task.id;
       $('#vPhrase').hidden=false;$('#vPhrase').innerHTML=`<small>Bu cümleyi kendi sesinle oku ya da söyle</small><b>${esc(phrase)}</b>`;
       $('#vHint').textContent='Cümlenin tamamını net bir sesle kaydet.';$('#toolBody [name=name]').disabled=true;
       VREC=createRecorder($('#vRec'),{minSec:3,maxSec:60,label:'Doğrulama',upload:uploadBlob});
     }else{
-      const r=await jpost('/api/voice',{id:uid(),validationTaskId:V.phraseTask,verifyUrl:url,voiceName:name});const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(errMsg(j));
+      const r=await jpost('/api/voice',{consent:true,id:uid(),validationTaskId:V.phraseTask,verifyUrl:url,voiceName:name});const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(errMsg(j));
       closeLayer($('#mTool'));toast('Ses klonu hazırlanıyor');
       waitTask(j.task.id,300e3).then(()=>toast('Ses klonu hazır · '+name)).catch(e=>toast('Ses klonu: '+e.message));
     }
@@ -619,48 +644,8 @@ function applyTheme(){const t=S.set.theme;if(t==='auto')document.documentElement
 $('#defModel').value=S.set.model;$('#model').value=S.set.model;
 $('#defModel').addEventListener('change',e=>{S.set.model=e.target.value;$('#model').value=e.target.value;save()});
 /* ---------- audio engine ---------- */
-const P={el:null,ctx:null,src:null,buf:null,t0:0,off:0,playing:false,cur:null,raf:0,shuffle:false,repeat:false,lyrLines:0,lyrIdx:-1};
-const BUF=new Map();
-function ctx(){if(!P.ctx){const C=window.AudioContext||window.webkitAudioContext;P.ctx=new C()}if(P.ctx.state==='suspended')P.ctx.resume();return P.ctx}
-async function getBuffer(t){const k=t.seed+'|'+t.output+'|'+t.gender;if(BUF.has(k))return BUF.get(k);const b=await synth(t);BUF.set(k,b);if(BUF.size>8)BUF.delete(BUF.keys().next().value);return b}
-async function synth(t){
-  const r=rng(t.seed),sr=44100,O=window.OfflineAudioContext||window.webkitOfflineAudioContext;
-  const kind=t.output,bpm=kind==='beat'?Math.round(130+r()*20):Math.round(78+r()*46),beat=60/bpm,bar=beat*4;
-  const bars=Math.max(8,Math.floor(40/bar)),dur=bars*bar+1.8,c=new O(2,Math.ceil(sr*dur),sr);
-  const comp=c.createDynamicsCompressor();comp.threshold.value=-16;comp.ratio.value=4;comp.connect(c.destination);
-  const master=c.createGain();master.gain.value=.85;master.connect(comp);
-  const minor=r()>.45,root=45+Math.floor(r()*9);
-  const progs=minor?[[[0,3,7],[8,12,15],[3,7,10],[10,14,17]],[[0,3,7],[5,8,12],[10,14,17],[7,10,14]]]:[[[0,4,7],[7,11,14],[9,12,16],[5,9,12]],[[0,4,7],[5,9,12],[9,12,16],[7,11,14]]];
-  const prog=progs[Math.floor(r()*progs.length)],scale=minor?[0,3,5,7,10]:[0,2,4,7,9];
-  const hasPad=kind!=='beat'&&kind!=='stemv',hasBass=kind!=='stemv',hasDrums=kind!=='stemv',hasLead=kind==='song'||kind==='stemv',half=kind==='beat'||r()>.7;
-  const noise=c.createBuffer(1,sr,sr),nd=noise.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
-  const mt=m=>440*Math.pow(2,(m-69)/12);
-  const padF=c.createBiquadFilter();padF.type='lowpass';padF.frequency.value=1300;padF.connect(master);
-  const drums=c.createGain();drums.gain.value=kind==='beat'?1:.75;drums.connect(master);
-  const leadF=c.createBiquadFilter();leadF.type='lowpass';leadF.frequency.value=2600;const leadG=c.createGain();leadG.gain.value=1;leadF.connect(leadG);leadG.connect(master);
-  const dl=c.createDelay(1);dl.delayTime.value=beat*.75;const fb=c.createGain();fb.gain.value=.28;const wet=c.createGain();wet.gain.value=.35;leadG.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(wet);wet.connect(master);
-  function tone(type,f,time,len,vol,dest,att){const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,time);g.gain.linearRampToValueAtTime(vol,time+att);g.gain.exponentialRampToValueAtTime(.0001,time+len);o.connect(g);g.connect(dest);o.start(time);o.stop(time+len+.05)}
-  function kick(t){const o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(40,t+.13);g.gain.setValueAtTime(.95,t);g.gain.exponentialRampToValueAtTime(.001,t+(kind==='beat'?.6:.35));o.connect(g);g.connect(drums);o.start(t);o.stop(t+.65)}
-  function snare(t){const s=c.createBufferSource();s.buffer=noise;const f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=1900;const g=c.createGain();g.gain.setValueAtTime(.4,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);s.connect(f);f.connect(g);g.connect(drums);s.start(t);s.stop(t+.22);tone('triangle',185,t,.1,.16,drums,.002)}
-  function hat(t,v){const s=c.createBufferSource();s.buffer=noise;const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=7800;const g=c.createGain();g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+.05);s.connect(f);f.connect(g);g.connect(drums);s.start(t);s.stop(t+.06)}
-  function voice(f,t,len){const o=c.createOscillator(),o2=c.createOscillator(),l=c.createOscillator(),lg=c.createGain(),g=c.createGain();o.type='sawtooth';o2.type='sine';o.frequency.value=f;o2.frequency.value=f;l.frequency.value=5.3;lg.gain.value=f*.011;l.connect(lg);lg.connect(o.frequency);lg.connect(o2.frequency);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.075,t+.07);g.gain.setValueAtTime(.065,t+len*.7);g.gain.exponentialRampToValueAtTime(.001,t+len+.1);o.connect(g);o2.connect(g);g.connect(leadF);[o,o2,l].forEach(x=>{x.start(t);x.stop(t+len+.15)})}
-  let last=4;const oct=t.gender==='m'?12:24;
-  for(let b=0;b<bars;b++){
-    const t0=.25+b*bar,ch=prog[b%4],intro=b<2,brk=bars>10&&b===bars-3;
-    if(hasPad)ch.forEach(iv=>{tone('sawtooth',mt(root+12+iv),t0,bar*.98,.035,padF,.35);tone('sawtooth',mt(root+12+iv)*1.005,t0,bar*.98,.022,padF,.4)});
-    if(kind==='beat'&&!intro)[0,2.5].forEach(q=>ch.forEach(iv=>tone('square',mt(root+24+iv),t0+q*beat,beat*.35,.018,padF,.005)));
-    if(hasBass&&!intro)for(let q=0;q<4;q++){if(half&&q%2)continue;tone(kind==='beat'?'sine':'triangle',mt(root-12+ch[0]),t0+q*beat,beat*(half?1.8:.9),kind==='beat'?.5:.3,master,.006)}
-    if(hasDrums&&b>0&&!brk)for(let s=0;s<16;s++){const st=t0+s*beat/4;
-      if((half?[0,10]:[0,8]).includes(s)||(kind==='beat'&&s===7&&r()>.5))kick(st);
-      if((half?[8]:[4,12]).includes(s))snare(st);
-      if(s%2===0||(kind==='beat'&&r()>.55))hat(st,s%4===2?.08:.045)}
-    if(hasLead&&!intro&&!brk)for(let s=0;s<8;s++){if(r()<.3)continue;last=Math.max(0,Math.min(9,last+Math.floor(r()*5)-2));const m=root+oct+scale[last%5]+12*Math.floor(last/5);voice(mt(m),t0+s*beat/2,beat/2*(r()>.7?2:1)*.95)}
-  }
-  return await c.startRendering();
-}
-function peaks(b,n){const d=b.getChannelData(0),size=Math.floor(d.length/n),out=[];let mx=0;for(let i=0;i<n;i++){let m=0;for(let j=i*size;j<(i+1)*size;j+=64){const v=Math.abs(d[j]);if(v>m)m=v}out.push(m);if(m>mx)mx=m}return out.map(v=>v/(mx||1))}
-
-
+const P={el:null,off:0,playing:false,cur:null,raf:0,shuffle:false,repeat:false,lyrLines:0,lyrIdx:-1};
+// Yalnız gerçek ses dosyası çalınır (KIE / Firebase Storage). Sesi olmayan parça çalınmaz.
 
 /* ---------- player: sıra, karıştır, tekrar ---------- */
 const findT=id=>S.lib.find(x=>x.id===id);
@@ -703,17 +688,11 @@ function prev(force){
 function restart(){seek(0);if(!P.playing)toggle()}
 async function load(t,dir){
   if(!t)return;const tok=++PL.tok;
-  stopSrc(true);P.cur=t;P.buf=null;P.off=0;P.playing=false;
+  stopSrc();P.cur=t;P.off=0;P.playing=false;
   syncMini(dir);syncPlayer(dir);setLoading(true);tick();
   if(t.audioUrl){const el=P.el||(P.el=mkEl());el.src=t.audioUrl;try{await el.play()}catch(e){if(tok===PL.tok){setLoading(false);P.playing=false;syncIcons()}}if(tok===PL.tok)mediaSession();return}
-  ctx();
-  let buf;try{buf=await getBuffer(t)}catch(e){if(tok===PL.tok){setLoading(false);toast('Ses oluşturulamadı')}return}
-  if(tok!==PL.tok)return;P.buf=buf;setLoading(false);startSrc(0);mediaSession();
+  setLoading(false);P.playing=false;syncIcons();if(tok===PL.tok)toast('Bu parçanın sesi hazır değil');
 }
-function startSrc(off){const c=ctx(),s=c.createBufferSource(),g=c.createGain();s.buffer=P.buf;s.connect(g);g.connect(c.destination);
-  g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(1,c.currentTime+.16);
-  s.onended=()=>{if(P.src!==s)return;P.src=null;P.playing=false;P.off=0;syncIcons();next(true)};
-  s.start(0,off);P.src=s;P.g=g;P.t0=c.currentTime;P.off=off;P.playing=true;syncIcons();loop()}
 function mkEl(){const el=new Audio();el.preload='auto';el.playsInline=true;
   el.addEventListener('playing',()=>{if(!isEl())return;P.playing=true;setLoading(false);loop()});
   el.addEventListener('pause',()=>{if(!isEl())return;P.playing=false;syncIcons()});
@@ -722,14 +701,13 @@ function mkEl(){const el=new Audio();el.preload='auto';el.playsInline=true;
   el.addEventListener('error',()=>{if(!isEl()||!el.getAttribute('src'))return;const id=P.cur.id;setLoading(false);toast('Çalınamadı, sıradakine geçiliyor');setTimeout(()=>{if(P.cur&&P.cur.id===id)next(true)},900)});
   return el}
 const isEl=()=>!!(P.el&&P.cur&&P.cur.audioUrl);
-const hasMedia=()=>!!(P.buf||isEl());
-const dur=()=>isEl()?(isFinite(P.el.duration)?P.el.duration:0):(P.buf?P.buf.duration:0);
-function stopSrc(fade){if(P.el&&!P.el.paused)P.el.pause();if(P.src){const s=P.src,g=P.g;P.src=null;s.onended=null;
-  try{if(fade&&g&&P.ctx){const c=P.ctx;g.gain.cancelScheduledValues(c.currentTime);g.gain.setValueAtTime(g.gain.value,c.currentTime);g.gain.linearRampToValueAtTime(0,c.currentTime+.12);s.stop(c.currentTime+.14)}else s.stop()}catch(e){}}}
-function stopAll(){PL.tok++;stopSrc();if(P.el)P.el.removeAttribute('src');P.playing=false;P.cur=null;P.buf=null;syncMini();closeLayer($('#fp'))}
-function pos(){if(isEl())return P.el.currentTime||0;if(!P.buf)return 0;return P.playing?Math.min(P.off+P.ctx.currentTime-P.t0,P.buf.duration):P.off}
-function toggle(){if(isEl()){if(P.el.paused)P.el.play().catch(()=>{});else P.el.pause();return}if(!P.buf)return;if(P.playing){P.off=pos();stopSrc(true);P.playing=false;syncIcons();tick()}else startSrc(P.off>=P.buf.duration-.05?0:P.off)}
-function seek(p){p=Math.max(0,Math.min(.999,p));if(isEl()){const d=dur();if(d)P.el.currentTime=p*d;tick();return}if(!P.buf)return;const o=p*P.buf.duration;if(P.playing){stopSrc();startSrc(o)}else{P.off=o;tick()}}
+const hasMedia=()=>isEl();
+const dur=()=>isEl()&&isFinite(P.el.duration)?P.el.duration:0;
+function stopSrc(){if(P.el&&!P.el.paused)P.el.pause()}
+function stopAll(){PL.tok++;stopSrc();if(P.el)P.el.removeAttribute('src');P.playing=false;P.cur=null;syncMini();closeLayer($('#fp'))}
+function pos(){return isEl()?(P.el.currentTime||0):0}
+function toggle(){if(!isEl())return;if(P.el.paused)P.el.play().catch(()=>{});else P.el.pause()}
+function seek(p){p=Math.max(0,Math.min(.999,p));if(!isEl())return;const d=dur();if(d)P.el.currentTime=p*d;tick()}
 function loop(){cancelAnimationFrame(P.raf);const f=()=>{tick();if(P.playing)P.raf=requestAnimationFrame(f)};f()}
 let msT=0;
 function tick(){
@@ -738,7 +716,7 @@ function tick(){
   const c=fmt(t),dd=d?fmt(d):'-:--';$('#fpCur').textContent=c;$('#fpDur').textContent=dd;$('#lfCur').textContent=c;$('#lfDur').textContent=dd;
   if(L.words.length)lyrTick(t);
   else if(P.lyrLines){const i=Math.min(P.lyrLines-1,Math.floor(p*P.lyrLines));if(i!==P.lyrIdx){P.lyrIdx=i;let el=null;$$('#fpLyr .l').forEach(l=>{const k=+l.dataset.i;l.classList.toggle('on',k===i);l.classList.toggle('past',k<i);if(k===i)el=l});lyrScroll(el)}}
-  const now=Date.now();if(d&&now-msT>1000&&'mediaSession' in navigator&&navigator.mediaSession.setPositionState){msT=now;try{navigator.mediaSession.setPositionState({duration:d,position:Math.min(t,d),playbackRate:1})}catch(e){}}
+  const now=Date.now();if(d&&now-msT>1000&&window.CR){msT=now;CR.media.position({duration:d,position:Math.min(t,d),playbackRate:1})}
 }
 /* ---------- senkron sözler (KIE timeStamped-lyrics) ---------- */
 const L={id:null,words:[],lines:[],wi:-1,li:-1,hold:0,busy:new Set()};
@@ -817,7 +795,7 @@ function syncIcons(){
   $('#miniPlay').innerHTML=ic(P.playing?'pause':'play',20);const big=ic(P.playing?'pauseXL':'playXL',28);$('#fpPlay').innerHTML=big;$('#lfPlay').innerHTML=big;
   $('#fpShuf').classList.toggle('on',P.shuffle);const rp=$('#fpRep');rp.classList.toggle('on',P.repeat!=='off');rp.classList.toggle('one',P.repeat==='one');
   rp.setAttribute('aria-label',{off:'Tekrar kapalı',all:'Tümünü tekrarla',one:'Bu şarkıyı tekrarla'}[P.repeat]);
-  markRows();if(navigator.mediaSession)try{navigator.mediaSession.playbackState=P.playing?'playing':'paused'}catch(e){}
+  markRows();if(window.CR)CR.media.state(P.playing?'playing':'paused');
 }
 function syncMini(dir){const t=P.cur;$('#mini').hidden=!t;if(!t)return;const ch=PL.lastMini!==t.id;PL.lastMini=t.id;
   if(ch||$('#miniArt').dataset.img!==(t.image||'')){$('#miniArt').innerHTML=art(t);$('#miniArt').dataset.img=t.image||''}
@@ -850,10 +828,10 @@ $('#fpStyle').addEventListener('click',e=>{const b=e.target.closest('[data-tag]'
 $('#fpParent').addEventListener('click',e=>{const b=e.target.closest('[data-parent]');if(b)play(b.dataset.parent,false)});
 function openPlayer(){syncPlayer();const fp=$('#fp');if(P.cur)tintFor(P.cur);fp.classList.add('open');fp.setAttribute('aria-hidden','false');if(!stack.includes(fp))stack.push(fp);fp.scrollTop=0;riseIn($('#npMeta'),120)}
 $('#fp')._onClose=()=>{$('#fp').setAttribute('aria-hidden','true');closeLayer($('#lyrFull'))};
-function mediaSession(){if(!('mediaSession' in navigator)||!P.cur)return;try{navigator.mediaSession.metadata=new MediaMetadata({title:P.cur.title,artist:'SoundForge',album:KIND[P.cur.output]||'',artwork:P.cur.image?[{src:P.cur.image,sizes:'512x512'}]:[]});
-  const ms=navigator.mediaSession,H=(a,f)=>{try{ms.setActionHandler(a,f)}catch(e){}};
-  H('play',()=>{if(!P.playing)toggle()});H('pause',()=>{if(P.playing)toggle()});H('nexttrack',()=>next());H('previoustrack',()=>prev());
-  H('seekto',d=>{const D=dur();if(D)seek(d.seekTime/D)});H('seekbackward',d=>{const D=dur();if(D)seek((pos()-(d.seekOffset||10))/D)});H('seekforward',d=>{const D=dur();if(D)seek((pos()+(d.seekOffset||10))/D)})}catch(e){}}
+function mediaSession(){if(!window.CR||!P.cur)return;const M=CR.media,art=P.cur.image&&/^https:/.test(P.cur.image)?[{src:P.cur.image,sizes:'512x512',type:'image/jpeg'}]:[];
+  M.metadata({title:P.cur.title||'',artist:'CookRapper',album:KIND[P.cur.output]||'',artwork:art});M.state(P.playing?'playing':'paused');
+  const H=M.handler;H('play',()=>{if(!P.playing)toggle()});H('pause',()=>{if(P.playing)toggle()});H('nexttrack',()=>next());H('previoustrack',()=>prev());
+  H('seekto',d=>{const D=dur();if(D&&d&&d.seekTime!=null)seek(d.seekTime/D)});H('seekbackward',d=>{const D=dur();if(D)seek((pos()-((d&&d.seekOffset)||10))/D)});H('seekforward',d=>{const D=dur();if(D)seek((pos()+((d&&d.seekOffset)||10))/D)})}
 /* kontroller */
 $('#miniPlay').onclick=()=>hasMedia()&&toggle();
 $('#fpPlay').onclick=()=>hasMedia()&&toggle();$('#lfPlay').onclick=()=>hasMedia()&&toggle();

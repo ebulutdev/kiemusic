@@ -1,4 +1,4 @@
-/* ── SoundForge · Ses kaydedici bileşeni ───────────────────
+/* ── CookRapper · Ses kaydedici bileşeni ───────────────────
    Telefon ses kaydedicisi gibi: kaydet → dinle / sar → sil ya da kaydet (Firebase Storage).
    Durumlar: idle → rec → review → saving → saved
    Kullanım: const r = createRecorder(el, { minSec, maxSec, upload, onChange }); r.start(); r.load(file)

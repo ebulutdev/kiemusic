@@ -1,6 +1,8 @@
-# SoundForge — KIE + Suno AI Music Studio
+# CookRapper — Yapay Zekâ Müzik Stüdyosu
 
-Next.js 15 · TypeScript · Firebase (Auth · Firestore · Storage) · KIE API · PWA · iOS & Android uyumlu
+Next.js 15 · TypeScript · Firebase (Auth · Firestore · Storage) · KIE API (arka uç) · PWA · Capacitor 8 (iOS & Android)
+
+> Mağaza adı **CookRapper**. Arayüzde ve mağaza sayfasında üçüncü taraf marka adları (KIE, Suno) kullanılmaz; yalnız sunucu kodunda geçer.
 
 ---
 
@@ -17,10 +19,13 @@ Next.js 15 · TypeScript · Firebase (Auth · Firestore · Storage) · KIE API �
 | Vocal Separation | Stem ayırma (vocal/bass/drums/guitar...) |
 | Replace Section | Bölüm yeniden üret |
 | Persona | Tekrar kullanılabilir vokal persona |
-| Custom Voice | Kendi sesini tanıt |
+| Custom Voice | Kendi sesini tanıt — "bu ses bana ait" onayı zorunlu (sunucuda da kontrol) |
+| İçerik bildirimi | Parça menüsü → Bildir → Firestore `reports` (inceleme kuyruğu) |
+| Hak onayı | Yüklenen kayıtla cover/uzat/vokal ekle: "haklarına sahibim" onayı zorunlu; yalnız kullanıcının kendi ses kaynakları kabul edilir |
 | Advanced Controls | style_weight, weirdness, audio_weight, variety |
 | PWA | iOS Safari + Android Chrome install |
-| Webhook | HMAC-SHA256 doğrulamalı |
+| Webhook | HMAC-SHA256 doğrulamalı — production'da zorunlu (anahtar yoksa bildirim reddedilir) |
+| Mobil | Capacitor: arayüz pakete gömülü, arka planda çalma, kilit ekranı/bildirim kontrolleri, yerel kaydet/paylaş |
 | Polling | 3sn fallback (webhook gelmezse) |
 
 ---
@@ -29,8 +34,8 @@ Next.js 15 · TypeScript · Firebase (Auth · Firestore · Storage) · KIE API �
 
 ```bash
 # 1. Klonla
-git clone https://github.com/sizin-repo/kie-suno-music
-cd kie-suno-music
+git clone https://github.com/ebulutdev/kiemusic.git
+cd kiemusic
 
 # 2. Bağımlılıklar
 npm install
@@ -93,7 +98,7 @@ Kredi düşümü transaction ile atomik; başarısız görevde iade yalnız bir 
 ## Proje Yapısı
 
 ```
-kie-suno-music/
+cookrapper/
 ├── app/
 │   ├── api/
 │   │   ├── callback/          ← KIE webhook (HMAC doğrulamalı)
@@ -125,10 +130,16 @@ kie-suno-music/
 │   ├── validation.ts          ← Zod şemaları
 │   └── webhook.ts             ← HMAC doğrulama
 ├── public/
-│   ├── soundforge.html        ← Mobil arayüz
+│   ├── index.html             ← Mobil arayüz (iskelet)
+│   ├── env.js · native.js     ← Çalışma ortamı + yerel köprü (MediaSession, kaydet, paylaş, API adresi)
+│   ├── vendor/firebase.js     ← Gömülü Firebase SDK (npm run vendor)
+│   ├── fonts/ · icons/        ← Gömülü fontlar (OFL) · uygulama ikonları
 │   └── fb.js                  ← Firebase istemci (Auth + Firestore senkronu)
 ├── firestore.rules · firestore.indexes.json · storage.rules · firebase.json
-└── agents/                    ← Agent instruction dosyaları
+├── middleware.ts              ← /api CORS (yalnız capacitor://localhost, https://localhost)
+├── capacitor.config.ts · ios/ · android/   ← mobil projeler
+├── resources/ · assets/       ← ikon/açılış ekranı kaynakları (SVG → PNG)
+└── scripts/                   ← seed · vendor · build-www
 ```
 
 ---
@@ -233,7 +244,7 @@ MIT
 ```bash
 cp .env.example .env # KIE_API_KEY'i yazın
 npm install
-npm run dev          # http://localhost:3000 → SoundForge mobil arayüzü
+npm run dev          # http://localhost:3000 → CookRapper mobil arayüzü
 ```
 
 Ses kaydı / yükleme ve webhook için KIE'nin sunucunuza erişebilmesi gerekir:
@@ -246,3 +257,38 @@ iPhone'da adresi Safari'de açıp Paylaş → Ana Ekrana Ekle ile uygulama gibi 
 
 **Vercel'e alırken:** `.env` GitHub'a gitmez (.gitignore). Vercel → Settings → Environment Variables'a
 `KIE_API_KEY`, `APP_URL`, `FIREBASE_SERVICE_ACCOUNT` (JSON içeriği tek satır) ve `FIREBASE_STORAGE_BUCKET` ekleyin.
+
+---
+
+## Mobil uygulama (App Store / Google Play)
+
+Arayüz uygulamanın içine gömülür (`www/` ← `public/`); API istekleri `apphosting.yaml → APP_URL` adresine gider.
+
+```bash
+npm run vendor          # Firebase SDK + fontları public/ altına göm (paket güncellenince)
+npm run mobile:build    # public → www (env.js'e API adresi yazılır) + npx cap sync
+npm run mobile:ios      # Xcode'da aç → Signing (Team) → Product > Archive
+npm run mobile:android  # Android Studio'da aç → Build > Generate Signed Bundle (AAB)
+npm run mobile:assets   # assets/*.png'den ikon + açılış ekranı üret (resources/*.svg kaynaktır)
+```
+
+Farklı sunucu: `CR_API_BASE=https://... npm run mobile:build`
+
+| Konu | Nerede |
+|---|---|
+| Paket kimliği | `com.fetsangrup.cookrapper` (capacitor.config.ts, Xcode, build.gradle) |
+| Mikrofon izni | iOS `NSMicrophoneUsageDescription` · Android `RECORD_AUDIO` |
+| Arka planda çalma | iOS `UIBackgroundModes: audio` + AppDelegate `AVAudioSession .playback` · Android medya ön plan hizmeti (`@capgo/capacitor-media-session`) |
+| Kilit ekranı / bildirim | `public/native.js → CR.media` (iOS: WKWebView mediaSession · Android: eklenti) |
+| İndir / paylaş | `CR.save` (FileTransfer → paylaşım sayfası "Dosyalara kaydet") · `CR.share` (bağlantılı) |
+| CORS | `middleware.ts` — ek kaynak: `CORS_EXTRA_ORIGINS` |
+| Google / Apple girişi | Mobilde şimdilik gizli (web açılır penceresi uygulama içinde çalışmaz) → yerel eklenti eklenecek |
+
+### Yayın öncesi gizli anahtarlar
+
+```bash
+firebase apphosting:secrets:set kie-webhook-hmac-key   # KIE dashboard > Webhook Settings > HMAC Secret (zorunlu)
+```
+
+İçerik bildirimleri: Firebase Console → Firestore → `reports` (status: `open` → `reviewed` | `removed`).
+Firestore kurallarını yayınlayın: `firebase deploy --only firestore`

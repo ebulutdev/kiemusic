@@ -33,5 +33,10 @@ service cloud.firestore {
     match /tasks/{rest=**} {
       allow read, write: if false;
     }
+
+    // İçerik şikâyetleri: yalnız sunucu (/api/report)
+    match /reports/{id} {
+      allow read, write: if false;
+    }
   }
 }

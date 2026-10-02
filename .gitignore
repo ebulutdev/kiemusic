@@ -11,3 +11,6 @@ next-env.d.ts
 firebase-service-account*.json
 *-firebase-adminsdk-*.json
 .firebase/
+
+# Mobil paket: public/ kopyası (npm run mobile:build üretir)
+www/

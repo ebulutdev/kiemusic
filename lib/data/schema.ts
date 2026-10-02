@@ -9,6 +9,7 @@
 //   users/{uid}/tracks/{id}       kütüphane   — parça başına belge; yalnız değişen parça yazılır
 //   tasks/{kieTaskId}             TaskDoc     — yalnız sunucu; belge id = KIE taskId → sorgusuz okuma
 //   tasks/{kieTaskId}/lyrics/{audioId}        — zaman damgalı söz önbelleği; parça açılınca 1 okuma
+//   reports/{uid_task_audio}      ReportDoc   — yalnız sunucu; uygulama içi içerik şikâyetleri (inceleme kuyruğu)
 // Storage
 //   uploads/{uid}/{file}          kullanıcı ses kayıtları (KIE'ye kaynak)
 //   media/{uid}/{taskId}/{file}   üretilen ses/kapak kopyaları (KIE 14 günde siler)
@@ -21,6 +22,7 @@ export const COL = {
   tasks: "tasks",
   lyrics: "lyrics",
   config: "config",
+  reports: "reports",
 } as const;
 
 export const path = {
@@ -29,6 +31,7 @@ export const path = {
   track:  (uid: string, id: string) => `${COL.users}/${uid}/${COL.tracks}/${id}`,
   task:   (taskId: string) => `${COL.tasks}/${taskId}`,
   lyrics: (taskId: string, audioId: string) => `${COL.tasks}/${taskId}/${COL.lyrics}/${audioId}`,
+  report: (id: string) => `${COL.reports}/${id}`,
 };
 
 export const storagePath = {
@@ -80,6 +83,7 @@ export interface VoiceDoc {
   verifyUrl?: string | null;
   providerTaskId?: string | null;
   seed?: number;
+  consentAt?: string | null;          // "bu ses bana ait" onayı (kalıcı kayıt: tasks/{id}.params.consent)
 }
 
 export interface UserDoc {
@@ -129,4 +133,19 @@ export interface TaskDoc {
   createdAt?: unknown;
   updatedAt?: unknown;
   completedAt?: unknown;
+}
+
+// ── reports/{id} — içerik şikâyeti (yalnız sunucu yazar; Console'dan incelenir) ──
+export interface ReportDoc {
+  reporterUid: string;
+  taskId: string | null;
+  audioId: string | null;
+  title: string | null;
+  reason: string;
+  note: string | null;
+  status: "open" | "reviewed" | "removed";
+  ownerUid: string | null;            // parçanın sahibi (görevden)
+  taskType: string | null;
+  snapshot: { audio_url?: string; image_url?: string; title?: string; prompt?: string } | null;
+  createdAt: unknown;
 }

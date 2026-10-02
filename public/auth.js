@@ -1,4 +1,4 @@
-/* ── SoundForge · Giriş / kayıt ekranı ─────────────────────
+/* ── CookRapper · Giriş / kayıt ekranı ─────────────────────
    Firebase işlemleri public/fb.js → FB.auth; oturum durumu "fb-auth" olayıyla gelir.
    Kapı: kalıcı hesap (Apple / Google / e-posta) ya da misafir seçimi yoksa ekran açık kalır.
    Görünümler: main (yöntem seçimi) → email (giriş/kayıt formu) → reset (şifre sıfırlama).
@@ -9,6 +9,9 @@
   const h = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const say = (m) => (typeof toast === "function" ? toast(m) : null);
   const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  // Mobil uygulamada (Capacitor) Google/Apple web açılır penceresi çalışmaz → yerel giriş eklentisi gelene kadar gizli.
+  // Yalnız e-posta + misafir kalır (Apple 4.8: üçüncü taraf giriş yoksa Apple ile Giriş zorunlu değil).
+  const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 
   const sv = (d, w = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   const I = {
@@ -71,10 +74,11 @@
     <div class="au-body">
 
       <section class="au-main">
+        <p class="au-brand">CookRapper</p>
         <h1 class="au-h" id="auTitle">Sahne <em>senin.</em></h1>
         <div class="au-stack">
-          <button class="au-btn au-apple" data-p="apple">${I.apple}<span>Apple ile devam et</span></button>
-          <button class="au-btn" data-p="google">${I.google}<span>Google ile devam et</span></button>
+          ${NATIVE ? "" : `<button class="au-btn au-apple" data-p="apple">${I.apple}<span>Apple ile devam et</span></button>
+          <button class="au-btn" data-p="google">${I.google}<span>Google ile devam et</span></button>`}
           <button class="au-btn" data-view="email">${I.mail}<span>E-posta ile devam et</span></button>
         </div>
         <div class="au-err" id="auMErr" role="alert"></div>

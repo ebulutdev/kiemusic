@@ -1,4 +1,4 @@
-/* SoundForge — TR / EN dil desteği
+/* CookRapper — TR / EN dil desteği
    Arayüz Türkçe yazılır; İngilizce seçilince metin düğümleri ve placeholder / aria-label / title
    öznitelikleri sözlükten çevrilir. Kullanıcı içeriği (şarkı adı, sözler, stil) çevrilmez.
    Seçim localStorage'da saklanır: sf_lang = "tr" | "en". */
@@ -42,7 +42,7 @@
     "Persona hazır": "Persona ready", "Persona hazırlanıyor": "Preparing persona", "Ses klonu hazır": "Voice clone ready",
     "Ses klonu hazırlanıyor": "Preparing voice clone", "Stemler hazır": "Stems ready", "Stem bulunamadı": "No stems found",
     "Önce bir parça üret": "Create a track first", "Uygun parça yok — önce bir şarkı üret": "No suitable track — create a song first",
-    "Bu parça KIE işlemi için uygun değil": "This track can't be used for this action",
+    "Bu parça bu işlem için uygun değil": "This track can't be used for this action",
     "Bölüm en az 10 saniye olmalı": "Section must be at least 10 seconds", "Bölüm, şarkının yarısından uzun olamaz": "Section can't be longer than half the song",
     "Bitiş parça süresini aşıyor": "End is past the track length", "Devam noktası parça süresinden kısa olmalı": "Continue point must be inside the track",
     "Tüm enstrümanlar": "All instruments", "Vokal + enstrüman": "Vocals + instrumental", "Enstrüman": "Instrumental",
@@ -94,7 +94,21 @@
     "erkek vokal": "male vocal", "anadolu rock": "anatolian rock", "arabesk": "arabesque",
     "#türkçe hip hop": "#turkish hip hop", "türkçe hip hop": "turkish hip hop", "nostalji": "nostalgia", "brezilya funk": "brazilian funk", "caz": "jazz", "balad": "ballad", "halk": "folk",
     "Hesap oluştur; şarkıların ve kredin her cihazda seninle olsun.": "Create an account to keep your songs and credits on every device.", "#nostalji": "#nostalgia", "#arabesk": "#arabesque", "#brezilya funk": "#brazilian funk",
-    "#sinematik": "#cinematic", "#anadolu rock": "#anatolian rock", "#caz": "#jazz", "#akustik": "#acoustic", "#balad": "#ballad", "#halk": "#folk"
+    "#sinematik": "#cinematic", "#anadolu rock": "#anatolian rock", "#caz": "#jazz", "#akustik": "#acoustic", "#balad": "#ballad", "#halk": "#folk",
+    // izin onayları / içerik bildirimi
+    "Bu ses bana ait ya da sahibinden açık yazılı iznim var. Başka birini taklit etmek için kullanmayacağım.": "This is my own voice, or I have the owner's explicit written permission. I won't use it to impersonate anyone.",
+    "Sesin sana ait olduğunu onayla": "Confirm that this is your own voice",
+    "Bu kaydın haklarına sahibim ya da kullanma iznim var. Telifli bir şarkıyı izinsiz yüklemiyorum.": "I own the rights to this recording or have permission to use it. I'm not uploading copyrighted music without permission.",
+    "Kaydın haklarına sahip olduğunu onayla": "Confirm that you have the rights to this recording",
+    "Bildir": "Report", "İçeriği bildir": "Report content", "Başka bir sebep": "Something else", "Açıklama (isteğe bağlı)": "Details (optional)",
+    "Nefret söylemi, şiddet ya da saldırgan içerik": "Hate speech, violence or offensive content", "Cinsel ya da uygunsuz içerik": "Sexual or inappropriate content",
+    "Telif hakkı ihlali": "Copyright infringement", "Başka birinin sesini ya da kimliğini taklit": "Impersonates someone's voice or identity",
+    "Bildirimler 24 saat içinde incelenir. Kural dışı içerik kaldırılır.": "Reports are reviewed within 24 hours. Content that breaks the rules is removed.",
+    "Bildirimin alındı. Teşekkürler.": "Report received. Thank you.", "Kütüphaneden kaldır": "Remove from library", "Gönderilemedi": "Couldn't send",
+    "Kaydın haklarına sahip olduğunu onaylaman gerekiyor.": "You need to confirm you have the rights to this recording.",
+    "Sesin sana ait olduğunu onaylaman gerekiyor.": "You need to confirm this is your own voice.",
+    "Ses klonu için kendi kaydını kullanmalısın.": "Use your own recording for a voice clone.",
+    "Bu ses kaynağı kullanılamaz. Kendi kaydını yükle ya da kütüphanendeki bir parçayı seç.": "This audio source can't be used. Upload your own recording or pick a track from your library."
   };
   const MONTHS = { Ocak: "January", Şubat: "February", Mart: "March", Nisan: "April", Mayıs: "May", Haziran: "June", Temmuz: "July",
     Ağustos: "August", Eylül: "September", Ekim: "October", Kasım: "November", Aralık: "December" };

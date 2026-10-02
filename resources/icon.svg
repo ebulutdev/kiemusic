@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- CookRapper uygulama ikonu: alev + mikrofon (özgün çizim). Kaynak: resources/icon.svg → npm run icons -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#2A1B10"/>
+      <stop offset=".55" stop-color="#130E0A"/>
+      <stop offset="1" stop-color="#0B0A09"/>
+    </radialGradient>
+    <linearGradient id="fire" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#C2261D"/>
+      <stop offset=".38" stop-color="#FF7A2F"/>
+      <stop offset=".8" stop-color="#F5B83D"/>
+      <stop offset="1" stop-color="#FFD36E"/>
+    </linearGradient>
+    <linearGradient id="gold" gradientUnits="userSpaceOnUse" x1="352" y1="560" x2="672" y2="870">
+      <stop offset="0" stop-color="#FFE29A"/>
+      <stop offset=".5" stop-color="#F5B83D"/>
+      <stop offset="1" stop-color="#D98A0B"/>
+    </linearGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF8EA"/>
+      <stop offset="1" stop-color="#E9DCC4"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <g transform="translate(512 500) scale(1.14) translate(-512 -500)">
+  <!-- alev parıltısı -->
+  <path d="M512 150c40 90 150 150 170 270 12 76-14 140-50 182-30 34-70 50-120 50s-90-16-120-50c-36-42-62-106-50-182 12-74 62-118 96-164 10 46 30 70 54 84-8-80 6-136 20-190z" fill="#FF7A2F" opacity=".55" filter="url(#glow)"/>
+  <!-- alev -->
+  <path d="M512 150c40 90 150 150 170 270 12 76-14 140-50 182-30 34-70 50-120 50s-90-16-120-50c-36-42-62-106-50-182 12-74 62-118 96-164 10 46 30 70 54 84-8-80 6-136 20-190z" fill="url(#fire)"/>
+  <path d="M520 300c24 58 90 96 96 170 4 52-22 92-44 116H452c-24-24-44-62-34-112 8-40 34-64 52-90 6 26 18 40 32 48-4-50 8-90 18-132z" fill="#FFD36E" opacity=".75"/>
+  <!-- mikrofon başlığı -->
+  <rect x="402" y="368" width="220" height="300" rx="110" fill="url(#head)"/>
+  <g stroke="#2A1B10" stroke-width="14" stroke-linecap="round" opacity=".85">
+    <path d="M440 452h144M432 504h160M432 556h160M440 608h144"/>
+  </g>
+  <rect x="402" y="368" width="220" height="300" rx="110" fill="none" stroke="#0B0A09" stroke-opacity=".25" stroke-width="6"/>
+  <!-- tutucu + gövde -->
+  <path d="M352 560v24c0 88 72 160 160 160s160-72 160-160v-24" fill="none" stroke="url(#gold)" stroke-width="34" stroke-linecap="round"/>
+  <path d="M512 744v74" stroke="url(#gold)" stroke-width="34" stroke-linecap="round"/>
+  <path d="M420 850h184" stroke="url(#gold)" stroke-width="34" stroke-linecap="round"/>
+  </g>
+</svg>
