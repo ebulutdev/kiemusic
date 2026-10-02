@@ -1,5 +1,5 @@
 {
- "version": 2,
+ "version": 3,
  "pricing": {
   "startCredits": 500,
   "costs": {
@@ -185,20 +185,23 @@
   ],
   "beatTags": "instrumental beat, drum-focused, punchy drums, minimal melody, no vocals"
  },
- "kie": {
+ "engine": {
   "defaultModel": "V6",
   "models": [
    {
     "id": "V6",
-    "label": "V6"
+    "label": "Cook v1",
+    "note": "Dengeli"
    },
    {
     "id": "V6_MINI",
-    "label": "V6 Mini"
+    "label": "Cook v2",
+    "note": "Hızlı"
    },
    {
     "id": "V6_WILD",
-    "label": "V6 Wild"
+    "label": "Cook v3",
+    "note": "Deneysel"
    }
   ],
   "limits": {

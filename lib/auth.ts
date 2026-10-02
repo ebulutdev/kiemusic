@@ -24,11 +24,18 @@ export async function requireUser(req: Request): Promise<User> {
   }
 }
 
+/** İstemciye giden mesaj: altyapı/sağlayıcı adları ve iç ayrıntılar kullanıcıya gösterilmez. */
+export function publicMessage(msg: string | null | undefined, fallback = "İşlem şu an yapılamadı. Biraz sonra tekrar dene."): string {
+  const m = (msg || "").trim();
+  if (!m || /kie|suno|api[_ ]?key|callback|http \d{3}|taskid|tanımlanmamış|undefined|null|econn|fetch failed/i.test(m)) return fallback;
+  return m;
+}
+
 export function errorResponse(error: unknown, tag: string) {
   const json = (status: number, msg: string) => NextResponse.json({ success: false, error: msg }, { status });
   if (error instanceof HttpError) return json(error.status, error.message);
   if (error instanceof InsufficientCredits) return json(402, error.message);
   if (error instanceof FirebaseNotConfigured) return json(503, error.message);
   console.error(tag, error);
-  return json(500, error instanceof Error ? error.message : "Beklenmeyen hata");
+  return json(500, publicMessage(error instanceof Error ? error.message : ""));
 }

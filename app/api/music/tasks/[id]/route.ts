@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getKieTask, getMusicTaskDetail } from "@/lib/kie";
-import { requireUser, errorResponse } from "@/lib/auth";
+import { requireUser, errorResponse, publicMessage } from "@/lib/auth";
 import { getTask, setResults, failTask, updateTask } from "@/lib/data/tasks";
 import { mirrorIfNeeded } from "@/lib/data/mirror";
 import { applyExtra } from "@/lib/data/extras";
@@ -76,7 +76,7 @@ export async function GET(request: Request, context: Context) {
         title: task.params?.title,
         results: task.results,
         extra: task.extra ?? null,
-        error: task.errorMessage ? { code: task.errorCode, message: task.errorMessage } : null,
+        error: task.errorMessage ? { code: task.errorCode, message: publicMessage(task.errorMessage, "Üretim başarısız oldu.") } : null,
       },
     });
   } catch (error) {

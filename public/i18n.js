@@ -108,7 +108,23 @@
     "Kaydın haklarına sahip olduğunu onaylaman gerekiyor.": "You need to confirm you have the rights to this recording.",
     "Sesin sana ait olduğunu onaylaman gerekiyor.": "You need to confirm this is your own voice.",
     "Ses klonu için kendi kaydını kullanmalısın.": "Use your own recording for a voice clone.",
-    "Bu ses kaynağı kullanılamaz. Kendi kaydını yükle ya da kütüphanendeki bir parçayı seç.": "This audio source can't be used. Upload your own recording or pick a track from your library."
+    "Bu ses kaynağı kullanılamaz. Kendi kaydını yükle ya da kütüphanendeki bir parçayı seç.": "This audio source can't be used. Upload your own recording or pick a track from your library.",
+    // stüdyo araçları: dalga formu, cover / uzat / bölüm değiştir
+    "Başlangıç": "Start", "Bitiş": "End", "Yeni bölüm bu noktadan sonra başlar": "The new part starts after this point", "yeni bölüm": "new part",
+    "Dokun: oradan dinle · Tutamaçları sürükle": "Tap to listen from there · Drag the handles", "Dokun ya da sürükle: devam noktası": "Tap or drag: continue point",
+    "0,5 sn geri": "Back 0.5 s", "0,5 sn ileri": "Forward 0.5 s", "Seçimi dinle": "Play selection", "Geçişi dinle": "Play lead-in", "Durdur": "Stop",
+    "Bu sözleri düzenle": "Edit these lyrics", "Seçili bölümdeki sözler": "Lyrics in the selection", "Devam noktasından önceki son satırlar": "Last lines before the continue point",
+    "Dalga formu yükleniyor…": "Loading waveform…", "Dalga formu gösterilemiyor; dinleyerek seçebilirsin.": "Waveform unavailable; you can still choose by listening.",
+    "Bu parçanın sesi hazır değil": "This track's audio isn't ready", "Düzenle": "Edit", "Dalga formu yok — dinleyerek seç": "No waveform — choose by listening",
+    "Yeni sözler (isteğe bağlı)": "New lyrics (optional)", "Tüm sözler": "Full lyrics", "Stil (boş: aynı stil)": "Style (empty: same style)",
+    "Şarkının tüm sözleri (düzenlenmiş)": "Full song lyrics (edited)", "Devam bölümünün sözleri (boş: yapay zekâ yazar)": "Lyrics for the new part (empty: AI writes them)",
+    "Sözler (boş bırakırsan yapay zekâ yazar)": "Lyrics (leave empty and AI writes them)", "Yeni stil — ör. akustik gitar, lo-fi, 90lar rap": "New style — e.g. acoustic guitar, lo-fi, 90s rap",
+    "Vokalli": "With vocals", "Enstrümantal": "Instrumental", "Kaynağa bağlılık": "Source strength", "Çeşitlilik": "Variety", "Oto": "Auto",
+    "Kaçınılacaklar — ör. davul, distorsiyon": "Exclude — e.g. drums, distortion", "Model": "Model", "Dengeli": "Balanced", "Hızlı": "Fast", "Deneysel": "Experimental",
+    "Parçayı seçtiğin noktadan itibaren yeni bir bölümle devam ettirir. Sonuç, uzatılmış şarkının tamamıdır.": "Continues the track with a new part from the point you choose. The result is the full extended song.",
+    "Parçanın ana melodisini korur; stilini, sesini ve sözlerini değiştirir.": "Keeps the track's core melody and changes its style, voice and lyrics.",
+    "Seçtiğin aralık yeniden üretilir, şarkının geri kalanı aynı kalır. Aralık en az 10 sn, en çok şarkının yarısı olabilir.": "The selected range is regenerated and the rest of the song stays the same. The range must be at least 10 s and at most half the song.",
+    "Üretim başarısız oldu.": "Generation failed.", "İşlem şu an yapılamadı. Biraz sonra tekrar dene.": "Couldn't do that right now. Try again in a moment."
   };
   const MONTHS = { Ocak: "January", Şubat: "February", Mart: "March", Nisan: "April", Mayıs: "May", Haziran: "June", Temmuz: "July",
     Ağustos: "August", Eylül: "September", Ekim: "October", Kasım: "November", Aralık: "December" };
@@ -118,7 +134,8 @@
     [/^Kayıt en az (\d+) saniye olmalı$/, "Recording must be at least $1 seconds"], [/^Ses en az (\d+) saniye olmalı$/, "Audio must be at least $1 seconds"],
     [/^Ses en fazla (\d+) dakika olabilir$/, "Audio can be at most $1 minutes"], [/^Dosya en fazla (\d+) MB olabilir$/, "File can be at most $1 MB"],
     [/^Bağlantıyı (.+) adresine gönderdik\. Gelen kutunu ve spam klasörünü kontrol et\.$/, "We sent the link to $1. Check your inbox and spam folder."],
-    [/^(.+) ile giriş$/, "Signed in with $1"]
+    [/^(.+) ile giriş$/, "Signed in with $1"],
+    [/^([\d.]+) sn$/, "$1 s"], [/^en az (\d+) sn$/, "min $1 s"], [/^en çok (.+)$/, "max $1"], [/^(Yeni stil|Stil) — şu an: (.+)$/, (m, k, v) => (k === "Stil" ? "Style" : "New style") + " — now: " + v]
   ];
   // kullanıcı içeriği: çevrilmez
   const SKIP = "#fpLyr,.song:not(.pin) .t,.gc-t,#fpTitle,#miniTitle,#lfTitle,#fpStyle,.np-q-t b,.menu-head b,script,style,textarea,[data-noi18n]";

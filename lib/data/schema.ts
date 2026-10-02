@@ -51,9 +51,10 @@ export interface AppConfig {
     titles: string[];
     beatTags: string;
   };
-  kie: {
+  // Üretim motoru ayarları. models[].id sunucuya gider (V6…), label/note yalnız arayüzde görünür (Cook v1…)
+  engine: {
     defaultModel: string;
-    models: { id: string; label: string }[];
+    models: { id: string; label: string; note?: string }[];
     limits: Record<string, number>;
     mediaRetentionDays: number;
     pollIntervalMs: number;

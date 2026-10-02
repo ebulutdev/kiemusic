@@ -4,7 +4,7 @@
 //
 // Giriş: Apple, Google, e-posta+şifre, misafir → arayüz: public/auth.js ("fb-auth" olayı + FB.auth)
 // Okuma maliyeti: toplam 3 dinleyici
-//   config/app           → fiyat + katalog + KIE ayarları (tek belge)
+//   config/app           → fiyat + katalog + motor ayarları (tek belge)
 //   users/{uid}          → kredi + ayarlar + personalar + sesler (tek belge)
 //   users/{uid}/tracks   → kütüphane (yalnız değişen belgeler gelir)
 // Yazma maliyeti:
