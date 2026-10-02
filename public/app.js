@@ -432,7 +432,7 @@ function renderLib(){
   const liked=S.lib.filter(t=>t.like===1).length;
   const pin=S.filter==='all'&&!q&&!grid?`<button class="song pin" id="pinLiked"><span class="thumb liked">${ic('like',24)}</span><div class="song-body"><div class="song-t"><span class="t">Beğenilen şarkılar</span></div><div class="song-s">Liste • ${liked} şarkı</div></div></button>`:'';
   const L=$('#libList');L.classList.toggle('lgrid',grid);
-  L.innerHTML=it.length?pin+it.map(grid?card:row).join(''):pin+`<div class="empty">${S.lib.length?'Sonuç yok':'Kütüphane boş'}</div>`;
+  L.innerHTML=it.length?pin+it.map(grid?card:row).join(''):pin+`<div class="empty">${S.filter==='like'&&!q?'Beğendiğin şarkılar burada görünür':S.lib.length?'Sonuç yok':'Kütüphane boş'}</div>`;
 }
 $('#libList').addEventListener('click',e=>{if(e.target.closest('#pinLiked')){S.filter='like';renderLib()}});
 $('#sortBtn').onclick=()=>{S.sort=S.sort==='new'?'old':'new';renderLib()};
@@ -447,19 +447,55 @@ document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(
   const list=s.closest('#libList,#feed'),ids=[...list.querySelectorAll('[data-id]')].map(x=>x.dataset.id),name=list.id==='feed'?'Son üretilenler':S.filter==='like'?'Beğenilen şarkılar':'Kütüphane';
   if(a.dataset.act==='play')play(t.id,false,ids,name);if(a.dataset.act==='open')play(t.id,true,ids,name);if(a.dataset.act==='more')openMenu(t.id)});
 
+/* uzun bas → parça menüsü */
+(()=>{let tm=0,sx=0,sy=0,fired=false;const lists='#libList,#feed';
+  document.addEventListener('pointerdown',e=>{const s=e.target.closest('[data-id]');if(!s||!s.closest(lists))return;fired=false;sx=e.clientX;sy=e.clientY;clearTimeout(tm);
+    tm=setTimeout(()=>{fired=true;if(navigator.vibrate)try{navigator.vibrate(8)}catch(_){}openMenu(s.dataset.id)},480)},{passive:true});
+  document.addEventListener('pointermove',e=>{if(tm&&Math.hypot(e.clientX-sx,e.clientY-sy)>10){clearTimeout(tm);tm=0}},{passive:true});
+  ['pointerup','pointercancel','scroll'].forEach(ev=>document.addEventListener(ev,()=>{clearTimeout(tm);tm=0},{passive:true,capture:true}));
+  document.addEventListener('click',e=>{if(fired&&e.target.closest(lists)){e.stopPropagation();e.preventDefault();fired=false}},true);
+  document.addEventListener('contextmenu',e=>{if(e.target.closest(lists))e.preventDefault()})})();
 /* ---------- sheet / menu ---------- */
 function openSheet(html){const sh=$('#sheet');sh.innerHTML='<div class="grab" id="shGrab"></div>'+html;openLayer(sh);swipeClose($('#shGrab'),sh)}
+// araç uygunluğu: bu parça bu araçla işlenebilir mi?
+function toolFits(key,t){const T=TOOLS[key];if(!T||!t)return false;const f=(T.f||[]).find(x=>x.k==='src');if(!f)return true;
+  return f.only==='inst'?!isVocal(t):f.only==='song'?t.output==='song':f.only==='nostem'?!t.kind:true}
 function openMenu(id){
-  const t=S.lib.find(x=>x.id===id);if(!t)return;const ready=t.status==='ready';
-  const it=[['play','Oynat','play'],['like',t.like===1?'Beğeniyi kaldır':'Beğen','thumbUp'],['extend','Uzat','extend'],['cover','Cover','cover']];
-  if(t.output!=='song')it.push(['vocals','Vokal ekle','vocals']);if(!t.kind)it.push(['stems','Stemlere ayır','stems']);
-  it.push(['replace','Bölüm değiştir','scissors'],['persona','Persona oluştur','persona'],['share','Paylaş','share']);if(t.audioUrl)it.push(['download','İndir','download']);
-  openSheet(`<div class="menu-head"><span class="thumb">${art(t)}</span><div><b>${esc(t.title)}</b><small>${KIND[t.output]} · v${t.version}</small></div></div>
-    <div class="menu">${it.map(([k,l,i])=>`<button data-m="${k}" ${!ready&&!['play','like'].includes(k)?'disabled':''}>${ic(i,22)}${l}</button>`).join('')}<button class="del" data-m="delete">${ic('trash',22)}Sil</button></div>`);
-  $('#sheet').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const m=b.dataset.m;closeLayer($('#sheet'));
-    if(m==='play')play(id,true);else if(m==='like')setLike(t,1);else if(m==='share')share(t);else if(m==='download')window.open(t.audioUrl,'_blank');
-    else if(m==='delete'){if(P.cur&&P.cur.id===id)stopAll();S.lib=S.lib.filter(x=>x.id!==id);save();renderAll();toast('Silindi')}
-    else openTool(m,id)});
+  const t=findT(id);if(!t)return;const ready=t.status==='ready',live=!!(API.live&&t.audioId);
+  const tools=['extend','cover','vocals','stems','replace','persona'].filter(k=>toolFits(k,t));
+  const cost=k=>{const c=TOOLS[k].cost;return c?`<small>${c}</small>`:''};
+  openSheet(`<div class="tm-head"><span class="thumb cov">${art(t)}</span><div><b>${esc(t.title)}</b><small>${esc(KIND[t.output]||'Şarkı')} • ${modelTag(t)}${t.duration?' • '+fmt(t.duration):''}</small></div></div>
+    <div class="tm-quick">
+      <button class="tm-q${t.like===1?' on':''}" data-m="like" ${ready?'':'disabled'}>${ic(t.like===1?'like':'heart',22)}<span>${t.like===1?'Beğenildi':'Beğen'}</span></button>
+      <button class="tm-q" data-m="next" ${ready?'':'disabled'}>${ic('queue',22)}<span>Sonra çal</span></button>
+      <button class="tm-q" data-m="share" ${ready?'':'disabled'}>${ic('share',22)}<span>Paylaş</span></button>
+    </div>
+    <div class="tm-sec">Stüdyo'ya gönder</div>
+    <div class="tm-tools">${tools.map(k=>`<button class="tm-t" data-m="${k}" ${ready?'':'disabled'}>${ic(TOOLS[k].ic,22)}<span>${TOOLS[k].n}</span>${cost(k)}</button>`).join('')}</div>
+    ${live?'':`<p class="tm-note">${ready?'Stüdyo işlemleri sunucuya bağlıyken çalışır.':'Parça hâlâ üretiliyor.'}</p>`}
+    <div class="menu"><button data-m="play" ${ready?'':'disabled'}>${ic('play',22)}Oynat</button>${t.audioUrl?`<button data-m="download">${ic('download',22)}İndir</button>`:''}<button class="del" data-m="delete">${ic('trash',22)}Sil</button></div>`);
+  $('#sheet').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const m=b.dataset.m;
+    if(m==='like'){setLike(t,1);b.classList.toggle('on',t.like===1);b.innerHTML=`${ic(t.like===1?'like':'heart',22)}<span>${t.like===1?'Beğenildi':'Beğen'}</span>`;return}
+    closeLayer($('#sheet'));
+    if(m==='play')play(id,true);else if(m==='next')playNext(t);else if(m==='share')share(t);else if(m==='download')window.open(t.audioUrl,'_blank');
+    else if(m==='delete')removeTrack(t);
+    else{if(!live)return toast(ready?'Stüdyo işlemleri sunucuya bağlıyken çalışır.':'Hâlâ üretiliyor');if($('#fp').classList.contains('open'))closeLayer($('#fp'));openTool(m,id)}});
+}
+function playNext(t){
+  if(!P.cur||!hasMedia()){play(t.id,false,[t.id]);return}
+  if(P.cur.id===t.id)return toast('Şu an çalıyor');
+  let qi=P.qids.indexOf(t.id);if(qi<0){P.qids.push(t.id);qi=P.qids.length-1}
+  const at=P.order.indexOf(qi);if(at>=0){P.order.splice(at,1);if(at<=P.pos)P.pos--}
+  P.order.splice(P.pos+1,0,qi);syncPlayer();toast('Sıraya eklendi');
+}
+// silme: hemen kaldır, 5 sn "Geri al"
+let snackT,undoBuf=null;
+function snack(msg,act,fn){const s=$('#snack');$('#snackMsg').textContent=msg;$('#snackAct').textContent=act||'';$('#snackAct').hidden=!act;$('#snackAct').onclick=()=>{s.classList.remove('show');clearTimeout(snackT);fn&&fn()};
+  s.classList.add('show');clearTimeout(snackT);snackT=setTimeout(()=>s.classList.remove('show'),5000)}
+function removeTrack(t){
+  const idx=S.lib.indexOf(t);if(idx<0)return;if(P.cur&&P.cur.id===t.id)stopAll();
+  S.lib.splice(idx,1);save();renderAll();undoBuf={t,idx};
+  snack('Silindi','Geri al',()=>{if(!undoBuf)return;S.lib.splice(Math.min(undoBuf.idx,S.lib.length),0,undoBuf.t);undoBuf=null;save();renderAll()});
 }
 function setLike(t,v){t.like=t.like===v?0:v;save();renderAll();syncPlayer()}
 async function share(t){const txt=`${t.title} — SoundForge`;try{if(navigator.share){await navigator.share({title:t.title,text:txt});return}}catch(e){return}try{await navigator.clipboard.writeText(txt);toast('Kopyalandı')}catch(e){toast(txt)}}
@@ -480,7 +516,10 @@ const TOOLS={
 const isVocal=t=>t.output==='song'||t.output==='stemv';
 function srcOptions(only,sel){return S.lib.filter(t=>t.status==='ready'&&t.audioId&&(only==='inst'?!isVocal(t):only==='song'?t.output==='song':only==='nostem'?!t.kind:true)).map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${esc(t.title)} · v${t.version}</option>`).join('')}
 function fieldHTML(f,sel){
-  if(f.k==='src'){const o=srcOptions(f.only,sel);return o?`<select class="inp" name="src">${o}</select>`:'<div class="empty" style="padding:18px 0">Uygun parça yok — önce bir şarkı üret</div>'}
+  if(f.k==='src'){const L=S.lib.filter(t=>t.status==='ready'&&t.audioId&&(f.only==='inst'?!isVocal(t):f.only==='song'?t.output==='song':f.only==='nostem'?!t.kind:true));
+    if(!L.length)return '<div class="empty" style="padding:18px 0">Uygun parça yok — önce bir şarkı üret</div>';
+    const cur=L.some(t=>t.id===sel)?sel:L[0].id;
+    return `<div class="sp-lbl">Parça seç</div><input type="hidden" name="src" value="${cur}"><div class="scroll-x sp-row">${L.map(t=>`<button type="button" class="sp${t.id===cur?' on':''}" data-sp="${t.id}"><span class="sp-a cov">${art(t)}</span><b>${esc(t.title)}</b><small>${esc(KIND[t.output]||'')} • ${fmt(t.duration)}</small></button>`).join('')}</div>`}
   if(f.k==='range2')return `<div class="row2"><label class="fl">Başlangıç (sn)<input class="inp" type="number" name="from" value="30" min="0" step="1" inputmode="numeric"></label><label class="fl">Bitiş (sn)<input class="inp" type="number" name="to" value="45" min="0" step="1" inputmode="numeric"></label></div>`;
   if(f.k==='rec')return '<div class="phrase" id="vPhrase" hidden></div><div id="vRec"></div><p class="hint" id="vHint">10–60 sn şarkı söyle ya da rap yap. Arka plan sessiz olsun.</p>';
   const only=f.only?` data-only="${f.only}"`:'';
@@ -504,6 +543,9 @@ function openTool(key,srcId){
   $('#toolTitle').textContent=T.n;$('#toolBody').innerHTML=T.f.map(f=>fieldHTML(f,srcId)).join('');$('#toolErr').textContent='';
   $('#toolBody').querySelectorAll('.seg').forEach(sg=>bindSeg(sg,v=>{sg.dataset.val=v;setToolGo(key)}));
   $('#toolBody').querySelector('[name=src]')?.addEventListener('change',()=>syncTool(key));
+  $('#toolBody').querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{const inp=$('#toolBody [name=src]');if(inp.value===b.dataset.sp)return;inp.value=b.dataset.sp;
+    $$('#toolBody .sp').forEach(x=>x.classList.toggle('on',x===b));inp.dispatchEvent(new Event('change'))});
+  requestAnimationFrame(()=>{const on=$('#toolBody .sp.on');if(on)on.scrollIntoView({inline:'center',block:'nearest'})});
   $('#toolBody').querySelector('[name=full]')?.addEventListener('input',e=>e.target.dataset.touched=1);
   syncTool(key);setToolGo(key);
   if(key==='voice'){V.step=1;V.phraseTask='';VREC=createRecorder($('#vRec'),{minSec:10,maxSec:60,label:'Ses örneği',upload:uploadBlob})}

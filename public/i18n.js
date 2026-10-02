@@ -34,7 +34,7 @@
     "Yeniden üret": "Regenerate", "Devam noktası": "Continue from", "Yeni bölümün sözleri": "Lyrics for the new section",
     "Yeni bölümün sözleri gerekli": "Lyrics for the new section are required", "Şarkının tüm sözleri gerekli": "Full song lyrics are required",
     "Ad gerekli": "Name required", "Ses adı": "Voice name", "Ses adı gerekli": "Voice name required", "Sahne adı": "Stage name", "Sahne": "Stage",
-    "Sanatçı": "Artist", "Geri": "Back", "senin.": "is yours.", "Sesi oluştur": "Create voice", "Ses örneği": "Voice sample", "Önce ses örneği kaydet": "Record a voice sample first",
+    "Sanatçı": "Artist", "Sonra çal": "Play next", "Sıraya eklendi": "Added to queue", "Beğenildi": "Liked", "Stüdyo'ya gönder": "Send to Studio", "Geri al": "Undo", "Parça seç": "Pick a track", "Stüdyo işlemleri sunucuya bağlıyken çalışır.": "Studio actions work when the server is connected.", "Parça hâlâ üretiliyor.": "Track is still generating.", "Beğendiğin şarkılar burada görünür": "Songs you like show up here", "Geri": "Back", "senin.": "is yours.", "Sesi oluştur": "Create voice", "Ses örneği": "Voice sample", "Önce ses örneği kaydet": "Record a voice sample first",
     "Doğrulama": "Verification", "Cümle hazırlanıyor…": "Preparing phrase…", "Doğrulama cümlesi alınamadı": "Couldn't get the verification phrase",
     "Bu cümleyi kendi sesinle oku ya da söyle": "Read or sing this phrase in your own voice",
     "Cümlenin tamamını net bir sesle kaydet.": "Record the whole phrase clearly.", "Önce cümleyi okuyup kaydet": "Read and record the phrase first",
