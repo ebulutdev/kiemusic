@@ -181,7 +181,10 @@ function exBuild(){
   if(!GENRES.length){EX.built=false;return} // katalog (config/app) henüz gelmedi
   if(EX.built&&w===EX.w&&hh===EX.h){exRender();return}
   const keep=EX.built?EX.focus:-1;EX.w=w;EX.h=hh;
-  const T=EX.T=Math.round(clamp(Math.min(w,hh)*.34,108,176)),G=Math.round(T*.2),sx=EX.sx=T+G,sy=EX.sy=Math.round(sx*.87),cols=7,rows=8;
+  const T=EX.T=Math.round(clamp(Math.min(w,hh)*.34,108,176)),G=Math.round(T*.2),sx=EX.sx=T+G,sy=EX.sy=Math.round(sx*.87);
+  // sonsuz döngü: ızgara, ekranın her yönde en az yarım ekran + kenar payı fazlası kadar büyük → aynı karolar kesintisiz tekrar eder
+  const cols=Math.max(8,2*Math.ceil((w/2+1.45*T)/sx)+2);let rows=Math.max(10,Math.ceil((hh+2.9*T)/sy)+2);if(rows%2)rows++;
+  EX.W=cols*sx;EX.H=rows*sy;
   let html='';EX.tiles=[];
   for(let r=0,k=0;r<rows;r++)for(let c=0;c<cols;c++,k++){
     const g=GENRES[k%GENRES.length],x=c*sx+(r%2?sx/2:0),y=r*sy,d=Math.hypot(c+(r%2?.5:0)-cols/2+.25,r-(rows-1)/2);
@@ -189,14 +192,13 @@ function exBuild(){
     const [sa,sb]=tileImgs(hash('ex'+g[0]+k));html+=`<button class="ex-tile" data-i="${k}" tabindex="-1" aria-label="${esc(g[0])}" style="width:${T}px;height:${T}px"><span class="ex-in" style="animation-delay:${Math.round(d*80)}ms"><img class="ex-a" src="${sa}" alt="" draggable="false"><img class="ex-b" src="${sb}" alt="" draggable="false"></span></button>`;
   }
   $('#exGrid').innerHTML=html;$$('#exGrid .ex-tile').forEach((el,i)=>{EX.tiles[i].el=el;EX.tiles[i].bEl=el.querySelector('.ex-b');el.style.zIndex=1});
-  const xs=EX.tiles.map(t=>t.x),ys=EX.tiles.map(t=>t.y);EX.b={x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys)};
   EX.built=true;EX.focus=-1;
-  const t=EX.tiles[keep>=0?keep:3*cols+3];EX.cx=t.x;EX.cy=t.y;EX.vx=EX.vy=0;EX.tx=null;exRender();
+  const t=EX.tiles[keep>=0&&keep<EX.tiles.length?keep:Math.floor(rows/2)*cols+Math.floor(cols/2)];EX.cx=t.x;EX.cy=t.y;EX.vx=EX.vy=0;EX.tx=null;exRender();
 }
 function exRender(){
-  const w2=EX.w/2,h2=EX.h/2,R=Math.min(EX.w,EX.h)*.68,half=EX.T/2,mx=w2+EX.T*1.3,my=h2+EX.T*1.3;let best=-1,bd=1e12;
+  const w2=EX.w/2,h2=EX.h/2,R=Math.min(EX.w,EX.h)*.68,half=EX.T/2,mx=w2+EX.T*1.3,my=h2+EX.T*1.3,W=EX.W,H=EX.H;let best=-1,bd=1e12;
   for(let i=0;i<EX.tiles.length;i++){
-    const t=EX.tiles[i],dx=t.x-EX.cx,dy=t.y-EX.cy,d=dx*dx+dy*dy;if(d<bd){bd=d;best=i}
+    const t=EX.tiles[i];let dx=t.x-EX.cx,dy=t.y-EX.cy;dx-=Math.round(dx/W)*W;dy-=Math.round(dy/H)*H;const d=dx*dx+dy*dy;if(d<bd){bd=d;best=i}
     if(dx>mx||dx<-mx||dy>my||dy<-my){if(!t.off){t.el.style.visibility='hidden';t.off=true}continue}
     if(t.off!==false){t.el.style.visibility='visible';t.off=false}
     const e=Math.min(1,Math.sqrt(d)/R),s=1.34-.74*Math.pow(e,1.25),k=1-.17*e;
@@ -216,7 +218,7 @@ function exLoop(now){
     const K=64,C=2*Math.sqrt(K)*.92;                 // soft, barely-underdamped spring
     EX.vx+=(-K*(EX.cx-EX.tx)-C*EX.vx)*dt;EX.vy+=(-K*(EX.cy-EX.ty)-C*EX.vy)*dt;
     EX.cx+=EX.vx*dt;EX.cy+=EX.vy*dt;
-    if(Math.abs(EX.cx-EX.tx)<.25&&Math.abs(EX.cy-EX.ty)<.25&&Math.hypot(EX.vx,EX.vy)<3){EX.cx=EX.tx;EX.cy=EX.ty;EX.vx=EX.vy=0;EX.tx=null}
+    if(Math.abs(EX.cx-EX.tx)<.25&&Math.abs(EX.cy-EX.ty)<.25&&Math.hypot(EX.vx,EX.vy)<3){EX.cx=((EX.tx%EX.W)+EX.W)%EX.W;EX.cy=((EX.ty%EX.H)+EX.H)%EX.H;EX.vx=EX.vy=0;EX.tx=null}
   }
   exRender();
   const busy=EX.drag||EX.tx!=null;
@@ -226,16 +228,17 @@ function exStart(){EX.run=true;if(!EX.raf){EX.last=0;EX.raf=requestAnimationFram
 function exWake(){EX.run=true;if(!EX.raf){EX.last=0;EX.raf=requestAnimationFrame(exLoop)}}
 function exStop(){EX.run=false;if(EX.raf)cancelAnimationFrame(EX.raf);EX.raf=0}
 function exReplay(){const e=$('#explore');e.classList.remove('shown');void e.offsetWidth;e.classList.add('shown')}
-function exNearest(x,y){let b=0,bd=1e18;EX.tiles.forEach((t,i)=>{const d=(t.x-x)**2+(t.y-y)**2;if(d<bd){bd=d;b=i}});return b}
-function exGoTo(i){const t=EX.tiles[i];if(!t)return;EX.tx=t.x;EX.ty=t.y;exStart()}
+const wrapD=(d,P)=>d-Math.round(d/P)*P;
+function exNearest(x,y){let b=0,bd=1e18;EX.tiles.forEach((t,i)=>{const dx=wrapD(t.x-x,EX.W),dy=wrapD(t.y-y,EX.H),d=dx*dx+dy*dy;if(d<bd){bd=d;b=i}});return b}
+// hedef: karonun, referans noktaya (kamera ya da kayış ucu) en yakın kopyası
+function exGoTo(i,rx=EX.cx,ry=EX.cy){const t=EX.tiles[i];if(!t)return;EX.tx=rx+wrapD(t.x-rx,EX.W);EX.ty=ry+wrapD(t.y-ry,EX.H);exStart()}
 function exOpen(){const t=EX.tiles[EX.focus];if(t)openCreate('custom',{style:t.g[1]})}
 function initExplore(){
   const st=EX.stage=$('#exStage');
   st.addEventListener('pointerdown',e=>{if(e.button>0)return;try{st.setPointerCapture(e.pointerId)}catch(_){}
     EX.drag=true;EX.tx=null;EX.vx=EX.vy=0;EX.px=e.clientX;EX.py=e.clientY;EX.pt=performance.now();EX.moved=0;EX.down=e.target.closest('.ex-tile');st.classList.add('drag');exStart()});
   st.addEventListener('pointermove',e=>{if(!EX.drag)return;
-    const now=performance.now(),dx=e.clientX-EX.px,dy=e.clientY-EX.py,dt=Math.max(8,now-EX.pt)/1000,b=EX.b;
-    const rx=EX.cx<b.x0||EX.cx>b.x1?.32:1,ry=EX.cy<b.y0||EX.cy>b.y1?.32:1;   // rubber band past edges
+    const now=performance.now(),dx=e.clientX-EX.px,dy=e.clientY-EX.py,dt=Math.max(8,now-EX.pt)/1000,rx=1,ry=1;   // kenar yok: sonsuz
     EX.cx-=dx*rx;EX.cy-=dy*ry;
     EX.vx=EX.vx*.7+(-dx*rx/dt)*.3;EX.vy=EX.vy*.7+(-dy*ry/dt)*.3;
     EX.px=e.clientX;EX.py=e.clientY;EX.pt=now;EX.moved+=Math.abs(dx)+Math.abs(dy)});
@@ -243,16 +246,16 @@ function initExplore(){
     if(EX.moved<8&&EX.down){const i=+EX.down.dataset.i;EX.vx=EX.vy=0;if(i===EX.focus)exOpen();else exGoTo(i);return}
     if(performance.now()-EX.pt>80){EX.vx=EX.vy=0}                                   // finger rested before lifting
     const V=3200;EX.vx=clamp(EX.vx,-V,V);EX.vy=clamp(EX.vy,-V,V);
-    const b=EX.b,px=clamp(EX.cx+EX.vx*.26,b.x0,b.x1),py=clamp(EX.cy+EX.vy*.26,b.y0,b.y1);  // project the glide, land on nearest tile
-    exGoTo(exNearest(px,py))};
+    const px=EX.cx+EX.vx*.3,py=EX.cy+EX.vy*.3;  // kayışı öngör, en yakın karoya otur
+    exGoTo(exNearest(px,py),px,py)};
   st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end);
   st.addEventListener('contextmenu',e=>e.preventDefault());
-  let wt;st.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaMode===1?18:1,b=EX.b;EX.tx=null;EX.vx=EX.vy=0;
-    EX.cx=clamp(EX.cx+e.deltaX*f*.9,b.x0-40,b.x1+40);EX.cy=clamp(EX.cy+e.deltaY*f*.9,b.y0-40,b.y1+40);exStart();
+  let wt;st.addEventListener('wheel',e=>{e.preventDefault();const f=e.deltaMode===1?18:1;EX.tx=null;EX.vx=EX.vy=0;
+    EX.cx+=e.deltaX*f*.9;EX.cy+=e.deltaY*f*.9;exStart();
     clearTimeout(wt);wt=setTimeout(()=>exGoTo(exNearest(EX.cx,EX.cy)),150)},{passive:false});
   document.addEventListener('keydown',e=>{if(S.view!=='home'||stack.length||/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
     const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];const f=EX.tiles[EX.focus];
-    if(m&&f){e.preventDefault();exGoTo(exNearest(f.x+m[0]*EX.sx,f.y+m[1]*EX.sy))}else if(e.key==='Enter'&&f){e.preventDefault();exOpen()}});
+    if(m&&f){e.preventDefault();const fx=EX.cx+wrapD(f.x-EX.cx,EX.W)+m[0]*EX.sx,fy=EX.cy+wrapD(f.y-EX.cy,EX.H)+m[1]*EX.sy;exGoTo(exNearest(fx,fy),fx,fy)}else if(e.key==='Enter'&&f){e.preventDefault();exOpen()}});
   $('#exGo').innerHTML=ic('arrowUp',20);$('#exGo').firstChild.style.transform='rotate(45deg)';$('#exGo').onclick=exOpen;
   let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{exBuild();moveInd()},150)});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.view==='home')exStart()});
