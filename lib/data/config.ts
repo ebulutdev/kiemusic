@@ -1,17 +1,15 @@
-import { readFileSync } from "fs";
-import { join } from "path";
 import { adminDb } from "../firebaseAdmin";
 import { path, type AppConfig } from "./schema";
+// Derleme anında sunucu koduna gömülür. fs ile okunmamalı: Next'in dosya izleyicisi o zaman
+// public/config'i standalone çıktısına kopyalar, App Hosting de "public zaten var" deyip
+// public'in geri kalanını (index.html, app.js…) atlar → canlıda ana sayfa 404 olur.
+import seedConfig from "../../public/config/app.json";
 
 // config/app tek belge; sunucu 60 sn bellekte tutar → istek başına okuma yok.
 // Firestore'da yoksa / okunamazsa public/config/app.json (seed kaynağı) kullanılır.
 const TTL = 60_000;
 let cached: { at: number; value: AppConfig } | null = null;
-let fallback: AppConfig | null = null;
-
-function fileConfig(): AppConfig {
-  return (fallback ??= JSON.parse(readFileSync(join(process.cwd(), "public", "config", "app.json"), "utf8")));
-}
+const fileConfig = (): AppConfig => seedConfig as unknown as AppConfig;
 
 export async function getConfig(): Promise<AppConfig> {
   if (cached && Date.now() - cached.at < TTL) return cached.value;
