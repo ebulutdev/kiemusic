@@ -5,5 +5,16 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "emulators": {
+    "ui": {
+      "enabled": true
+    },
+    "singleProjectMode": true,
+    "apphosting": {
+      "port": 5002,
+      "rootDirectory": "./",
+      "startCommand": "npm run dev"
+    }
   }
 }
