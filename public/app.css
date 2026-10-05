@@ -567,6 +567,27 @@ input[type=range]{width:100%;accent-color:var(--accent);height:24px;margin:0}
 .sp small{display:block;font-size:11.5px;color:var(--muted)}
 .sp.on .sp-a{box-shadow:0 0 0 3px var(--accent),0 10px 22px rgba(0,0,0,.3);transform:scale(.95)}
 .sp.on b{color:var(--accent)}
+/* Yatay kaydırma (pencerelerde): taşan kenarda yumuşak kaybolma + cam ok düğmeleri; yön yoksa ok gizlenir */
+.sx-wrap{position:relative;--fl:0px;--fr:0px}
+.sx-wrap.can-l{--fl:52px}.sx-wrap.can-r{--fr:52px}
+.modal .sx-wrap>.scroll-x,#mCreate .sx-wrap>.chips.fade{-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent);mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent)}
+.sx-btn{position:absolute;top:50%;z-index:2;width:30px;height:30px;margin-top:-15px;border-radius:50%;display:grid;place-items:center;color:var(--text);
+  background:var(--surface2);background:color-mix(in srgb,var(--surface2) 78%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+  box-shadow:0 8px 20px rgba(0,0,0,.4),inset 0 0 0 1px var(--line);opacity:0;transform:scale(.7);pointer-events:none;
+  transition:opacity .22s,transform .25s cubic-bezier(.3,.8,.3,1.3),background .2s,color .2s}
+.sx-btn.prev{left:-8px}.sx-btn.prev .ic{transform:rotate(180deg)}
+.sx-btn.next{right:-8px}
+.sx-wrap.can-l .sx-btn.prev,.sx-wrap.can-r .sx-btn.next{opacity:1;transform:none;pointer-events:auto}
+.sx-btn:hover{background:var(--accent);color:var(--on-accent);box-shadow:0 8px 22px rgba(245,184,61,.35)}
+.sx-btn:active{transform:scale(.88)}
+.sx-tall .sx-btn{top:52px;width:36px;height:36px;margin-top:-18px}   /* parça kapağının ortası */
+/* İnce, temaya uyan kaydırma çubuğu (Windows'un gri oklu çubuğu yerine) */
+.ta,.modal textarea,.m-body{scrollbar-width:thin;scrollbar-color:rgba(160,150,140,.35) transparent}
+.ta::-webkit-scrollbar,.modal textarea::-webkit-scrollbar,.m-body::-webkit-scrollbar{width:10px;height:10px}
+.ta::-webkit-scrollbar-track,.modal textarea::-webkit-scrollbar-track,.m-body::-webkit-scrollbar-track{background:transparent;margin:12px}
+.ta::-webkit-scrollbar-thumb,.modal textarea::-webkit-scrollbar-thumb,.m-body::-webkit-scrollbar-thumb{background:rgba(160,150,140,.32);border:3px solid transparent;border-radius:99px;background-clip:padding-box}
+.ta::-webkit-scrollbar-thumb:hover,.modal textarea::-webkit-scrollbar-thumb:hover,.m-body::-webkit-scrollbar-thumb:hover{background-color:rgba(245,184,61,.6)}
+.ta::-webkit-scrollbar-button,.modal textarea::-webkit-scrollbar-button,.m-body::-webkit-scrollbar-button{display:none;width:0;height:0}
 .song,.gcard{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 
 /* ── onay kutuları (ses klonu izni, kayıt hakları) + içerik bildirimi ──

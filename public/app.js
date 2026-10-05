@@ -726,6 +726,17 @@ function openTool(key,srcId){
   $('#toolGo').disabled=false;$('#toolGo').onclick=()=>runTool(key);openLayer($('#mTool'));
 }
 $('#mTool')._onClose=()=>{if(WV){WV.destroy();WV=null}};
+// Pencerelerdeki yatay kaydırma satırları (parça seçici, stil etiketleri): taşan kenarda yumuşak geçiş + ok düğmeleri.
+// Satır .sx-wrap içine alınır; oklar yalnız o yönde kaydırılacak içerik varken görünür.
+function sxSync(w){const s=w.firstElementChild;if(!s)return;const m=s.scrollWidth-s.clientWidth;w.classList.toggle('can-l',s.scrollLeft>4);w.classList.toggle('can-r',m-s.scrollLeft>4)}
+function sxEnhance(s){if(s.parentElement&&s.parentElement.classList.contains('sx-wrap'))return;
+  const w=document.createElement('div');w.className='sx-wrap'+(s.classList.contains('sp-row')?' sx-tall':'');s.before(w);w.appendChild(s);
+  for(const d of [-1,1]){const b=document.createElement('button');b.type='button';b.className='sx-btn '+(d<0?'prev':'next');b.tabIndex=-1;
+    b.setAttribute('aria-label',d<0?'Geri kaydır':'İleri kaydır');b.innerHTML=ic('chevR',18);
+    b.onclick=e=>{e.preventDefault();e.stopPropagation();s.scrollBy({left:d*Math.max(160,s.clientWidth*.75),behavior:'smooth'})};w.appendChild(b)}
+  s.addEventListener('scroll',()=>sxSync(w),{passive:true});if(window.ResizeObserver)new ResizeObserver(()=>sxSync(w)).observe(s);sxSync(w)}
+const sxScan=()=>{$$('.modal .scroll-x').forEach(sxEnhance);$$('.sx-wrap').forEach(sxSync)};
+{const mo=new MutationObserver(()=>requestAnimationFrame(sxScan));$$('.modal').forEach(m=>mo.observe(m,{childList:true,subtree:true}));setTimeout(sxScan,0)}
 // Gelişmiş ayarlar → istek alanları (yalnız dokunulanlar)
 function advBody(b,vocal){const el=n=>b.querySelector(`[name="${n}"]`),touched=n=>el(n)&&el(n).dataset.touched,pc=n=>+el(n).value/100,out={};
   if(vocal&&touched('aw'))out.audioWeight=pc('aw');if(touched('sw'))out.styleWeight=pc('sw');if(touched('wc'))out.weirdnessConstraint=pc('wc');
