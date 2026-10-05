@@ -33,8 +33,11 @@ export async function patchConfig(fields: Record<string, unknown>) {
   invalidateConfig();
 }
 
-export async function getCost(taskType: string): Promise<number> {
-  const c = (await getConfig()).pricing.costs[taskType];
+/** Kullanıcı kredisi: önce modele özel fiyat (pricing.modelCosts[model][op]), yoksa pricing.costs[op]. İstemcideki costOf ile aynı kural. */
+export async function getCost(taskType: string, model?: string): Promise<number> {
+  const p = (await getConfig()).pricing;
+  const m = model ? p.modelCosts?.[model]?.[taskType] : undefined;
+  const c = typeof m === "number" ? m : p.costs[taskType];
   if (typeof c !== "number") throw new Error(`Fiyat tanımlı değil: ${taskType}`);
   return c;
 }

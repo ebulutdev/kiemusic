@@ -14,6 +14,7 @@
    "replace-section": 5,
    "split-stem": 25
   },
+  "modelCosts": {},
   "plans": [
    {
     "id": "plus_monthly",

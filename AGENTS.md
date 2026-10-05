@@ -24,6 +24,7 @@ Yanıt dili: Türkçe. Hedef: iOS/Android mobil uygulama (Capacitor 8, `ios/` + 
 - `firestore.rules` · `storage.rules` (seed yayınlar)
 
 ## Kurallar
+- Maliyet rozeti: istemci `costOf(op, model)` ↔ sunucu `getCost(op, model)`; fiyat yalnız `pricing.costs` + isteğe bağlı `pricing.modelCosts[model][op]` (app.json + seed). Rozet = kullanıcı kredisi, KIE token değil
 - Git / Dal Kuralı: Yapılan her geliştirme ve commit doğrudan 'main' dalında yapılacak. Kesinlikle yeni branch açılmayacak.
 - Sabit değer (fiyat, liste, model, limit) koda yazılmaz → `public/config/app.json` + `npm run db:seed`
 - Kredi yalnız sunucuda düşer/iade edilir (transaction); istemci sadece gösterir

@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data;
-    const cost = await getCost("generate");
+    const cost = await getCost("generate", data.model);
     await chargeCredits(user.uid, cost);
 
     let providerTaskId: string;
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      cost,
       task: { id: providerTaskId, providerTaskId, status: task.status },
     });
   } catch (error) {

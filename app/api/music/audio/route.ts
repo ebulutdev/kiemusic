@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     // Çoklu stem ayırma KIE'de daha pahalı → ayrı fiyat anahtarı
-    const cost = await getCost(data.taskType === "remove-vocals" && data.stemType === "split_stem" ? "split-stem" : data.taskType);
+    const cost = await getCost(data.taskType === "remove-vocals" && data.stemType === "split_stem" ? "split-stem" : data.taskType, data.model);
     await chargeCredits(user.uid, cost);
     let providerTaskId: string;
     try {
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
+      cost,
       task: { id: providerTaskId, providerTaskId, status: "QUEUED", taskType: data.taskType },
     });
   } catch (error) {

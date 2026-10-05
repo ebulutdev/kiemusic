@@ -51,7 +51,7 @@ export interface AppConfig {
   // Krediler aylıktır: her dönem (periodDays) sonunda bakiye sıfırlanır; abonelik varsa plan kredisine yenilenir (devretmez).
   // startCredits: yeni hesaba ilk dönem hediyesi · freeMonthly: planı olmayana her dönem verilen kredi (0 = yok)
   // plans: aylık abonelikler (id = App Store / Play abonelik ürün kimliği)
-  pricing: { startCredits: number; periodDays?: number; freeMonthly?: number; costs: Record<string, number>; plans?: PlanConfig[] };
+  pricing: { startCredits: number; periodDays?: number; freeMonthly?: number; costs: Record<string, number>; modelCosts?: Record<string, Record<string, number>>; plans?: PlanConfig[] };
   // Yasal metinler: /terms ve /privacy (public/terms.html, privacy.html) · version: sayfalardaki sürüm (hesap açılışında kabul kaydı)
   // contact: sayfalarda görünen iletişim e-postası (boşsa yer tutucu metin)
   legal?: { version: string; terms: string; privacy: string; contact?: string };
