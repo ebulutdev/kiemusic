@@ -876,8 +876,8 @@ async function load(t,dir){
 }
 function mkEl(){const el=new Audio();el.preload='auto';el.playsInline=true;
   el.addEventListener('playing',()=>{if(!isEl())return;P.playing=true;setLoading(false);loop()});
-  el.addEventListener('pause',()=>{if(!isEl())return;P.playing=false;syncIcons()});
-  el.addEventListener('waiting',()=>{if(isEl())setLoading(true)});
+  el.addEventListener('pause',()=>{if(!isEl())return;P.playing=false;setLoading(false);syncIcons()});
+  el.addEventListener('waiting',()=>{if(isEl()&&!el.paused)setLoading(true)}); // duraklatılmışken sarma döner simge bırakmasın
   el.addEventListener('ended',()=>{if(!isEl())return;P.playing=false;syncIcons();next(true)});
   el.addEventListener('error',()=>{if(!isEl()||!el.getAttribute('src'))return;const id=P.cur.id;setLoading(false);toast('Çalınamadı, sıradakine geçiliyor');setTimeout(()=>{if(P.cur&&P.cur.id===id)next(true)},900)});
   return el}
