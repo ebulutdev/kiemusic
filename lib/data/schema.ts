@@ -37,16 +37,35 @@ export const path = {
 export const storagePath = {
   upload: (uid: string, file: string) => `uploads/${uid}/${file}`,
   media:  (uid: string, taskId: string, file: string) => `media/${uid}/${taskId}/${file}`,
+  explore: (file: string) => `explore/${file}`, // keşfet kutusu müzikleri (yalnız admin)
 };
 
+export interface ExplorePreview { url: string; path: string; start: number; name?: string }
+
 // ── config/app ────────────────────────────────────────────
+// songs: yaklaşık şarkı sayısı (üretim 10 kredi = 2 şarkı)
+export interface PlanConfig { id: string; name: string; credits: number; price: number; currency: string; songs: number; best?: boolean }
+
 export interface AppConfig {
   version: number;
-  pricing: { startCredits: number; costs: Record<string, number> };
+  // Krediler aylıktır: her dönem (periodDays) sonunda bakiye sıfırlanır; abonelik varsa plan kredisine yenilenir (devretmez).
+  // startCredits: yeni hesaba ilk dönem hediyesi · freeMonthly: planı olmayana her dönem verilen kredi (0 = yok)
+  // plans: aylık abonelikler (id = App Store / Play abonelik ürün kimliği)
+  pricing: { startCredits: number; periodDays?: number; freeMonthly?: number; costs: Record<string, number>; plans?: PlanConfig[] };
+  // Yasal metinler: /terms ve /privacy (public/terms.html, privacy.html) · version: sayfalardaki sürüm (hesap açılışında kabul kaydı)
+  // contact: sayfalarda görünen iletişim e-postası (boşsa yer tutucu metin)
+  legal?: { version: string; terms: string; privacy: string; contact?: string };
+  // Kâr analizi (admin paneli düzenler): uygulama kredisinin $ değeri, üretim servisi kredisinin $ maliyeti,
+  // servis kredisi bilinmeyen görevler için işlem başına tahmini servis kredisi
+  economics?: { usdPerCredit: number; kieUsdPerCredit: number; kieCreditsEstimate: Record<string, number> };
   catalog: {
     styles: string[];
     ideas: string[];
-    genres: { name: string; style: string }[];
+    // preview: ana sayfa keşfet kutusunda çalan müzik (admin yükler; Storage explore/…)
+    // label: kutu altındaki yazı · prompt: ok'a basınca dolan metin · action: custom (bu tarzda üret) | cover (kutu müziğinin cover'ı)
+    genres: { name: string; style: string; label?: string; prompt?: string; action?: "custom" | "cover"; preview?: ExplorePreview | null }[];
+    exploreMax?: number;  // keşfette en fazla kaç farklı kutu (gerisi tekrar)
+    previewSec?: number;  // kutu müziğinin döngü uzunluğu (sn)
     lyrics: string[];
     titles: string[];
     beatTags: string;
@@ -87,8 +106,17 @@ export interface VoiceDoc {
   consentAt?: string | null;          // "bu ses bana ait" onayı (kalıcı kayıt: tasks/{id}.params.consent)
 }
 
+// Kredi dönemi (ms). grant: dönem başında verilen kredi (ilerleme çubuğu bunun içinden kalan bakiyeyi gösterir)
+export interface CreditPeriod { start: number; end: number; grant: number }
+// Aktif abonelik — yalnız sunucu yazar (mağaza makbuzu doğrulandıktan sonra). expiresAt: mağazanın yenileme tarihi (ms)
+export interface UserPlan { id: string; credits: number; expiresAt: number; store?: "apple" | "google"; tx?: string }
+
 export interface UserDoc {
   credits: number;
+  period?: CreditPeriod;
+  plan?: UserPlan | null;
+  guest?: boolean;
+  terms?: { version: string | null; at?: unknown }; // hesap açılışında kabul edilen Kullanım Koşulları / Gizlilik sürümü (yalnız sunucu yazar)
   settings?: { model?: string; theme?: string };
   personas?: Record<string, PersonaDoc>; // id → persona
   voices?: Record<string, VoiceDoc>;     // id → ses
@@ -124,6 +152,7 @@ export interface TaskDoc {
   callbackType?: string | null;
   cost: number;
   refunded: boolean;
+  kieCredits?: number; // üretim servisinin bu görev için gerçekten düştüğü kredi (recordInfo.creditsConsumed)
   params: Record<string, unknown>; // istekte gelen üretim parametreleri (boş alanlar atılır)
   results: TaskResult[];
   /** Ses olmayan sonuçlar: persona_id, validateInfo (doğrulama cümlesi), voiceId */

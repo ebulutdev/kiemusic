@@ -20,6 +20,9 @@ const apiBase = appUrl().replace(/\/+$/, "");
 if (!/^https:\/\//.test(apiBase)) throw new Error("API adresi https olmalı: " + apiBase);
 
 rmSync(out, { recursive: true, force: true });
-cpSync(join(root, "public"), out, { recursive: true, filter: (p) => !p.endsWith(".LEGAL.txt") });
+// Yönetim paneli (admin.*) yalnız web'de: mobil uygulama paketine girmez.
+// Yasal sayfalar (terms.html, privacy.html) pakette kalır → docs.js uygulama içinde çevrimdışı gösterir;
+// yalnız tarayıcıda açılan sayfanın stil/betiği (legal.css, legal.js) pakete girmez.
+cpSync(join(root, "public"), out, { recursive: true, filter: (p) => !p.endsWith(".LEGAL.txt") && !/[\\/](admin\.(html|js|css)|legal\.(js|css))$/.test(p) });
 writeFileSync(join(out, "env.js"), `// Otomatik üretildi (scripts/build-www.mjs)\nwindow.CR_ENV = { apiBase: ${JSON.stringify(apiBase)} };\n`);
 console.log("www hazır · API:", apiBase);

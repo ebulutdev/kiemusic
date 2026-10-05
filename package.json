@@ -12,7 +12,8 @@
     "mobile:build": "node scripts/build-www.mjs && npx cap sync",
     "mobile:ios": "npx cap open ios",
     "mobile:android": "npx cap open android",
-    "mobile:assets": "capacitor-assets generate --ios --android --iconBackgroundColor '#0B0A09' --iconBackgroundColorDark '#0B0A09' --splashBackgroundColor '#0B0A09' --splashBackgroundColorDark '#0B0A09'"
+    "mobile:assets": "capacitor-assets generate --ios --android --iconBackgroundColor '#0B0A09' --iconBackgroundColorDark '#0B0A09' --splashBackgroundColor '#0B0A09' --splashBackgroundColorDark '#0B0A09'",
+    "admin:grant": "node scripts/grant-admin.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",

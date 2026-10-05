@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { voicePhraseSchema } from "@/lib/validation";
 import { createKieTask } from "@/lib/kie";
-import { requireUser, errorResponse } from "@/lib/auth";
+import { requireAccount, errorResponse } from "@/lib/auth";
 import { createTask } from "@/lib/data/tasks";
 import { assertOwnUpload } from "@/lib/data/media";
 import { VOICE_CONSENT_VERSION } from "@/lib/validation";
@@ -11,7 +11,7 @@ import { VOICE_CONSENT_VERSION } from "@/lib/validation";
 // İstemci /api/music/tasks/{id} ile bekler; cümle gelince kullanıcı onu okuyup kaydeder (2. adım: /api/voice).
 export async function POST(request: Request) {
   try {
-    const user = await requireUser(request);
+    const user = await requireAccount(request);
     const parsed = voicePhraseSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ success: false, error: "Geçersiz istek", details: parsed.error.flatten() }, { status: 400 });

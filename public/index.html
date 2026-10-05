@@ -31,7 +31,7 @@
       <div class="explore" id="explore">
         <div class="ex-stage" id="exStage"><div id="exGrid"></div></div>
         <div class="ex-vig"></div>
-        <div class="ex-focus"><div class="ex-pill"><b id="exName">#trap</b><button class="ex-go" id="exGo" aria-label="Bu türle oluştur"></button></div></div>
+        <div class="ex-focus"><div class="ex-pill"><button class="ex-snd" id="exSnd" aria-label="Ses"></button><b id="exName">#trap</b><button class="ex-go" id="exGo" aria-label="Bu türle oluştur"></button></div></div>
       </div>
     </section>
 
@@ -54,11 +54,16 @@
     <!-- PROFILE -->
     <section class="view" id="v-profile" hidden>
       <div class="p-head"><span class="p-av" id="pAv"></span><div><b>Profilim</b><small id="pCount">0 parça</small><small id="pMode" style="display:block"></small></div></div>
-      <div class="credit-card"><div class="n"><span class="cr">0</span><small>kredi</small></div><div class="meter"><i id="meter"></i></div></div>
+      <div class="credit-card" role="button" tabindex="0" aria-label="Kredi ve planlar">
+        <div class="cc-top"><div class="n"><span class="cr">0</span><small><span id="ccOf"></span> kredi</small></div><span class="cc-plan" id="ccPlan">Ücretsiz</span></div>
+        <div class="meter" role="progressbar" aria-label="Bu dönem kalan kredi" aria-valuemin="0" aria-valuemax="100"><i id="meter"></i></div>
+        <div class="cc-meta"><span id="ccMeta"></span><span class="cc-go"><span id="ccGo">Planlar</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></div>
+      </div>
       <div class="form">
         <div><div class="lbl">Dil</div><div class="seg" id="langSeg"><button data-v="tr" class="on">Türkçe</button><button data-v="en">English</button></div></div>
         <div><div class="lbl">Tema</div><div class="seg" id="themeSeg"><button data-v="auto" class="on">Sistem</button><button data-v="light">Açık</button><button data-v="dark">Koyu</button></div></div>
         <div><div class="lbl">Varsayılan model</div><select class="inp" id="defModel"><option value="V6">Cook v1</option><option value="V6_MINI">Cook v2</option><option value="V6_WILD">Cook v3</option></select></div>      </div>
+      <nav class="p-legal" aria-label="Yasal"><a href="/terms" data-legal="terms" target="_blank" rel="noopener">Kullanım Koşulları</a><a href="/privacy" data-legal="privacy" target="_blank" rel="noopener">Gizlilik Politikası</a></nav>
     </section>
   </main>
 
@@ -142,7 +147,7 @@
       </div>
       <textarea class="ta" id="aLyrics" rows="5" maxlength="5000" placeholder="Sözler" hidden></textarea>
       <div class="fg-row"><input class="inp" id="aTitle" maxlength="80" placeholder="Başlık"><input class="inp" id="aStyle" maxlength="1000" placeholder="Stil"></div>
-      <label class="chk" id="aRightsWrap"><input type="checkbox" id="aRights"><span>Bu kaydın haklarına sahibim ya da kullanma iznim var. Telifli bir şarkıyı izinsiz yüklemiyorum.</span></label>
+      <label class="chk" id="aRightsWrap"><input type="checkbox" id="aRights"><span>Bu kaydın haklarına sahibim ya da kullanma iznim var. Telif ve diğer haklardan doğan sorumluluk bana aittir.</span></label>
     </div>
   </div>
   <div class="m-foot" id="mFoot"><div class="err" id="createErr"></div><button class="primary" id="createBtn"><span>Oluştur</span><span class="cost" id="createCost"></span></button></div>
@@ -192,8 +197,11 @@
 
 <script src="/env.js"></script>
 <script src="/native.js"></script>
+<script src="/exaudio.js"></script>
 <script src="/recorder.js"></script>
 <script src="/wave.js"></script>
+<script src="/docs.js"></script>
+<script src="/credits.js"></script>
 <script src="/app.js"></script>
 <script src="/auth.js"></script>
 <script src="/i18n.js"></script>

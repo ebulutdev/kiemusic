@@ -1,0 +1,105 @@
+/* ── CookRapper · Yönetim paneli (admin.html) — uygulama renk değişkenlerini (app.css) kullanır ── */
+body.ad{height:auto;min-height:100%;overflow:auto;background:var(--bg)}
+.ad *{box-sizing:border-box}
+.ad-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 24px;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.ad-brand{display:flex;align-items:baseline;gap:10px}
+.ad-brand b{font:800 20px var(--display);letter-spacing:-.03em}
+.ad-brand span{font:500 12px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.ad-tabs{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface)}
+.ad-tabs button{height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:14px;color:var(--muted)}
+.ad-tabs button[aria-selected=true]{background:var(--surface2);color:var(--text)}
+.ad-who{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);min-width:0}
+.ad-who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px}
+.ad-main{max-width:1240px;margin:0 auto;padding:22px 24px 80px;display:flex;flex-direction:column;gap:18px}
+.ad-state{padding:40px;text-align:center;color:var(--muted);border-radius:22px;background:var(--surface)}
+.ad-state:empty{display:none}
+.ad-state b{display:block;color:var(--text);font-size:18px;margin-bottom:6px}
+.ad-state code{font:13px var(--mono);background:var(--surface2);padding:3px 8px;border-radius:8px;color:var(--text)}
+.ad-pane{display:flex;flex-direction:column;gap:18px}
+.ad-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ad-seg{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface)}
+.ad-seg button{height:32px;padding:0 12px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--muted)}
+.ad-seg button.on{background:var(--text);color:var(--bg)}
+.ad-ghost{height:34px;padding:0 14px;border-radius:10px;font-size:13.5px;font-weight:600;background:var(--surface);color:var(--text)}
+.ad-primary{height:42px;padding:0 20px;border-radius:12px;font-weight:700;background:var(--text);color:var(--bg)}
+.ad-note{font-size:12.5px;color:var(--muted)}
+
+/* özet kartları */
+.ad-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.ad-kpi{padding:16px 18px;border-radius:20px;background:var(--surface);display:flex;flex-direction:column;gap:6px;min-width:0}
+.ad-kpi small{font-size:12.5px;color:var(--muted);font-weight:500}
+.ad-kpi b{font:800 30px/1.05 var(--display);letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ad-kpi span{font-size:12.5px;color:var(--muted);line-height:1.45}
+.ad-kpi.hero{background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 22%,var(--surface)),var(--surface))}
+.ad-kpi .neg{color:var(--danger)}
+
+/* kartlar, grafikler */
+.ad-card{margin:0;padding:18px;border-radius:22px;background:var(--surface);min-width:0}
+.ad-card figcaption,.ad-card-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ad-card figcaption b,.ad-card-h b{font-size:15.5px}
+.ad-card figcaption small,.ad-card-h small{font-size:12.5px;color:var(--muted)}
+.ad-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px}
+.ad-chart{position:relative;height:200px}
+.ad-chart svg{display:block;width:100%;height:100%;overflow:visible}
+.ad-chart .grid line{stroke:var(--line);stroke-width:1}
+.ad-chart .axis text{font:11px var(--mono);fill:var(--faint)}
+.ad-chart .bar{fill:var(--accent);transition:opacity .15s}
+.ad-chart .bar.neg{fill:var(--danger)}
+.ad-chart .zero{stroke:var(--muted);stroke-width:1}
+.ad-chart:hover .bar{opacity:.55}
+.ad-chart .bar.hot{opacity:1}
+.ad-chart .hit{fill:transparent;cursor:default}
+.ad-tip{position:fixed;z-index:30;pointer-events:none;padding:8px 11px;border-radius:10px;background:var(--text);color:var(--bg);font-size:12.5px;line-height:1.45;box-shadow:var(--shadow);transform:translate(-50%,calc(-100% - 10px));white-space:nowrap}
+.ad-tip b{font-weight:700}
+
+/* tablolar */
+.ad-scroll{overflow-x:auto;margin:0 -18px;padding:0 18px}
+.ad-table{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums}
+.ad-table th{position:sticky;top:0;text-align:right;font-weight:600;font-size:12px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ad-table td{text-align:right;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.ad-table th:first-child,.ad-table td:first-child{text-align:left}
+.ad-table tr:last-child td{border-bottom:0}
+.ad-table td.neg{color:var(--danger)}
+.ad-table td small{color:var(--muted)}
+.ad-table .who{max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.ad-empty{padding:18px;text-align:center;color:var(--muted);font-size:13.5px}
+.est{color:var(--faint);font-size:11px;margin-left:4px}
+
+/* keşfet kutuları */
+.ad-intro p{margin:6px 0 0;color:var(--muted);font-size:13.5px;line-height:1.5}
+.ad-intro em{font-style:normal;color:var(--text)}
+.ad-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.ad-tile{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:20px;background:var(--surface)}
+.ad-tile-h{display:flex;align-items:center;gap:10px}
+.ad-tile-h .n{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:var(--surface2);font:600 12px var(--mono);color:var(--muted)}
+.ad-tile-h b{flex:1;font-size:15px}
+.ad-tile-h .has{font-size:11.5px;color:var(--accent);font-weight:600}
+.ad-form label,.ad-tile label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted);font-weight:500}
+.ad-form input,.ad-tile input,.ad-tile textarea,.ad-tile select,.ad-est input{width:100%;padding:10px 12px;border-radius:11px;border:1px solid var(--line);background:var(--surface2);color:var(--text);font:14px var(--sans)}
+.ad-tile textarea{resize:vertical;min-height:62px}
+.ad-tile .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ad-music{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:14px;background:var(--surface2)}
+.ad-music audio{width:100%;height:36px}
+.ad-music .meta{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.ad-music .meta span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ad-music .none{font-size:12.5px;color:var(--faint)}
+.ad-tile .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ad-tile .acts .ad-note{margin-left:auto}
+.ad-file{position:relative;overflow:hidden;display:inline-flex;align-items:center;cursor:pointer}
+.ad-file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.ad-danger{color:var(--danger)}
+.ad-form{display:flex;flex-direction:column;gap:12px;max-width:640px}
+.ad-form fieldset{border:0;padding:0;margin:4px 0 0}
+.ad-form legend{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.ad-est{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ad-est label{font-size:11.5px}
+.ad-actions{display:flex;align-items:center;gap:12px}
+
+@media (max-width:640px){
+  .ad-top{padding:12px 16px;gap:10px}
+  .ad-tabs{order:3;width:100%;overflow-x:auto}
+  .ad-main{padding:16px 16px 60px}
+  .ad-kpi b{font-size:24px}
+  .ad-grid2,.ad-tiles{grid-template-columns:1fr}
+}

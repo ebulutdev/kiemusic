@@ -5,7 +5,7 @@ import {
   buildCoverInput, buildExtendInput, buildUploadExtendInput, buildAddVocalsInput,
   buildStemInput, buildReplaceSectionInput,
 } from "@/lib/kieInputBuilder";
-import { requireUser, errorResponse } from "@/lib/auth";
+import { requireAccount, errorResponse } from "@/lib/auth";
 import { getCost } from "@/lib/data/config";
 import { chargeCredits, refundCredits } from "@/lib/data/users";
 import { createTask } from "@/lib/data/tasks";
@@ -23,7 +23,7 @@ const BUILD: Record<AudioTaskInput["taskType"], (d: AudioTaskInput) => Record<st
 
 export async function POST(request: Request) {
   try {
-    const user = await requireUser(request);
+    const user = await requireAccount(request);
     const parsed = audioTaskSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ success: false, error: "Geçersiz istek", details: parsed.error.flatten() }, { status: 400 });

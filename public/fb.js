@@ -152,6 +152,8 @@ function listen() {
     if (d.voices) sig.set("u/voices", signature(d.voices));
     SF()?.applyUser({
       credits: typeof d.credits === "number" ? d.credits : null,
+      period: d.period || null, // aylık kredi dönemi { start, end, grant } — yalnız sunucu yazar
+      plan: d.plan || null,     // aktif abonelik { id, credits, expiresAt }
       settings: d.settings || null,
       personas: d.personas ? fromMap(d.personas) : null,
       voices: d.voices ? fromMap(d.voices) : null,
@@ -202,6 +204,21 @@ function publish(u) {
   authState = info(u);
   if (window.FB) window.FB.authState = authState;
   window.dispatchEvent(new CustomEvent("fb-auth", { detail: authState }));
+  syncCredits(u);
+}
+
+// Kredi: misafir 0; hesap açılınca (misafirden bağlama dahil) ilk dönem başlangıç hediyesiyle açılır → sunucu /api/me karar verir.
+// Uygulama her açılışta 1 kez çağırır: aylık dönem bittiyse sunucu bakiyeyi orada sıfırlar / yeniler.
+// Hesaba geçişte kimlik jetonu yenilenir ki sunucu artık misafir olmadığını görsün.
+let creditKey = "";
+function syncCredits(u) {
+  if (!u) { creditKey = ""; return; }
+  const key = u.uid + (u.isAnonymous ? ":guest" : ":account");
+  if (key === creditKey) return;
+  creditKey = key;
+  (u.isAnonymous ? u.getIdToken() : u.getIdToken(true))
+    .then((t) => fetch(window.CR ? window.CR.api("/api/me") : "/api/me", { method: "POST", headers: { Authorization: "Bearer " + t } }))
+    .catch(() => { creditKey = ""; });
 }
 
 onAuthStateChanged(auth, (user) => {
@@ -286,7 +303,24 @@ const authApi = {
   },
 
   signIn: ({ email, password }) => signInWithEmailAndPassword(auth, email, password).then((r) => r.user),
-  reset: (email) => sendPasswordResetEmail(auth, email),
+  // Sıfırlama bağlantısı şifre değişince uygulamaya döner (adres Firebase'de yetkili alan olmalı)
+  reset: (email) => {
+    const base = /^https?:/.test(location.origin) ? location.origin : (window.CR_ENV && window.CR_ENV.apiBase) || "";
+    return sendPasswordResetEmail(auth, email, base ? { url: base + "/" } : undefined).catch((e) => {
+      // dönüş adresi yetkili alan değilse bağlantısız gönder (e-posta yine gider)
+      if (/continue-uri|unauthorized-domain/.test(e?.code || "")) return sendPasswordResetEmail(auth, email);
+      throw e;
+    });
+  },
+  // Sıfırlamadan önce: hesap var mı, şifreli mi? (Google/Apple hesabının şifresi yoktur)
+  checkEmail: async (email) => {
+    const r = await fetch(window.CR ? window.CR.api("/api/auth/email") : "/api/auth/email", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.success) throw Object.assign(new Error(j.error || "Kontrol edilemedi"), { code: "app/check" });
+    return j;
+  },
   resendVerification: () => auth.currentUser && sendEmailVerification(auth.currentUser),
 
   async guest() {
@@ -325,5 +359,7 @@ async function headers(extra = {}) {
   return h;
 }
 
-window.FB = { headers, schedule, uid: () => uid, auth: authApi, authState };
+// Yetki değişince (ör. admin:grant) yeni kimlik jetonu al → özel yetkiler (claims) hemen geçerli olur
+const refreshToken = () => auth.currentUser?.getIdToken(true);
+window.FB = { headers, schedule, uid: () => uid, auth: authApi, authState, refreshToken };
 window.dispatchEvent(new Event("fb-ready"));

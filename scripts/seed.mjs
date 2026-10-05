@@ -19,8 +19,21 @@ const bucket = process.env.FIREBASE_STORAGE_BUCKET || env.FIREBASE_STORAGE_BUCKE
 const app = initializeApp({ credential: cert(sa), storageBucket: bucket });
 
 const config = JSON.parse(readFileSync("public/config/app.json", "utf8"));
-await getFirestore(app).doc("config/app").set({ ...config, updatedAt: FieldValue.serverTimestamp() });
-console.log(`✓ config/app yazıldı (v${config.version})`);
+// Admin panelinde düzenlenen alanlar korunur: birim fiyatlar (economics) ve keşfet kutusu
+// ayarları (müzik, etiket, prompt, davranış) — kutu adına göre eşlenir.
+const ref = getFirestore(app).doc("config/app");
+const live = (await ref.get()).data();
+if (live?.economics) config.economics = live.economics;
+const kept = new Map((live?.catalog?.genres || []).map((g) => [g.name, g]));
+config.catalog.genres = config.catalog.genres.map((g) => {
+  const o = kept.get(g.name);
+  if (!o) return g;
+  const out = { ...g, style: o.style || g.style };
+  for (const k of ["label", "prompt", "action", "preview"]) if (o[k] !== undefined && o[k] !== null) out[k] = o[k];
+  return out;
+});
+await ref.set({ ...config, updatedAt: FieldValue.serverTimestamp() });
+console.log(`✓ config/app yazıldı (v${config.version}, admin ayarları korundu)`);
 
 const rules = getSecurityRules(app);
 await rules.releaseFirestoreRulesetFromSource(readFileSync("firestore.rules", "utf8"));
@@ -31,6 +44,13 @@ try {
   if (!exists) throw new Error("kova yok");
   await rules.releaseStorageRulesetFromSource(readFileSync("storage.rules", "utf8"), bucket);
   console.log("✓ storage.rules yayınlandı");
+  // Tarayıcı sesleri Web Audio ile çalabilsin (keşfet geçişleri, dalga formu): indirme adresleri zaten
+  // jetonla korunuyor; CORS yalnız okumaya (GET/HEAD) izin verir, yazma kurallarını değiştirmez.
+  await getStorage(app).bucket().setCorsConfiguration([{
+    origin: ["*"], method: ["GET", "HEAD"], maxAgeSeconds: 3600,
+    responseHeader: ["Content-Type", "Content-Length", "Content-Range", "Accept-Ranges"],
+  }]);
+  console.log("✓ Storage CORS (yalnız okuma) ayarlandı");
 } catch (e) {
   console.log(`– storage.rules atlandı (Storage açık değil: ${e.message})`);
 }

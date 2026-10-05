@@ -100,6 +100,17 @@ export async function getKieTask(taskId: string) {
   return kieGet(`/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(taskId)}`);
 }
 
+/** Hesaptaki kalan servis kredisi (admin paneli). Bilinmiyorsa null. */
+export async function getKieBalance(): Promise<number | null> {
+  try {
+    const d = await kieGet("/api/v1/chat/credit");
+    const v = typeof d?.data === "number" ? d.data : Number(d?.data?.credits ?? d?.data?.balance);
+    return Number.isFinite(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── 10. Müzik Task Detayı (eski endpoint) ─────────────────
 export async function getMusicTaskDetail(taskId: string) {
   return kieGet(`/api/v1/generate/record-info?taskId=${encodeURIComponent(taskId)}`);

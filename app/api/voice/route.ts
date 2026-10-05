@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { voiceSchema, VOICE_CONSENT_VERSION } from "@/lib/validation";
 import { assertOwnUpload } from "@/lib/data/media";
 import { createKieTask } from "@/lib/kie";
-import { requireUser, errorResponse } from "@/lib/auth";
+import { requireAccount, errorResponse } from "@/lib/auth";
 import { saveVoice } from "@/lib/data/users";
 import { createTask, getTask } from "@/lib/data/tasks";
 
@@ -12,7 +12,7 @@ import { createTask, getTask } from "@/lib/data/tasks";
 // voiceId gelince users/{uid}.voices[id] güncellenir (lib/data/extras.ts); üretimde persona_id + voice_persona.
 export async function POST(request: Request) {
   try {
-    const user = await requireUser(request);
+    const user = await requireAccount(request);
     const parsed = voiceSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ success: false, error: "Geçersiz istek", details: parsed.error.flatten() }, { status: 400 });

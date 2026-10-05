@@ -71,11 +71,10 @@ Object.assign(I,{
 
 /* ---------- state ---------- */
 // Fiyatlar: Firestore config/pricing → SF.applyPricing (sunucu her zaman kendi fiyatıyla düşer)
-let MAX=500;
 const COST={generate:10,cover:10,extend:10,'upload-extend':10,'add-vocals':10,'remove-vocals':5,'replace-section':5};
 const S={view:'home',mode:'simple',output:'song',gender:'f',variety:1,aop:'cover',filter:'all',sort:'new',q:'',
   lib:store.get('sf2_lib',[]),personas:store.get('sf2_personas',[]),voices:store.get('sf2_voices',[]),
-  set:Object.assign({credits:MAX,backend:'',key:'',model:'V6',theme:'auto'},store.get('sf2_set',{})),src:null};
+  set:Object.assign({credits:0,period:null,plan:null,backend:'',key:'',model:'V6',theme:'auto'},store.get('sf2_set',{})),src:null};
 S.lib.forEach(t=>{if(t.output==='instrumental')t.output='beat';if(t.fav&&t.like==null)t.like=1});
 // Atılacak kayıtlar: sesi olmayan "hazır" parça (eski deneme sesi) ya da 10 dk'dan eski, sunucu görevi hiç oluşmamış üretim.
 // Yeni başlayan üretim (görev numarası birkaç sn içinde gelir) korunur — başka sekme/cihaz onu silmesin.
@@ -91,21 +90,21 @@ const jpost=(url,body)=>api(url,{method:'POST',headers:{'Content-Type':'applicat
 window.SF={
   state:()=>S,
   applyCatalog(c){if(!c)return;const put=(a,v)=>{if(Array.isArray(v)&&v.length)a.splice(0,a.length,...v)};
-    put(STYLES,c.styles);put(IDEAS,c.ideas);put(LYRICS,c.lyrics);put(TITLES,c.titles);put(GENRES,(c.genres||[]).map(g=>Array.isArray(g)?g:[g.name,g.style]));
+    put(STYLES,c.styles);put(IDEAS,c.ideas);put(LYRICS,c.lyrics);put(TITLES,c.titles);put(GENRES,(c.genres||[]).map(g=>Array.isArray(g)?g:[g.name,g.style,g.preview||null,g]));if(c.exploreMax>0)EXMAX=c.exploreMax;if(c.previewSec&&window.ExAudio)ExAudio.setClip(c.previewSec);
     if(c.beatTags)BEAT_TAGS=c.beatTags;
     $('#styleChips').innerHTML=STYLES.map(s=>`<button class="chip" data-s="${esc(s)}">${esc(s)}</button>`).join('');syncChips();renderSugs();
     EX.built=false;window.dispatchEvent(new Event('resize'));window.dispatchEvent(new Event('sf-catalog'))},
-  applyPricing(p){if(!p)return;if(p.startCredits>0)MAX=p.startCredits;if(p.costs)Object.assign(COST,p.costs);syncCreate();renderProfile()},
+  applyPricing(p){if(!p)return;if(window.Credits)Credits.setPricing(p);if(p.costs)Object.assign(COST,p.costs);syncCreate();renderProfile()},
   // Model listesi: id sunucuya gider (değişmez), label/note yalnız arayüzde (config/app.json → engine.models)
   applyEngine(k){if(!k||!Array.isArray(k.models)||!k.models.length)return;SF.engine=true;
     MODELS.splice(0,MODELS.length,...k.models);
     if(!k.models.some(m=>m.id===S.set.model))S.set.model=k.defaultModel||k.models[0].id;
     ['#defModel','#model'].forEach(s=>{$(s).innerHTML=modelOptions();$(s).value=S.set.model});renderAll()},
   // Çıkışta bu cihazdaki hesap verisini temizle (bulutta duruyor; sonraki hesaba karışmasın)
-  resetLocal(){stopAll();S.lib=[];S.personas=[];S.voices=[];S.set.credits=MAX;
+  resetLocal(){stopAll();S.lib=[];S.personas=[];S.voices=[];S.set.credits=0;S.set.period=S.set.plan=null;
     ['sf2_lib','sf2_personas','sf2_voices'].forEach(k=>store.set(k,[]));store.set('sf2_set',S.set);renderAll();renderStudio()},
-  applyConfig(c){if(!c)return;SF.applyPricing(c.pricing);SF.applyCatalog(c.catalog);SF.applyEngine(c.engine)},
-  applyUser({credits,settings,personas,voices}){if(credits!=null)S.set.credits=credits;
+  applyConfig(c){if(!c)return;if(window.Docs)Docs.setLegal(c.legal);SF.applyPricing(c.pricing);SF.applyCatalog(c.catalog);SF.applyEngine(c.engine)},
+  applyUser({credits,period,plan,settings,personas,voices}){if(credits!=null)S.set.credits=credits;if(period!==undefined)S.set.period=period;if(plan!==undefined)S.set.plan=plan;
     if(settings){if(settings.model)S.set.model=settings.model;if(settings.theme&&settings.theme!==S.set.theme){S.set.theme=settings.theme;applyTheme()}}
     if(personas)S.personas=personas;if(voices)S.voices=voices;
     store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);renderAll();if(personas||voices)renderStudio()},
@@ -152,7 +151,7 @@ function styleFromDesc(d){const l=d.toLocaleLowerCase('tr'),f=STYLES.filter(s=>l
 /* ---------- static icons ---------- */
 $$('.mk').forEach(m=>m.innerHTML=MARK);
 const NAV={home:['Ana sayfa','home'],studio:['Stüdyo','studio'],library:['Kütüphane','library'],profile:['Profil','user']};
-I.user=I.persona;
+I.user=I.persona;I.mute='<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/>';
 $$('.nav').forEach(b=>{const [l,i]=NAV[b.dataset.go];b.innerHTML=ic(i)+l});
 $$('.tab').forEach(b=>{if(b.dataset.go==='profile')return;const [l,i]=NAV[b.dataset.go];b.innerHTML=ic(i,22);b.setAttribute('aria-label',l)});$('.tab[data-go=profile]').setAttribute('aria-label','Profil');
 $('.tab-create span').innerHTML=ic('plus',26);$('#crIc').innerHTML=ic('create',14);$('.nav-create').innerHTML=ic('plus',18)+'Oluştur';
@@ -171,13 +170,13 @@ $('#styleRemix').innerHTML=ic('cover',18);$('#styleCopy').innerHTML=ic('copy',18
 
 /* ---------- navigation ---------- */
 function moveInd(){const on=$('.tab.on'),ind=$('#tabInd');if(!on||!ind)return;ind.style.transform=`translateX(${on.offsetLeft}px)`}
-function go(v){const same=S.view===v;S.view=v;$$('.view').forEach(x=>x.hidden=x.id!=='v-'+v);if(!same){const el=$('#v-'+v);el.classList.remove('enter');void el.offsetWidth;el.classList.add('enter')}if(v==='home'){requestAnimationFrame(()=>{exBuild();exReplay();exStart()})}else exStop();$$('.nav,.tab').forEach(b=>b.classList.toggle('on',b.dataset.go===v));moveInd();$('#main').scrollTop=0;if(v==='library')renderLib();if(v==='studio')renderStudio();if(v==='profile')renderProfile()}
+function go(v){const same=S.view===v;S.view=v;$$('.view').forEach(x=>x.hidden=x.id!=='v-'+v);if(!same){const el=$('#v-'+v);el.classList.remove('enter');void el.offsetWidth;el.classList.add('enter')}if(v==='home'){requestAnimationFrame(()=>{exBuild();exReplay();exStart()})}else exStop();$$('.nav,.tab').forEach(b=>b.classList.toggle('on',b.dataset.go===v));moveInd();if(window.ExAudio){v==='home'?ExAudio.resume():ExAudio.stop()}$('#main').scrollTop=0;if(v==='library')renderLib();if(v==='studio')renderStudio();if(v==='profile')renderProfile()}
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)go(g.dataset.go);const c=e.target.closest('[data-create]');if(c)openCreate(c.dataset.create)});
 
 /* ---------- overlay stack ---------- */
 const stack=[];
-function openLayer(el){el.classList.add('open');stack.push(el);$('#scrim').classList.add('open')}
-function closeLayer(el){el=el||stack[stack.length-1];if(!el)return;el.classList.remove('open');if(el._onClose)el._onClose();const i=stack.indexOf(el);if(i>=0)stack.splice(i,1);if(!stack.some(x=>x!==$('#fp')))$('#scrim').classList.remove('open');recStop();if(el===$('#fp'))el.setAttribute('aria-hidden','true')}
+function openLayer(el){el.classList.add('open');stack.push(el);$('#scrim').classList.add('open');if(window.ExAudio)ExAudio.stop()}
+function closeLayer(el){el=el||stack[stack.length-1];if(!el)return;el.classList.remove('open');if(el._onClose)el._onClose();const i=stack.indexOf(el);if(i>=0)stack.splice(i,1);if(!stack.some(x=>x!==$('#fp')))$('#scrim').classList.remove('open');recStop();if(el===$('#fp'))el.setAttribute('aria-hidden','true');if(!stack.length&&S.view==='home'&&window.ExAudio)ExAudio.resume()}
 $('#scrim').onclick=()=>{const top=stack[stack.length-1];if(top&&top!==$('#fp'))closeLayer(top)};
 $$('[data-close]').forEach(b=>b.onclick=()=>closeLayer(b.closest('.modal')));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLayer();if(e.code==='Space'&&!/INPUT|TEXTAREA|SELECT|BUTTON/.test(document.activeElement.tagName)&&hasMedia()){e.preventDefault();toggle()}});
@@ -189,6 +188,9 @@ function bindSeg(el,cb){el.addEventListener('click',e=>{const b=e.target.closest
 function renderSugs(){const s=[...IDEAS].sort(()=>Math.random()-.5).slice(0,3);$('#sugs').innerHTML=s.map(x=>`<button class="sug" data-sug="${esc(x)}"><span>${esc(x)}</span>${ic('arrowUL',16)}</button>`).join('')+`<button class="sug round" id="sugRe" aria-label="Yenile">${ic('refresh',18)}</button>`}
 $('#sugs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='sugRe')return renderSugs();$('#desc').value=b.dataset.sug;$('#simpleErr').textContent=''});
 /* ---------- explore: full-screen, soft spring physics ---------- */
+// Keşfet: config/app catalog.exploreMax kadar farklı kutu (gerisi tekrar); kutu = [ad, stil, müzik, admin ayarları]
+let EXMAX=20;
+const exLabel=g=>(g[3]&&(g[3].label||g[3].style))||g[1]||g[0];
 const EX={stage:null,tiles:[],w:0,h:0,T:0,sx:0,sy:0,cx:0,cy:0,vx:0,vy:0,tx:null,ty:null,drag:false,raf:0,last:0,focus:-1,built:false,b:null,run:false,t0:performance.now()};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const svgInner=s=>s.slice(s.indexOf('>')+1,s.lastIndexOf('</svg>'));
@@ -203,9 +205,9 @@ function exBuild(){
   // sonsuz döngü: ızgara, ekranın her yönde en az yarım ekran + kenar payı fazlası kadar büyük → aynı karolar kesintisiz tekrar eder
   const cols=Math.max(8,2*Math.ceil((w/2+1.45*T)/sx)+2);let rows=Math.max(10,Math.ceil((hh+2.9*T)/sy)+2);if(rows%2)rows++;
   EX.W=cols*sx;EX.H=rows*sy;
-  let html='';EX.tiles=[];
+  let html='';EX.tiles=[];const GS=GENRES.slice(0,Math.max(1,EXMAX));
   for(let r=0,k=0;r<rows;r++)for(let c=0;c<cols;c++,k++){
-    const g=GENRES[k%GENRES.length],x=c*sx+(r%2?sx/2:0),y=r*sy,d=Math.hypot(c+(r%2?.5:0)-cols/2+.25,r-(rows-1)/2);
+    const g=GS[k%GS.length],x=c*sx+(r%2?sx/2:0),y=r*sy,d=Math.hypot(c+(r%2?.5:0)-cols/2+.25,r-(rows-1)/2);
     EX.tiles.push({x,y,g,ph:k*1.37});
     const [sa,sb]=tileImgs(hash('ex'+g[0]+k));html+=`<button class="ex-tile" data-i="${k}" tabindex="-1" aria-label="${esc(g[0])}" style="width:${T}px;height:${T}px"><span class="ex-in" style="animation-delay:${Math.round(d*80)}ms"><img class="ex-a" src="${sa}" alt="" draggable="false"><img class="ex-b" src="${sb}" alt="" draggable="false"></span></button>`;
   }
@@ -227,7 +229,7 @@ function exRender(){
   }
   if(best>=0&&best!==EX.focus){const prev=EX.tiles[EX.focus];if(prev){prev.el.classList.remove('focus');prev.el.style.zIndex=1}
     EX.focus=best;const t=EX.tiles[best];t.el.classList.add('focus');t.el.style.zIndex=2;
-    const n=$('#exName');n.classList.remove('swap');void n.offsetWidth;n.textContent='#'+t.g[0];n.classList.add('swap');
+    const n=$('#exName');n.classList.remove('swap');void n.offsetWidth;n.textContent='#'+exLabel(t.g);n.classList.add('swap');if(window.ExAudio)ExAudio.focus(t.g[2]);
     if(EX.drag&&navigator.vibrate)try{navigator.vibrate(3)}catch(e){}}
 }
 function exLoop(now){
@@ -250,10 +252,13 @@ const wrapD=(d,P)=>d-Math.round(d/P)*P;
 function exNearest(x,y){let b=0,bd=1e18;EX.tiles.forEach((t,i)=>{const dx=wrapD(t.x-x,EX.W),dy=wrapD(t.y-y,EX.H),d=dx*dx+dy*dy;if(d<bd){bd=d;b=i}});return b}
 // hedef: karonun, referans noktaya (kamera ya da kayış ucu) en yakın kopyası
 function exGoTo(i,rx=EX.cx,ry=EX.cy){const t=EX.tiles[i];if(!t)return;EX.tx=rx+wrapD(t.x-rx,EX.W);EX.ty=ry+wrapD(t.y-ry,EX.H);exStart()}
-function exOpen(){const t=EX.tiles[EX.focus];if(t)openCreate('custom',{style:t.g[1]})}
+function exOpen(){const t=EX.tiles[EX.focus];if(!t)return;const m=t.g[3]||{},style=m.style||t.g[1],label=m.label||m.name||t.g[0];
+  if(m.action==='cover'&&m.preview&&m.preview.url){openCreate('audio');setOut('song');$('#opChips [data-v=cover]')?.click();
+    $('#aStyle').value=style;$('#aTitle').value=label;$('#aLyrics').value=m.prompt||'';syncCreate();REC.loadUrl(m.preview.url,label);return}
+  openCreate('custom',{style});if(m.prompt){setOut('song');$('#lyrics').value=m.prompt}$('#title').value=label}
 function initExplore(){
   const st=EX.stage=$('#exStage');
-  st.addEventListener('pointerdown',e=>{if(e.button>0)return;try{st.setPointerCapture(e.pointerId)}catch(_){}
+  st.addEventListener('pointerdown',e=>{if(e.button>0)return;if(window.ExAudio)ExAudio.unlock();try{st.setPointerCapture(e.pointerId)}catch(_){}
     EX.drag=true;EX.tx=null;EX.vx=EX.vy=0;EX.px=e.clientX;EX.py=e.clientY;EX.pt=performance.now();EX.moved=0;EX.down=e.target.closest('.ex-tile');st.classList.add('drag');exStart()});
   st.addEventListener('pointermove',e=>{if(!EX.drag)return;
     const now=performance.now(),dx=e.clientX-EX.px,dy=e.clientY-EX.py,dt=Math.max(8,now-EX.pt)/1000,rx=1,ry=1;   // kenar yok: sonsuz
@@ -274,6 +279,12 @@ function initExplore(){
   document.addEventListener('keydown',e=>{if(S.view!=='home'||stack.length||/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;
     const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];const f=EX.tiles[EX.focus];
     if(m&&f){e.preventDefault();const fx=EX.cx+wrapD(f.x-EX.cx,EX.W)+m[0]*EX.sx,fy=EX.cy+wrapD(f.y-EX.cy,EX.H)+m[1]*EX.sy;exGoTo(exNearest(fx,fy),fx,fy)}else if(e.key==='Enter'&&f){e.preventDefault();exOpen()}});
+  // Keşfet müziği: yalnız ana sayfada, açık pencere yokken ve ana çalar susarken
+  if(window.ExAudio){ExAudio.setGuard(()=>S.view==='home'&&!stack.length&&!P.playing);
+    document.addEventListener('pointerdown',()=>ExAudio.unlock(),{once:true,capture:true});
+    const snd=$('#exSnd'),pill=$('.ex-pill'),paint=()=>{const m=ExAudio.isMuted();snd.innerHTML=m?ic('mute',18):'<span class="ex-eq"><i></i><i></i><i></i></span>';snd.setAttribute('aria-label',m?'Sesi aç':'Sesi kapat');snd.classList.toggle('off',m)};
+    ExAudio.onState(on=>pill.classList.toggle('playing',on));
+    snd.onclick=e=>{e.stopPropagation();ExAudio.unlock();ExAudio.toggleMute();paint();const f=EX.tiles[EX.focus];if(f&&!ExAudio.isMuted())ExAudio.focus(f.g[2])};paint()}
   $('#exGo').innerHTML=ic('arrowUp',20);$('#exGo').firstChild.style.transform='rotate(45deg)';$('#exGo').onclick=exOpen;
   let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{exBuild();moveInd()},150)});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.view==='home')exStart()});
@@ -318,14 +329,21 @@ $('#dur').addEventListener('input',()=>$('#durO').textContent=fmt(+$('#dur').val
 /* ---------- recorder (public/recorder.js) ---------- */
 // Kayıt / dosya → dinle, sil ya da kaydet (Firebase Storage: /api/upload). Üretim servisi en az 6 sn ister.
 async function uploadBlob(blob,name){const fd=new FormData();fd.append('file',blob,name);const r=await api('/api/upload',{method:'POST',body:fd});const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(j.error||'Yükleme başarısız');return j.url}
-const REC=createRecorder($('#recCard'),{minSec:6,maxSec:480,label:'Kayıt',upload:uploadBlob,onChange:v=>{S.src=v;$('#createErr').textContent=''}});
+const REC=createRecorder($('#recCard'),{minSec:6,maxSec:480,label:'Kayıt',upload:uploadBlob,onChange:v=>{S.src=v;$('#createErr').textContent='';$('#aRightsWrap').hidden=!!(v&&v.explore)}}); // keşfet müziği admin içeriği: hak onayı gerekmez
 let VREC=null;
 const recLive=()=>REC.busy()||!!(VREC&&VREC.busy());
 function recStop(){REC.stop();REC.pause();if(VREC){VREC.stop();VREC.pause()}}
 
 /* ---------- generation ---------- */
-function spend(n){if(S.set.credits<n){toast('Kredi yetersiz');return false}S.set.credits-=n;return true}
+function spend(n){if(S.set.credits<n){if(window.Credits)Credits.open('empty');else toast('Kredi yetersiz');return false}S.set.credits-=n;return true}
+// Misafir kredi kullanamaz (kredisi 0; sunucu da requireAccount ile reddeder) → hesap ekranı
+document.addEventListener('click',e=>{if(e.target.closest('.cr-chip,.credit-card')&&!needAccount()&&window.Credits)Credits.open('manual')});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('credit-card')){e.preventDefault();e.stopPropagation();e.target.click()}},true);
+const isGuest=()=>{const st=window.FB&&FB.authState;return !st||st.anon};
+addEventListener('fb-auth',()=>{if(S.view==='profile')renderCredit()});
+function needAccount(){if(!isGuest())return false;if(window.Credits)Credits.open('guest');else if(window.AUTH)AUTH.open({mode:'signup',closable:true});return true}
 function spawn(base,count,cost,req,kind){
+  if(needAccount())return [];
   if(!API.live||!req){toast('Sunucuya bağlanılamadı');return []}
   if(cost&&!spend(cost))return [];
   const bases=Array.isArray(base)?base:Array.from({length:count},()=>base),now=Date.now();
@@ -339,7 +357,7 @@ function spawn(base,count,cost,req,kind){
 const API={live:true};
 const find=id=>S.lib.find(x=>x.id===id);
 function errMsg(j){const d=j&&j.details&&j.details.fieldErrors;if(d){const k=Object.keys(d)[0];if(k&&d[k][0])return d[k][0]}return (j&&j.error)||'İstek başarısız'}
-function liveFail(ids,msg,refund){ids.forEach(id=>{S.lib=S.lib.filter(x=>!(x.id===id&&x.status==='gen'))});if(refund)S.set.credits+=refund;save();renderAll();toast(msg||'Üretim başarısız')}
+function liveFail(ids,msg,refund){if(/Kredi yetersiz/i.test(msg||'')&&window.Credits)setTimeout(()=>Credits.open('empty'),300);ids.forEach(id=>{S.lib=S.lib.filter(x=>!(x.id===id&&x.status==='gen'))});if(refund)S.set.credits+=refund;save();renderAll();toast(msg||'Üretim başarısız')}
 async function runLive(tracks,req,cost,kind){
   const ids=tracks.slice().sort((a,b)=>a.version-b.version).map(t=>t.id);
   try{const q=typeof req==='function'?await req():req;
@@ -434,8 +452,8 @@ $('#createBtn').onclick=()=>{
     const body={customMode:true,instrumental:!song,model:$('#model').value,title:title.slice(0,80),style:song?st:beatStyle(st),negativeTags:$('#neg').value.trim()||undefined,duration:+$('#dur').value,styleWeight:+$('#sw').value/100,weirdnessConstraint:+$('#wc').value/100,variety:S.variety,...personaPick()};
     if(song)Object.assign(body,{lyrics:ly,vocalGender:S.gender,audioWeight:+$('#aw').value/100});
     ok=spawn({title,style:st,lyrics:song?ly:'',output:out,duration:+$('#dur').value,model:$('#model').value},2,COST.generate,{url:'/api/music/generate',body})}
-  else{const src=S.src;if(recLive())return fail('Önce kaydı durdur');if(!src)return fail('Önce ses kaydet ya da yükle');
-    if(!$('#aRights').checked)return fail('Kaydın haklarına sahip olduğunu onayla');
+  else{const src=S.src;if(recLive())return fail('Önce kaydı bitir (✓)');if(!src)return fail('Önce ses kaydet ya da yükle');
+    if(!src.explore&&!$('#aRights').checked)return fail('Kaydın haklarına sahip olduğunu onayla');
     const op=AOP[S.aop]||AOP.cover,vocal=S.aop==='vocals'||song,title=$('#aTitle').value.trim()||'Kaydım',style=$('#aStyle').value.trim(),lyr=$('#aLyrics').value.trim();
     if(S.aop==='vocals'){if(!style)return fail('Stil gerekli');if(!lyr)return fail('Sözler gerekli')}
     const body={taskType:op.type,model:S.set.model,title:title.slice(0,80),style:style||undefined,instrumental:!vocal,lyrics:vocal&&lyr?lyr:undefined};
@@ -600,7 +618,7 @@ const TOOLS={
     {k:'full',t:'area',ph:'Tüm sözler',only:'vocal',rows:5},{k:'style',t:'style',ph:'Stil'},
     {k:'gender',t:'seg',o:[['f','Kadın'],['m','Erkek']],only:'vocal'},{k:'adv',aw:'Ses ağırlığı'}]},
   persona:{n:'Persona',ic:'persona',cta:'Persona oluştur',cost:0,f:[{k:'src',only:'song'},{k:'name',t:'text',ph:'Persona adı'}]},
-  voice:{n:'Ses klonu',ic:'voice',cta:'Devam',cost:0,f:[{k:'name',t:'text',ph:'Ses adı'},{k:'rec'},{k:'consent',t:'check',l:'Bu ses bana ait ya da sahibinden açık yazılı iznim var. Başka birini taklit etmek için kullanmayacağım.'}]},
+  voice:{n:'Ses klonu',ic:'voice',cta:'Devam',cost:0,f:[{k:'name',t:'text',ph:'Ses adı'},{k:'rec'},{k:'consent',t:'check',l:'Bu ses bana ait ya da sahibinden açık yazılı iznim var. Başka birini taklit etmeyeceğim; doğacak sorumluluk bana aittir.'}]},
   record:{n:'Kayıttan',ic:'mic',go:()=>openCreate('audio')}
 };
 const isVocal=t=>t.output==='song'||t.output==='stemv';
@@ -670,7 +688,7 @@ function syncTool(key){const b=$('#toolBody'),t=find(b.querySelector('[name=src]
     const p=ensureAlign(t);if(p)p.then(()=>{if(WV&&WV.id===t.id)WV.setLines(lyricLines(t))})}
   syncVocal(key,t)}
 function openTool(key,srcId){
-  const T=TOOLS[key];if(T.go)return T.go();
+  const T=TOOLS[key];if(T.go)return T.go();if(needAccount())return;
   if(!API.live)return toast('Sunucuya bağlanılamadı');
   if(WV){WV.destroy();WV=null}
   const b=$('#toolBody');
@@ -746,7 +764,7 @@ async function runTool(key){
 }
 // Ses klonu: 1) ses örneği → doğrulama cümlesi  2) cümleyi oku → ses oluştur (voiceId)
 async function runVoice(name,fail){
-  if(V.busy)return;if(!name)return fail('Ses adı gerekli');if(VREC.busy())return fail('Önce kaydı durdur');
+  if(V.busy)return;if(!name)return fail('Ses adı gerekli');if(VREC.busy())return fail('Önce kaydı bitir (✓)');
   if(!$('#toolBody [name=consent]')?.checked)return fail('Sesin sana ait olduğunu onayla');
   const src=VREC.src();if(!src)return fail(V.step===1?'Önce ses örneği kaydet':'Önce cümleyi okuyup kaydet');
   const go=$('#toolGo');V.busy=true;go.disabled=true;setToolGo('voice',V.step===1?'Cümle hazırlanıyor…':'Gönderiliyor…');
@@ -776,7 +794,11 @@ function renderStudio(){
 document.addEventListener('click',e=>{const t=e.target.closest('[data-tool]');if(t)openTool(t.dataset.tool)});
 
 /* ---------- profile ---------- */
-function renderProfile(){$('#pCount').textContent=S.lib.length+' parça';$('#pMode').innerHTML=API.live?'<span class="live-dot"></span>Stüdyo çevrimiçi':'Sunucuya bağlı değil';$('#meter').style.width=Math.min(100,S.set.credits/MAX*100)+'%'}
+function renderProfile(){$('#pCount').textContent=S.lib.length+' parça';$('#pMode').innerHTML=API.live?'<span class="live-dot"></span>Stüdyo çevrimiçi':'Sunucuya bağlı değil';renderCredit()}
+// Profil kredi kartı: bu dönemde verilen kredinin ne kadarı kaldı (çubuk), plan, sıfırlanma / yenilenme zamanı (Credits.info)
+function renderCredit(){if(!window.Credits)return;const k=Credits.info(),m=$('#meter');m.style.width=k.pct+'%';m.parentElement.classList.toggle('low',!k.guest&&k.pct<20);m.parentElement.setAttribute('aria-valuenow',Math.round(k.pct));
+  $('#ccOf').textContent=k.guest||!k.grant?'':'/ '+k.grant;$('#ccPlan').textContent=k.guest?'Misafir':k.name;$('#ccPlan').classList.toggle('pro',!!k.plan);
+  $('#ccMeta').textContent=k.guest?'Hesap açana '+k.start+' kredi hediye':k.meta;$('#ccGo').textContent=k.guest?'Hesap aç':k.plan?'Planım':'Planlar'}
 bindSeg($('#themeSeg'),v=>{S.set.theme=v;applyTheme();save()});
 function applyTheme(){const t=S.set.theme;if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);$$('#themeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===t))}
 $('#defModel').value=S.set.model;$('#model').value=S.set.model;
@@ -798,7 +820,7 @@ function buildOrder(curId){
 function setContext(ids,name,curId){P.qids=ids.filter(id=>{const t=findT(id);return t&&t.status==='ready'});if(!P.qids.includes(curId))P.qids.unshift(curId);P.ctxName=name||'Kütüphane';buildOrder(curId)}
 function upcoming(n){const out=[];for(let k=P.pos+1;k<P.order.length&&out.length<n;k++)if(okAt(k))out.push({t:findT(P.qids[P.order[k]]),k});return out}
 async function play(id,openFull,ctxIds,ctxName){
-  const t=findT(id);if(!t)return;if(t.status!=='ready'){toast('Hâlâ üretiliyor');return}
+  const t=findT(id);if(!t)return;if(window.ExAudio)ExAudio.stop();if(t.status!=='ready'){toast('Hâlâ üretiliyor');return}
   if(P.cur&&P.cur.id===id&&hasMedia()){if(ctxIds)setContext(ctxIds,ctxName,id);if(openFull){if(!P.playing)toggle();openPlayer()}else toggle();return}
   setContext(ctxIds||S.lib.map(x=>x.id),ctxName,id);
   if(openFull)openPlayer();

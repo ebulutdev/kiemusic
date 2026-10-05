@@ -1,7 +1,9 @@
 {
- "version": 3,
+ "version": 8,
  "pricing": {
-  "startCredits": 500,
+  "startCredits": 28,
+  "periodDays": 30,
+  "freeMonthly": 0,
   "costs": {
    "generate": 10,
    "cover": 10,
@@ -11,7 +13,32 @@
    "remove-vocals": 5,
    "replace-section": 5,
    "split-stem": 25
-  }
+  },
+  "plans": [
+   {
+    "id": "plus_monthly",
+    "name": "Plus",
+    "credits": 400,
+    "price": 250,
+    "currency": "TRY",
+    "songs": 80
+   },
+   {
+    "id": "pro_monthly",
+    "name": "Pro",
+    "credits": 950,
+    "price": 500,
+    "currency": "TRY",
+    "songs": 190,
+    "best": true
+   }
+  ]
+ },
+ "legal": {
+  "version": "2026-10-05",
+  "terms": "/terms",
+  "privacy": "/privacy",
+  "contact": ""
  },
  "catalog": {
   "styles": [
@@ -59,8 +86,8 @@
     "style": "modern pop"
    },
    {
-    "name": "nostalji",
-    "style": "90s, retro, nostaljik"
+    "name": "rave hard",
+    "style": "hard rave, hardstyle kick, distorted bass, euphoric rave synths, 150 bpm"
    },
    {
     "name": "arabesk",
@@ -183,7 +210,9 @@
    "Beton Çiçek",
    "Uzak Frekans"
   ],
-  "beatTags": "instrumental beat, drum-focused, punchy drums, minimal melody, no vocals"
+  "beatTags": "instrumental beat, drum-focused, punchy drums, minimal melody, no vocals",
+  "exploreMax": 20,
+  "previewSec": 30
  },
  "engine": {
   "defaultModel": "V6",
@@ -217,5 +246,22 @@
   "mediaRetentionDays": 14,
   "pollIntervalMs": 4000,
   "pollTimeoutMin": 15
+ },
+ "economics": {
+  "usdPerCredit": 0.01,
+  "kieUsdPerCredit": 0.005,
+  "kieCreditsEstimate": {
+   "generate": 12,
+   "cover": 12,
+   "extend": 12,
+   "upload-extend": 12,
+   "add-vocals": 12,
+   "remove-vocals": 10,
+   "split-stem": 50,
+   "replace-section": 5,
+   "persona": 0,
+   "voice-phrase": 0,
+   "voice": 0
+  }
  }
 }

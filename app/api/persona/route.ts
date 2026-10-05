@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { personaSchema } from "@/lib/validation";
 import { createKieTask } from "@/lib/kie";
-import { requireUser, errorResponse } from "@/lib/auth";
+import { requireAccount, errorResponse } from "@/lib/auth";
 import { savePersona } from "@/lib/data/users";
 import { createTask, getTask, updateTask } from "@/lib/data/tasks";
 import { extraResult } from "@/lib/results";
@@ -12,7 +12,7 @@ import { extraResult } from "@/lib/results";
 // persona_id gelince users/{uid}.personas[id] güncellenir (lib/data/extras.ts).
 export async function POST(request: Request) {
   try {
-    const user = await requireUser(request);
+    const user = await requireAccount(request);
     const parsed = personaSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json({ success: false, error: "Geçersiz istek", details: parsed.error.flatten() }, { status: 400 });

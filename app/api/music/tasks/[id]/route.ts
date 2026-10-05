@@ -23,6 +23,12 @@ async function refresh(task: TaskDoc): Promise<TaskDoc> {
   const kie = await getKieTask(task.providerTaskId);
   const d = kie?.data ?? {};
   const state = d.state as string | undefined;
+  // Kâr analizi: servisin bu görev için gerçekten düştüğü kredi (yalnız değişince yazılır)
+  const used = Number(d.creditsConsumed);
+  if (Number.isFinite(used) && used > 0 && used !== task.kieCredits) {
+    await updateTask(task.providerTaskId, { kieCredits: used });
+    task = { ...task, kieCredits: used };
+  }
 
   const fail = async (code: string, msg: string): Promise<TaskDoc> => {
     await failTask(task.providerTaskId, code, msg);

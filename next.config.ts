@@ -8,7 +8,14 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: { "*": ["public/**/*"] },
   // Ana sayfa: mobil CookRapper arayüzü (public/index.html)
   async rewrites() {
-    return { beforeFiles: [{ source: "/", destination: "/index.html" }] };
+    return {
+      beforeFiles: [
+        { source: "/", destination: "/index.html" },
+        { source: "/admin", destination: "/admin.html" }, // yönetim paneli (yetki: /api/admin/* sunucuda denetlenir)
+        { source: "/privacy", destination: "/privacy.html" }, // Gizlilik Politikası (mağaza bağlantısı)
+        { source: "/terms", destination: "/terms.html" },     // Kullanım Koşulları
+      ],
+    };
   },
 };
 

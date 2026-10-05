@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { generateMusicSchema } from "@/lib/validation";
 import { createMusicTask } from "@/lib/kie";
 import { buildGenerateInput } from "@/lib/kieInputBuilder";
-import { requireUser, errorResponse } from "@/lib/auth";
+import { requireAccount, errorResponse } from "@/lib/auth";
 import { getCost } from "@/lib/data/config";
 import { chargeCredits, refundCredits } from "@/lib/data/users";
 import { createTask } from "@/lib/data/tasks";
 
 export async function POST(request: Request) {
   try {
-    const user = await requireUser(request);
+    const user = await requireAccount(request);
     const parsed = generateMusicSchema.safeParse(await request.json());
     if (!parsed.success) {
       return NextResponse.json(

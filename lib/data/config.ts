@@ -24,12 +24,17 @@ export async function getConfig(): Promise<AppConfig> {
   return value;
 }
 
+/** Admin değişikliğinden sonra bu sunucu örneğinin önbelleğini at (diğer örnekler en geç 60 sn'de günceller). */
+export function invalidateConfig() { cached = null; }
+
+/** config/app içindeki alanları günceller (iç içe anahtarlar: "economics", "catalog.genres" …). */
+export async function patchConfig(fields: Record<string, unknown>) {
+  await adminDb().doc(path.config).update({ ...fields, updatedAt: new Date() });
+  invalidateConfig();
+}
+
 export async function getCost(taskType: string): Promise<number> {
   const c = (await getConfig()).pricing.costs[taskType];
   if (typeof c !== "number") throw new Error(`Fiyat tanımlı değil: ${taskType}`);
   return c;
-}
-
-export async function getStartCredits(): Promise<number> {
-  return (await getConfig()).pricing.startCredits;
 }

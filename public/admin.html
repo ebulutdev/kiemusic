@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>CookRapper · Yönetim</title>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<link rel="stylesheet" href="/app.css">
+<link rel="stylesheet" href="/auth.css">
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body class="ad">
+<!-- Yönetim paneli: veriler /api/admin/* (sunucu "admin" yetkisini denetler). Mobil pakete girmez (scripts/build-www.mjs). -->
+<header class="ad-top">
+  <div class="ad-brand"><b>CookRapper</b><span>Yönetim</span></div>
+  <nav class="ad-tabs" id="adTabs" role="tablist">
+    <button role="tab" data-tab="stats" aria-selected="true">Analiz</button>
+    <button role="tab" data-tab="explore" aria-selected="false">Keşfet kutuları</button>
+    <button role="tab" data-tab="settings" aria-selected="false">Ayarlar</button>
+  </nav>
+  <div class="ad-who"><span id="adWho"></span><button class="ad-ghost" id="adOut">Çıkış</button></div>
+</header>
+
+<main class="ad-main">
+  <div class="ad-state" id="adState">Yükleniyor…</div>
+
+  <section class="ad-pane" data-pane="stats" hidden>
+    <div class="ad-bar">
+      <div class="ad-seg" id="adRange"><button data-d="7">7 gün</button><button data-d="30" class="on">30 gün</button><button data-d="90">90 gün</button><button data-d="365">1 yıl</button></div>
+      <button class="ad-ghost" id="adReload">Yenile</button>
+      <small class="ad-note" id="adStamp"></small>
+    </div>
+    <div class="ad-kpis" id="adKpis"></div>
+    <div class="ad-grid2">
+      <figure class="ad-card"><figcaption><b>Günlük üretim</b><small>Görev sayısı</small></figcaption><div class="ad-chart" id="chTasks"></div></figure>
+      <figure class="ad-card"><figcaption><b>Günlük kâr</b><small>Gelir − servis maliyeti ($)</small></figcaption><div class="ad-chart" id="chProfit"></div></figure>
+    </div>
+    <div class="ad-card"><div class="ad-card-h"><b>İşlem türüne göre</b><small>Kredi ve kâr, işlem başına</small></div><div class="ad-scroll" id="tbOp"></div></div>
+    <div class="ad-card"><div class="ad-card-h"><b>Modele göre</b><small>Hangi model ne kazandırıyor</small></div><div class="ad-scroll" id="tbModel"></div></div>
+    <div class="ad-card"><div class="ad-card-h"><b>Kullanıcılar</b><small>En çok harcayan 100 kullanıcı</small></div><div class="ad-scroll" id="tbUser"></div></div>
+  </section>
+
+  <section class="ad-pane" data-pane="explore" hidden>
+    <div class="ad-card ad-intro"><b>Ana sayfa keşfet kutuları</b>
+      <p>Her kutu: altta görünen <em>etiket</em>, ok'a basınca dolan <em>stil</em> ve <em>prompt</em>, ok'un davranışı ve kutu ekrana gelince çalan <em>müzik</em>. Değişiklikler uygulamaya anında yansır.</p></div>
+    <div class="ad-tiles" id="adTiles"></div>
+  </section>
+
+  <section class="ad-pane" data-pane="settings" hidden>
+    <form class="ad-card ad-form" id="adEcon">
+      <div class="ad-card-h"><b>Birim fiyatlar</b><small>Kâr analizi bu değerlerle hesaplanır</small></div>
+      <label>1 uygulama kredisinin satış değeri ($)<input type="number" name="usdPerCredit" step="0.0001" min="0" required></label>
+      <label>1 servis kredisinin maliyeti ($)<input type="number" name="kieUsdPerCredit" step="0.0001" min="0" required></label>
+      <fieldset><legend>İşlem başına tahmini servis kredisi <small>(gerçek değer gelmeyen eski görevler için)</small></legend><div class="ad-est" id="adEst"></div></fieldset>
+      <div class="ad-card-h"><b>Keşfet</b></div>
+      <label>Farklı kutu sayısı (gerisi tekrar)<input type="number" name="exploreMax" min="1" max="60" step="1" required></label>
+      <label>Kutu müziği döngü süresi (sn)<input type="number" name="previewSec" min="5" max="120" step="1" required></label>
+      <div class="ad-actions"><button class="ad-primary" type="submit">Kaydet</button><span class="ad-note" id="adEconMsg"></span></div>
+    </form>
+  </section>
+</main>
+<div class="ad-tip" id="adTip" role="tooltip" hidden></div>
+<div class="toast" id="toast"></div>
+
+<script src="/env.js"></script>
+<script>function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),2600)}</script>
+<script src="/auth.js"></script>
+<script src="/admin.js"></script>
+<script type="module" src="/fb.js"></script>
+</body>
+</html>

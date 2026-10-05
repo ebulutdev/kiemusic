@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser, errorResponse } from "@/lib/auth";
+import { requireAccount, errorResponse } from "@/lib/auth";
 import { saveUpload } from "@/lib/data/storage";
 
 export const runtime = "nodejs";
@@ -10,7 +10,7 @@ const OK_EXT = ["mp3", "m4a", "wav", "aac", "webm", "ogg", "mp4", "caf", "flac"]
 
 export async function POST(req: Request) {
   try {
-    const user = await requireUser(req);
+    const user = await requireAccount(req);
     const fd = await req.formData();
     const file = fd.get("file");
     if (!(file instanceof File)) return NextResponse.json({ success: false, error: "Dosya yok" }, { status: 400 });

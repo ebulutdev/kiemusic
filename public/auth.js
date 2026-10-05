@@ -30,6 +30,7 @@
   function msg(e) {
     const c = e?.code || "";
     if (["auth/popup-closed-by-user", "auth/cancelled-popup-request", "auth/user-cancelled"].includes(c)) return "";
+    if (c === "app/check") return e.message; // sunucudan gelen anlaşılır mesaj
     const M = {
       "auth/invalid-email": "Geçerli bir e-posta adresi gir.",
       "auth/invalid-credential": "E-posta ya da şifre hatalı.",
@@ -57,6 +58,13 @@
       <span class="au-l">${label}</span>${extra}</label>`;
   const eye = `<button type="button" class="au-eye" data-eye aria-label="Şifreyi göster">${I.eye}</button>`;
   const back = `<button type="button" class="au-back" data-view="main">${I.back}Geri</button>`;
+  // Yasal onay kutusu — Apple/Google ile devam ve e-posta kaydı için zorunlu (iki kutu aynı durumu paylaşır).
+  // Kabul edilen sürüm hesap açılınca sunucuda kaydedilir (users/{uid}.terms); bağlantıları docs.js uygulama içinde açar.
+  const terms = (id, only) => `<div class="au-terms"${only ? ` data-only="${only}"` : ""}>` +
+    `<label><input type="checkbox" class="au-tick" id="${id}" data-terms aria-label="Kullanım Koşulları ve Gizlilik Politikası'nı okudum, kabul ediyorum">` +
+    `<span class="au-box" aria-hidden="true">${I.check}</span>Kabul ediyorum:</label>` +
+    `<a href="/terms" data-legal="terms" target="_blank" rel="noopener">Koşullar</a><i aria-hidden="true">·</i>` +
+    `<a href="/privacy" data-legal="privacy" target="_blank" rel="noopener">Gizlilik</a></div>`;
   const cta = (id, text) => `<button class="au-btn au-cta" ${id ? `id="${id}"` : ""} type="submit"><span>${text}</span><i class="au-spin"></i></button>`;
 
   const root = document.createElement("div");
@@ -81,20 +89,22 @@
           <button class="au-btn" data-p="google">${I.google}<span>Google ile devam et</span></button>`}
           <button class="au-btn" data-view="email">${I.mail}<span>E-posta ile devam et</span></button>
         </div>
+        ${NATIVE ? "" : terms("auTerms")}
         <div class="au-err" id="auMErr" role="alert"></div>
-        <button class="au-quiet" id="auGuest">Misafir olarak devam et</button>
+        <button class="au-quiet" id="auGuest">Misafir olarak göz at</button>
       </section>
 
       <section class="au-email">
         ${back}
         <h2 class="au-h" id="auETitle">Giriş<em>.</em></h2>
         <form class="au-form" id="auForm" novalidate>
-          ${field("auName", "Sahne adı", { ac: "nickname", only: "signup" })}
+          ${field("auName", "Sahne adı", { ac: "off", only: "signup" })}
           ${field("auEmail", "E-posta", { type: "email", ac: "email", im: "email" })}
           ${field("auPw", "Şifre", { type: "password", ac: "current-password", extra: eye })}
           <div class="au-meter" data-only="signup" id="auMeter" data-s="0"><i></i><i></i><i></i><i></i></div>
           ${field("auPw2", "Şifre tekrar", { type: "password", ac: "new-password", only: "signup", extra: `<span class="au-match">${I.check}</span>` })}
           <button type="button" class="au-forgot" data-only="signin" data-view="reset">Şifremi unuttum</button>
+          ${terms("auTerms2", "signup")}
           <div class="au-err" id="auErr" role="alert" aria-live="assertive"></div>
           ${cta("auGo", "Giriş yap")}
         </form>
@@ -119,11 +129,16 @@
   // ── Durum ───────────────────────────────────────────────
   const form = q("#auForm"), err = q("#auErr"), go = q("#auGo");
   const val = (id) => q("#" + id).value.trim();
-  let dismissible = false, known = false;
+  let dismissible = false, known = false, accepted = false;
+  function needTerms(box) {
+    box.textContent = "Devam etmek için koşulları kabul et.";
+    qa(".au-terms", root).forEach((t) => { t.classList.remove("need"); void t.offsetWidth; t.classList.add("need"); });
+    return false;
+  }
 
   const COPY = {
     signin: { t: "Giriş<em>.</em>", cta: "Giriş yap", sw: "Hesabın yok mu? <b>Kayıt ol</b>" },
-    signup: { t: "Kayıt<em>.</em>", cta: "Hesap oluştur", sw: "Hesabın var mı? <b>Giriş yap</b>" },
+    signup: { t: "Kaydol<em>.</em>", cta: "Hesap oluştur", sw: "Hesabın var mı? <b>Giriş yap</b>" },
   };
   function setMode(m) {
     root.dataset.mode = m;
@@ -201,7 +216,9 @@
   // ── Olaylar ─────────────────────────────────────────────
   root.addEventListener("click", (e) => {
     const v = e.target.closest("[data-view]");
-    if (v && root.contains(v)) setView(v.dataset.view);
+    if (v && v !== root && root.contains(v)) setView(v.dataset.view); // kök de data-view taşır: her tıklamada hata silinmesin
+    const g = e.target.closest("[data-goto]"); // sıfırlamadan kayıt formuna geç (e-posta taşınır)
+    if (g && root.contains(g)) { const em = val("auREmail"); setMode(g.dataset.goto); setView("email"); q("#auEmail").value = em; }
   });
   q("[data-eye]", root).addEventListener("click", (e) => {
     const b = e.currentTarget, show = q("#auPw").type === "password", t = show ? "text" : "password";
@@ -209,7 +226,16 @@
     b.innerHTML = show ? I.eyeOff : I.eye;
     b.setAttribute("aria-label", show ? "Şifreyi gizle" : "Şifreyi göster");
   });
-  qa("[data-p]", root).forEach((b) => b.addEventListener("click", () => run(b, () => window.FB.auth[b.dataset.p](), q("#auMErr"))));
+  qa("[data-terms]", root).forEach((c) => c.addEventListener("change", () => {
+    accepted = c.checked;
+    qa("[data-terms]", root).forEach((o) => (o.checked = accepted));
+    qa(".au-terms", root).forEach((t) => t.classList.remove("need"));
+    if (accepted) clearErr();
+  }));
+  qa("[data-p]", root).forEach((b) => b.addEventListener("click", () => {
+    if (!accepted) return needTerms(q("#auMErr"));
+    run(b, () => window.FB.auth[b.dataset.p](), q("#auMErr"));
+  }));
   q("#auSwitch").addEventListener("click", () => setMode(root.dataset.mode === "signup" ? "signin" : "signup"));
   q("#auGuest").addEventListener("click", (e) => run(e.currentTarget, () => window.FB.auth.guest(), q("#auMErr")));
   q("#auX").addEventListener("click", () => close());
@@ -226,6 +252,7 @@
     }
     if (!okPw(pw)) return bad("auPw", "Şifre en az 8 karakter olmalı; harf ve rakam içermeli.");
     if (pw !== q("#auPw2").value) return bad("auPw2", "Şifreler eşleşmiyor.");
+    if (!accepted) return needTerms(err);
     const ok = await run(go, () => window.FB.auth.signUp({ email, password: pw, name: val("auName").slice(0, 40) }));
     if (ok) say("Hoş geldin! E-postana doğrulama bağlantısı gönderdik.");
   });
@@ -234,9 +261,22 @@
     e.preventDefault();
     const email = val("auREmail"), box = q("#auRErr");
     if (!EMAIL.test(email)) return bad("auREmail", "Geçerli bir e-posta adresi gir.", box);
-    if (await run(e.currentTarget.querySelector(".au-cta"), () => window.FB.auth.reset(email), box)) {
-      const ok = q("#auROk");
-      ok.textContent = `Bağlantıyı ${email} adresine gönderdik. Gelen kutunu ve spam klasörünü kontrol et.`;
+    const btn = e.currentTarget.querySelector(".au-cta"), ok = q("#auROk");
+    ok.hidden = true;
+    // Önce hesabı kontrol et: Firebase her durumda "gönderildi" der, e-posta gelmeyince kullanıcı nedenini bilemez
+    let info = null;
+    if (!(await run(btn, async () => { info = await window.FB.auth.checkEmail(email); }, box))) return;
+    if (!info.exists) {
+      box.innerHTML = 'Bu e-postayla hesap yok. <button type="button" class="au-inline" data-goto="signup">Kaydol</button>';
+      return;
+    }
+    if (!info.password) {
+      const via = info.providers.includes("google.com") ? "Google" : info.providers.includes("apple.com") ? "Apple" : "başka bir yöntem";
+      box.innerHTML = `Bu hesap ${via} ile açılmış; şifresi yok. <button type="button" class="au-inline" data-view="main">${via} ile devam et</button>`;
+      return;
+    }
+    if (await run(btn, () => window.FB.auth.reset(email), box)) {
+      ok.textContent = `Bağlantıyı ${email} adresine gönderdik. Bağlantıyla yeni şifreni belirle, sonra buradan giriş yap. Gelmezse spam klasörüne bak.`;
       ok.hidden = false;
     }
   });

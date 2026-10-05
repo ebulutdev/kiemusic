@@ -5,7 +5,12 @@ Yanıt dili: Türkçe. Hedef: iOS/Android mobil uygulama (Capacitor 8, `ios/` + 
 ## Harita (önce buraya bak, projeyi tarama)
 - `public/index.html` iskelet · `public/app.css` stil · `public/app.js` tüm arayüz mantığı (tek dosya, ~70 KB — ilgili fonksiyonu Grep ile bul)
 - `public/fb.js` Firebase istemci: giriş (Apple/Google/e-posta/misafir, misafir→hesap bağlama), 3 dinleyici (config/app, users/{uid}, users/{uid}/tracks), diff+batch yazım
-- `public/recorder.js` ses kaydedici bileşeni (kaydet → dinle/sar → sil ya da kaydet; WAV'a çevirip /api/upload) — Sesten ekranı ve ses klonu kullanır
+- `public/recorder.js` ses kaydedici bileşeni: bölümlü kayıt (duraklat/devam, geri al = son bölümü sil), ham PCM (AudioWorklet) → WAV → /api/upload; loadUrl (keşfet müziği) — Sesten ekranı ve ses klonu kullanır
+- `public/exaudio.js` keşfet müzik motoru (2 çalar, yumuşak geçiş, SETTLE beklemesi; Storage CORS gerekir → seed) · kutular: config/app catalog.genres[i] {label, style, prompt, action custom|cover, preview}, en fazla catalog.exploreMax farklı kutu
+- `public/credits.js` aylık plan penceresi + `Credits.info()` (kalan/verilen kredi, sıfırlanma) — planlar: config/app pricing.plans; satın alma `window.CR.purchase` = mağaza içi abonelik, henüz bağlı değil
+- Yasal sayfalar `/privacy` `/terms` → `public/privacy.html` `terms.html` (TR+EN) + `legal.css|js`; iletişim/sürüm: config/app `legal` {version, terms, privacy, contact}; Apple/Google ile devam ve e-posta kaydı “Okudum ve kabul ediyorum” kutusu işaretlenmeden çalışmaz (auth.js `terms`/`accepted`); hesap açılışında kabul edilen sürüm `users/{uid}.terms`; uygulamadaki `a[data-legal]` bağlantılarını `public/docs.js` uygulama içinde alttan açılan pencerede gösterir (metin paketteki terms/privacy.html’den, çevrimdışı; “Tarayıcıda aç” sunucu adresi) · `window.sheetDrag` ortak sürükle-kapat. Metin değişirse sayfalardaki sürüm + `legal.version` birlikte güncellenir
+- `/admin` → `public/admin.html|js|css` yönetim paneli (yalnız web; mobil pakete girmez) · API `app/api/admin/{stats,explore,config}` · yetki `lib/admin.ts` (custom claim admin) · `npm run admin:grant -- e-posta`
+- Kâr analizi: görev `kieCredits` (servis creditsConsumed) · config/app `economics` {usdPerCredit, kieUsdPerCredit, kieCreditsEstimate}
 - `public/auth.js` + `auth.css` giriş/kayıt ekranı (kapı) ve profil hesap kartı · tasarım: siyah/fildişi zemin + canlı sıcak vurgu (altın #F5B83D, alev turuncusu #FF7A2F, kehribar, koyu kırmızı), başlık fontu Grenze Gotisch; mor/mavi kullanma
 - `public/config/app.json` dinamik sabitlerin seed kaynağı (fiyat, katalog, KIE) → `npm run db:seed` ile Firestore `config/app`
 - `lib/data/schema.ts` Firestore/Storage yolları + tipler (tek doğruluk kaynağı) · `config.ts` (60 sn önbellek) · `users.ts` (kredi, persona, ses) · `tasks.ts` · `storage.ts` · `mirror.ts`
@@ -21,6 +26,8 @@ Yanıt dili: Türkçe. Hedef: iOS/Android mobil uygulama (Capacitor 8, `ios/` + 
 ## Kurallar
 - Sabit değer (fiyat, liste, model, limit) koda yazılmaz → `public/config/app.json` + `npm run db:seed`
 - Kredi yalnız sunucuda düşer/iade edilir (transaction); istemci sadece gösterir
+- Misafir (anonim) kredisi 0 ve harcayamaz: kredi/yükleme uçları `requireAccount`; başlangıç kredisi hesabın ilk dönemi (`ensureUser`)
+- Krediler aylık: dönem (`users/{uid}.period`) bitince bakiye sıfırlanır, abonelik (`plan`) varsa plan kredisine yenilenir, devretmez (`lib/data/users.ts` settlePeriod; abonelik → `startPlan`). Satın alınan kredi süreli olamaz (App Store 3.1.1) → ücretli kredi yalnız abonelik
 - Beat = KIE `instrumental: true` + stil sonuna `catalog.beatTags`; Enstrümantal modu yok
 - Okuma/yazma maliyeti: yeni koleksiyon/dinleyici eklemeden önce mevcut tek belgeye (config/app, users/{uid}) alan eklemeyi düşün
 - Gizli: `.env`, `firebase-service-account.json` — okuma, commit etme

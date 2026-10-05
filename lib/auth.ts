@@ -8,7 +8,7 @@ export class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
-export type User = { uid: string };
+export type User = { uid: string; anon: boolean };
 
 /** İstekteki Firebase ID token'ını doğrular (Authorization: Bearer <idToken>). */
 export async function requireUser(req: Request): Promise<User> {
@@ -16,12 +16,21 @@ export async function requireUser(req: Request): Promise<User> {
   const h = req.headers.get("authorization") || "";
   const token = h.startsWith("Bearer ") ? h.slice(7) : "";
   if (!token) throw new HttpError(401, "Oturum gerekli.");
+  let decoded;
   try {
-    const decoded = await auth.verifyIdToken(token);
-    return { uid: decoded.uid };
+    decoded = await auth.verifyIdToken(token);
   } catch {
     throw new HttpError(401, "Oturum geçersiz, uygulamayı yeniden açın.");
   }
+  return { uid: decoded.uid, anon: decoded.firebase?.sign_in_provider === "anonymous" };
+}
+
+/** Kredi harcayan / yükleme yapan işlemler: misafir (anonim) hesap kullanamaz. */
+export const ACCOUNT_REQUIRED = "Kredi kullanmak için hesap oluştur ya da giriş yap.";
+export async function requireAccount(req: Request): Promise<User> {
+  const u = await requireUser(req);
+  if (u.anon) throw new HttpError(403, ACCOUNT_REQUIRED);
+  return u;
 }
 
 /** İstemciye giden mesaj: altyapı/sağlayıcı adları ve iç ayrıntılar kullanıcıya gösterilmez. */

@@ -3,13 +3,14 @@
 //   1) kendi ürettiği parça  → sourceTaskId görevinin sonuçlarında bu URL var (onay gerekmez)
 //   2) kendi yüklediği kayıt → Storage uploads/{uid}/… (hak onayı zorunlu: rightsConfirmed)
 //   3) kendi medya kopyası   → Storage media/{uid}/…
+//   4) keşfet müziği         → Storage explore/… (yalnız admin yükler: app/api/admin/explore)
 // Bunların dışındaki adresler (internetteki herhangi bir şarkı) reddedilir.
 import { adminBucket } from "../firebaseAdmin";
 import { HttpError } from "../auth";
 import { getTask } from "./tasks";
 import { storagePath } from "./schema";
 
-export type MediaKind = "upload" | "media" | "generated";
+export type MediaKind = "upload" | "media" | "generated" | "explore";
 
 /** Firebase Storage indirme URL'sinden nesne yolunu çıkarır (bizim kovamız değilse null). */
 function storageObject(url: URL): string | null {
@@ -30,6 +31,7 @@ export async function classifyMedia(rawUrl: string, uid: string, sourceTaskId?: 
   const obj = storageObject(url);
   if (obj?.startsWith(storagePath.upload(uid, ""))) return "upload";
   if (obj?.startsWith(`media/${uid}/`)) return "media";
+  if (obj?.startsWith(storagePath.explore(""))) return "explore";
 
   if (sourceTaskId) {
     const task = await getTask(sourceTaskId);

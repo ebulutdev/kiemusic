@@ -121,7 +121,7 @@ export const personaSchema = z.object({
 
 // Ses klonu izni: kullanıcı sesin kendisine ait olduğunu (ya da sahibinin açık iznini) onaylar
 const CONSENT = z.literal(true, { errorMap: () => ({ message: "Sesin sana ait olduğunu onaylaman gerekiyor." }) });
-export const VOICE_CONSENT_VERSION = "2026-10-voice-v1";
+export const VOICE_CONSENT_VERSION = "2026-10-voice-v2"; // v2: "doğacak sorumluluk bana aittir" eklendi
 
 // ── Ses klonu: 1) doğrulama cümlesi (ai-music-api/validation-phrase) ──
 export const voicePhraseSchema = z.object({
