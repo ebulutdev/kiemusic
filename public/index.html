@@ -167,7 +167,7 @@
     <div class="np-top"><button class="icon-btn" id="npClose" aria-label="Kapat"></button><div class="np-ctx" id="fpGrab"><small>Çalınan yer</small><b id="npCtx">Kütüphane</b></div><button class="icon-btn" id="fpMore" aria-label="Diğer"></button></div>
     <div class="np-art-wrap" id="npArtWrap"><div class="np-art cov" id="fpArt"></div></div>
     <div class="np-meta" id="npMeta"><div><h2 id="fpTitle"></h2><p id="fpSub"></p></div><button class="np-like" id="npLike" aria-label="Beğen"></button></div>
-    <div class="np-seek" id="fpBar"><i id="fpFill"></i></div>
+    <div class="np-seek" id="fpBar"><span class="np-wv"><i id="fpFill"></i></span></div>
     <div class="np-times"><span id="fpCur">0:00</span><span id="fpDur">-:--</span></div>
     <div class="np-ctrl">
       <button class="icon-btn tg" id="fpShuf" aria-label="Karıştır"></button>
@@ -178,9 +178,11 @@
     </div>
     <div class="np-tools"><button class="icon-btn" id="npShare" aria-label="Paylaş"></button><button class="icon-btn" id="npQueue" aria-label="Sıra"></button></div>
     <div class="np-card lyr-card" id="lyrCard"><h3><span>Sözler</span><span class="np-h-act"><span class="lyr-st" id="lyrSt"></span><button class="np-mini" id="lyrCopy" aria-label="Kopyala"></button><button class="np-mini" id="lyrOpen" aria-label="Tam ekran"></button></span></h3><div class="lyr" id="fpLyr"></div></div>
-    <div class="np-card" id="npAboutCard"><h3><span>Hakkında</span><span class="np-h-act"><button class="np-mini" id="styleRemix" aria-label="Bu stille üret"></button><button class="np-mini" id="styleCopy" aria-label="Kopyala"></button></span></h3>
-      <p class="np-date" id="fpAbout"></p><div class="np-tags" id="fpStyle"></div><div id="fpParent"></div><div class="np-acts" id="fpPills"></div></div>
-    <div class="np-card" id="npNextCard"><h3><span>Sıradaki</span><button class="np-link" id="npQueue2">Sırayı aç</button></h3><div id="npNext"></div></div>
+    <div class="np-card" id="npAboutCard"><h3><span>Künye</span><span class="np-h-act"><button class="np-mini" id="styleRemix" aria-label="Bu stille üret"></button><button class="np-mini" id="styleCopy" aria-label="Stili kopyala"></button></span></h3>
+      <figure class="np-quote" id="fpStyleQ"><figcaption>Stil</figcaption><blockquote id="fpStyle"></blockquote></figure>
+      <figure class="np-quote" id="fpIdeaQ" hidden><figcaption>Fikir</figcaption><blockquote id="fpIdea" data-noi18n></blockquote></figure>
+      <dl class="np-dl" id="fpAbout"></dl><div id="fpParent"></div><div class="np-acts" id="fpPills"></div></div>
+    <div class="np-card" id="npNextCard"><h3><span>Sırada</span><button class="np-link" id="npQueue2">Sırayı aç</button></h3><div id="npNext"></div></div>
   </div>
 </div>
 

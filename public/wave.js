@@ -49,6 +49,7 @@
     }
     return CACHE.get(url);
   }
+  window.wavePeaks = loadPeaks; // çalar ekranı dalga formu (app.js syncWave)
 
   window.createWavePicker = function createWavePicker(root, o = {}) {
     const mode = o.mode === "point" ? "point" : "range";

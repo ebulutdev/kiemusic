@@ -968,15 +968,34 @@ function syncPlayer(dir=0){
   $('#npCtx').textContent=P.ctxName;$('#fpTitle').textContent=t.title;$('#fpSub').textContent=`${KIND[t.output]||'Şarkı'} • ${modelTag(t)}`;
   $('#lfTitle').textContent=t.title;$('#lfSub').textContent=KIND[t.output]||'';
   const lk=$('#npLike');lk.classList.toggle('on',t.like===1);lk.innerHTML=ic(t.like===1?'like':'heart',26);
-  const tags=(t.style||KIND[t.output]||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,8);
-  $('#fpStyle').innerHTML=tags.map(x=>`<button class="np-tag" data-tag="${esc(x)}">${esc(x)}</button>`).join('');
-  const d=new Date(t.created||Date.now());$('#fpAbout').textContent=`${d.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})} • ${modelTag(t)}${t.duration?' • '+fmt(t.duration):''}`;
+  renderKunye(t);syncWave(t);
   const par=t.parent&&findT(t.parent);$('#fpParent').innerHTML=par?`<button class="src-row" data-parent="${par.id}"><span class="av">${art(par)}</span><span class="src-t"><small>Kaynak</small><b>${esc(par.title)}</b></span>${ic('chevR',16)}</button>`:'';
   $('#fpPills').innerHTML=`<button class="np-act" data-ft="cover">${ic('cover',16)}Cover</button><button class="np-act" data-ft="extend">${ic('extend',16)}Uzat</button>${t.kind?'':`<button class="np-act" data-ft="stems">${ic('stems',16)}Stem</button>`}`;
   const up=upcoming(3);$('#npNextCard').hidden=!up.length;
   $('#npNext').innerHTML=up.map(({t:x,k})=>`<button class="np-q" data-k="${k}"><span class="np-q-art cov">${art(x)}</span><span class="np-q-t"><b>${esc(x.title)}</b><small>${esc(KIND[x.output]||'')} • ${fmt(x.duration)}</small></span></button>`).join('');
   if(ch){renderLyr(t);ensureAlign(t)}
 }
+// Künye: parçanın üretim bilgisi — stil metninin tamamı, fikir (kısa açıklama), tür, model, vokal, süre, söz, tarih
+const GENDER_TR={f:'Kadın',m:'Erkek'};
+function renderKunye(t){
+  $('#fpStyle').textContent=t.style||'';$('#fpStyleQ').hidden=!t.style;
+  const idea=t.prompt&&t.prompt!==t.style?t.prompt:'';$('#fpIdea').textContent=idea;$('#fpIdeaQ').hidden=!idea;
+  const ly=(t.lyrics||'').split('\n').map(x=>x.trim()).filter(x=>x&&!/^\[.*\]$/.test(x)),words=ly.join(' ').split(/\s+/).filter(Boolean).length;
+  const d=new Date(t.created||Date.now()),rows=[['Tür',KIND[t.output]||'Şarkı'],['Model',modelTag(t)],t.output==='song'&&GENDER_TR[t.gender]?['Vokal',GENDER_TR[t.gender]]:null,
+    t.duration?['Süre',fmt(t.duration)]:null,ly.length?['Söz',ly.length+' satır · '+words+' kelime']:t.output==='beat'?['Söz','Enstrümantal']:null,
+    ['Oluşturuldu',d.toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})+' · '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})]].filter(Boolean);
+  $('#fpAbout').innerHTML=rows.map(([k,v])=>`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('')}
+// Dalga formu ilerleme çubuğu: parçanın sesinden bir kez hesaplanır, parçaya 64 karakterlik metin olarak kaydedilir (t.wave → buluta da eşitlenir)
+// → aynı parça için ses bir daha indirilmez. Hesaplanana kadar ince çubuk görünür.
+const WAVE_N=64,WAVING=new Set();
+function waveMask(w){let r='';for(let i=0;i<WAVE_N;i++){const h=Math.max(.1,parseInt(w[i]||'0',36)/35)*40;r+=`<rect x="${i*4}" y="${((40-h)/2).toFixed(1)}" width="2.6" height="${h.toFixed(1)}" rx="1.3"/>`}
+  return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WAVE_N*4-1.4} 40" preserveAspectRatio="none">${r}</svg>`)}")`}
+function syncWave(t){const b=$('#fpBar');if(!t||!t.wave||t.wave.length!==WAVE_N){b.classList.remove('wv');if(t)loadWave(t);return}
+  if(b.dataset.wave!==t.wave){b.style.setProperty('--wave',waveMask(t.wave));b.dataset.wave=t.wave}b.classList.add('wv')}
+async function loadWave(t){if(!t.audioUrl||t.status!=='ready'||WAVING.has(t.id)||!window.wavePeaks||!$('#fp').classList.contains('open'))return;WAVING.add(t.id);
+  try{const{peaks}=await wavePeaks(t.audioUrl,t.providerTaskId,fetchAudio),per=peaks.length/WAVE_N;let s='';
+    for(let i=0;i<WAVE_N;i++){let m=0;for(let j=Math.floor(i*per),e=Math.max(j+1,Math.floor((i+1)*per));j<e;j++)m=Math.max(m,peaks[j]||0);s+=Math.min(35,Math.round(m*35)).toString(36)}
+    t.wave=s;save();if(P.cur&&P.cur.id===t.id)syncWave(t)}catch(e){/* dalga formu yoksa ince çubuk kalır */}finally{WAVING.delete(t.id)}}
 function openQueue(){
   const up=upcoming(40),t=P.cur;if(!t)return;
   openSheet(`<div class="sheet-sec">Şu an çalıyor</div><div class="np-q now"><span class="np-q-art cov">${art(t)}</span><span class="np-q-t"><b>${esc(t.title)}</b><small>${esc(KIND[t.output]||'')}</small></span></div>
@@ -984,9 +1003,8 @@ function openQueue(){
 }
 document.addEventListener('click',e=>{const q=e.target.closest('.np-q[data-k]');if(!q)return;if(q.closest('#sheet'))closeLayer($('#sheet'));goPos(+q.dataset.k,1)});
 $('#fpPills').addEventListener('click',e=>{const b=e.target.closest('[data-ft]');if(!b||!P.cur)return;openTool(b.dataset.ft,P.cur.id)});
-$('#fpStyle').addEventListener('click',e=>{const b=e.target.closest('[data-tag]');if(!b)return;closeLayer($('#fp'));openCreate('custom',{style:b.dataset.tag})});
 $('#fpParent').addEventListener('click',e=>{const b=e.target.closest('[data-parent]');if(b)play(b.dataset.parent,false)});
-function openPlayer(){syncPlayer();const fp=$('#fp');if(P.cur)tintFor(P.cur);fp.classList.add('open');fp.setAttribute('aria-hidden','false');if(!stack.includes(fp))stack.push(fp);fp.scrollTop=0;riseIn($('#npMeta'),120)}
+function openPlayer(){syncPlayer();const fp=$('#fp');if(P.cur)tintFor(P.cur);fp.classList.add('open');if(P.cur)syncWave(P.cur);fp.setAttribute('aria-hidden','false');if(!stack.includes(fp))stack.push(fp);fp.scrollTop=0;riseIn($('#npMeta'),120)}
 $('#fp')._onClose=()=>{$('#fp').setAttribute('aria-hidden','true');closeLayer($('#lyrFull'))};
 function mediaSession(){if(!window.CR||!P.cur)return;const M=CR.media,art=P.cur.image&&/^https:/.test(P.cur.image)?[{src:P.cur.image,sizes:'512x512',type:'image/jpeg'}]:[];
   M.metadata({title:P.cur.title||'',artist:'CookRapper',album:KIND[P.cur.output]||'',artwork:art});M.state(P.playing?'playing':'paused');

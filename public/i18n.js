@@ -134,7 +134,7 @@
     "Seçtiğin aralık yeniden üretilir, şarkının geri kalanı aynı kalır. Aralık en az 10 sn, en çok şarkının yarısı olabilir.": "The selected range is regenerated and the rest of the song stays the same. The range must be at least 10 s and at most half the song.",
     "Üretim başarısız oldu.": "Generation failed.", "İşlem şu an yapılamadı. Biraz sonra tekrar dene.": "Couldn't do that right now. Try again in a moment.",
     // aylık plan / kredi penceresi (credits.js) + profil kredi kartı
-    "Kabul ediyorum:": "I agree to:", "Devam etmek için koşulları kabul et.": "Accept the terms to continue.", "Kullanım Koşulları ve Gizlilik Politikası'nı okudum, kabul ediyorum": "I've read and agree to the Terms of Use and Privacy Policy", "Koşullar": "Terms", "Yükleniyor…": "Loading…", "Tarayıcıda aç": "Open in browser", "Yasal metinler": "Legal documents", "Sayfa açılamadı. İnternet bağlantını kontrol et.": "Couldn't open the page. Check your internet connection.", "Kullanım Koşulları": "Terms of Use", "Gizlilik Politikası": "Privacy Policy", "Yasal": "Legal",
+    "Kabul ediyorum:": "I agree to:", "Künye": "Credits", "Sırada": "Up next", "Fikir": "Idea", "Tür": "Type", "Söz": "Lyrics", "Oluşturuldu": "Created", "Stili kopyala": "Copy style", "Devam etmek için koşulları kabul et.": "Accept the terms to continue.", "Kullanım Koşulları ve Gizlilik Politikası'nı okudum, kabul ediyorum": "I've read and agree to the Terms of Use and Privacy Policy", "Koşullar": "Terms", "Yükleniyor…": "Loading…", "Tarayıcıda aç": "Open in browser", "Yasal metinler": "Legal documents", "Sayfa açılamadı. İnternet bağlantını kontrol et.": "Couldn't open the page. Check your internet connection.", "Kullanım Koşulları": "Terms of Use", "Gizlilik Politikası": "Privacy Policy", "Yasal": "Legal",
     "Hesabını aç": "Create your account",
     "Kredin bitti": "Out of credits",
     "Planın": "Your plan",
@@ -184,6 +184,7 @@
   const MONTHS = { Ocak: "January", Şubat: "February", Mart: "March", Nisan: "April", Mayıs: "May", Haziran: "June", Temmuz: "July",
     Ağustos: "August", Eylül: "September", Ekim: "October", Kasım: "November", Aralık: "December" };
   const RX = [
+    [/^(\d+) satır$/, (m, n) => n + (n === "1" ? " line" : " lines")], [/^(\d+) kelime$/, (m, n) => n + (n === "1" ? " word" : " words")],
     [/^(\d+) gün sonra yenilenir$/, "Renews in $1 days"], [/^(\d+) gün sonra sıfırlanır$/, "Resets in $1 days"], [/^(\d+) kredi \/ ay$/, "$1 credits / mo"], [/^%(\d+) tasarruf$/, "Save $1%"], [/^Her ay (\d+) kredi$/, "$1 credits every month"], [/^≈ (\d+) şarkı$/, "≈ $1 songs"], [/^(\d+) gün geçerli$/, "valid for $1 days"], [/^Hesap açana (\d+) kredi hediye$/, "$1 free credits when you sign up"], [/^(.+) \/ ay$/, "$1 / mo"],
     [/^(\d+) şarkı$/, (m, n) => n + (n === "1" ? " song" : " songs")], [/^(\d+) parça$/, (m, n) => n + (n === "1" ? " track" : " tracks")], [/^(\d+) kredi$/, "$1 credits"],
     [/^(\d{1,2}) (Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık) (\d{4})$/, (m, d, mo, y) => `${MONTHS[mo]} ${d}, ${y}`],
