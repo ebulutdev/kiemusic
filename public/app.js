@@ -71,7 +71,7 @@ Object.assign(I,{
 
 /* ---------- state ---------- */
 // Fiyatlar: Firestore config/pricing → SF.applyPricing (sunucu her zaman kendi fiyatıyla düşer)
-const COST={generate:10,cover:10,extend:10,'upload-extend':10,'add-vocals':10,'remove-vocals':5,'replace-section':5,'split-stem':25};
+const COST={generate:12,cover:12,extend:12,'upload-extend':10,'add-vocals':12,'remove-vocals':5,'replace-section':5,'split-stem':25};
 // Maliyet: önce modele özel fiyat (config pricing.modelCosts[model][op]), yoksa COST[op] — sunucudaki getCost(op, model) ile aynı kural
 const MODEL_COST={},TOOL_OP={extend:'extend',cover:'cover',vocals:'add-vocals',stems:'remove-vocals',replace:'replace-section'};
 const costOf=(op,model)=>{const m=MODEL_COST[model];return m&&typeof m[op]==='number'?m[op]:(COST[op]??0)};

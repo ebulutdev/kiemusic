@@ -52,6 +52,7 @@
       <div class="ad-card-h"><b>Birim fiyatlar</b><small>Kâr analizi bu değerlerle hesaplanır</small></div>
       <label>1 uygulama kredisinin satış değeri ($)<input type="number" name="usdPerCredit" step="0.0001" min="0" required></label>
       <label>1 servis kredisinin maliyeti ($)<input type="number" name="kieUsdPerCredit" step="0.0001" min="0" required></label>
+      <fieldset><legend>Kullanıcıdan düşülen kredi <small>(işlem başına; hedef: 1 kredi = 1 servis kredisi - altında ölçülen gerçek tüketim)</small></legend><div class="ad-est" id="adCost"></div></fieldset>
       <fieldset><legend>İşlem başına tahmini servis kredisi <small>(gerçek değer gelmeyen eski görevler için)</small></legend><div class="ad-est" id="adEst"></div></fieldset>
       <div class="ad-card-h"><b>Keşfet</b></div>
       <label>Farklı kutu sayısı (gerisi tekrar)<input type="number" name="exploreMax" min="1" max="60" step="1" required></label>

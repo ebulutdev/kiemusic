@@ -25,6 +25,7 @@ Yanıt dili: Türkçe. Hedef: iOS/Android mobil uygulama (Capacitor 8, `ios/` + 
 
 ## Kurallar
 - Maliyet rozeti: istemci `costOf(op, model)` ↔ sunucu `getCost(op, model)`; fiyat yalnız `pricing.costs` + isteğe bağlı `pricing.modelCosts[model][op]` (app.json + seed). Rozet = kullanıcı kredisi, KIE token değil
+- Fiyat hedefi: 1 kullanıcı kredisi = 1 KIE token (ölçülen: generate/cover/extend/add-vocals = 12). Gerçek tüketim admin › Ayarlar'da işlem başına görünür, fiyat oradan düzenlenir (`pricing.costs`). Plan şarkı sayısı otomatik (kredi / generate × 2)
 - Git / Dal Kuralı: Yapılan her geliştirme ve commit doğrudan 'main' dalında yapılacak. Kesinlikle yeni branch açılmayacak.
 - Sabit değer (fiyat, liste, model, limit) koda yazılmaz → `public/config/app.json` + `npm run db:seed`
 - Kredi yalnız sunucuda düşer/iade edilir (transaction); istemci sadece gösterir

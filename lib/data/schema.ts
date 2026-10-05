@@ -44,7 +44,7 @@ export interface ExplorePreview { url: string; path: string; start: number; name
 
 // ── config/app ────────────────────────────────────────────
 // songs: yaklaşık şarkı sayısı (üretim 10 kredi = 2 şarkı)
-export interface PlanConfig { id: string; name: string; credits: number; price: number; currency: string; songs: number; best?: boolean }
+export interface PlanConfig { id: string; name: string; credits: number; price: number; currency: string; songs?: number; best?: boolean }
 
 export interface AppConfig {
   version: number;

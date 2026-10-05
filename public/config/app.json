@@ -5,11 +5,11 @@
   "periodDays": 30,
   "freeMonthly": 0,
   "costs": {
-   "generate": 10,
-   "cover": 10,
-   "extend": 10,
+   "generate": 12,
+   "cover": 12,
+   "extend": 12,
    "upload-extend": 10,
-   "add-vocals": 10,
+   "add-vocals": 12,
    "remove-vocals": 5,
    "replace-section": 5,
    "split-stem": 25
@@ -21,8 +21,7 @@
     "name": "Plus",
     "credits": 400,
     "price": 250,
-    "currency": "TRY",
-    "songs": 80
+    "currency": "TRY"
    },
    {
     "id": "pro_monthly",
@@ -30,7 +29,6 @@
     "credits": 950,
     "price": 500,
     "currency": "TRY",
-    "songs": 190,
     "best": true
    }
   ]

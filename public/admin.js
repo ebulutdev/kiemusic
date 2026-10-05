@@ -74,6 +74,7 @@
   async function loadStats() {
     data = await api(`/api/admin/stats?days=${days}`);
     renderStats();
+    fillSettings();
   }
   $("#adRange").addEventListener("click", async (e) => {
     const b = e.target.closest("[data-d]");
@@ -263,16 +264,23 @@
     f.exploreMax.value = exp?.exploreMax ?? 20;
     f.previewSec.value = exp?.previewSec ?? 30;
     const keys = [...new Set([...Object.keys(OPS), ...Object.keys(E.kieCreditsEstimate || {})])];
+    // Kullanıcı kredisi: ölçülen = bu dönemde gerçek servis kredisi gelen tamamlanmış görevlerin ortalaması
+    const C = data?.pricing?.costs || {}, byOp = new Map((data?.byOp || []).map((r) => [r.key, r]));
+    const meas = (k) => { const r = byOp.get(k); if (!r || !r.completed) return "ölçülmedi"; const avg = r.kieCredits / r.completed;
+      return `${r.estimated ? "≈" : "ölçülen"} ${nf2.format(avg)}${r.estimated ? " (tahmin içerir)" : ""} · n=${r.completed}` };
+    $("#adCost").innerHTML = Object.keys(C).map((k) => `<label>${h(OPS[k] || k)}<input type="number" min="0" max="1000" step="1" data-c="${h(k)}" value="${C[k]}"><small class="ad-meas">${h(meas(k))}</small></label>`).join("") || "<small>Analiz yüklenince görünür</small>";
     $("#adEst").innerHTML = keys.map((k) => `<label>${h(OPS[k] || k)}<input type="number" min="0" step="0.5" data-k="${h(k)}" value="${E.kieCreditsEstimate?.[k] ?? 0}"></label>`).join("");
   }
   $("#adEcon").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const f = e.currentTarget, msg = $("#adEconMsg"), est = {};
+    const f = e.currentTarget, msg = $("#adEconMsg"), est = {}, costs = {};
+    $$("#adCost input").forEach((i) => (costs[i.dataset.c] = Math.max(0, Math.round(+i.value || 0))));
     $$("#adEst input").forEach((i) => (est[i.dataset.k] = Math.max(0, +i.value || 0)));
     msg.textContent = "Kaydediliyor…";
     try {
       await api("/api/admin/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         economics: { usdPerCredit: +f.usdPerCredit.value, kieUsdPerCredit: +f.kieUsdPerCredit.value, kieCreditsEstimate: est },
+        ...(Object.keys(costs).length ? { costs } : {}),
         exploreMax: Math.round(+f.exploreMax.value), previewSec: Math.round(+f.previewSec.value),
       }) });
       msg.textContent = "Kaydedildi ✓ — analiz yenileniyor";

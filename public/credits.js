@@ -26,7 +26,7 @@
   const set = () => (window.SF ? window.SF.state().set : { credits: 0 });
   const planOf = (id) => plans.find((p) => p.id === id);
   const price = (p) => prices[p.id] || money(p.price, p.currency);
-  const songs = (cr) => Math.floor(cr / (cfg.costs.generate || 10)) * 2; // 1 üretim = 2 şarkı
+  const songs = (cr) => Math.floor(cr / (cfg.costs.generate || 12)) * 2; // 1 üretim = 2 şarkı
 
   /** Kredi durumu — profil kartı ve pencere aynı hesabı kullanır. pct: bu dönemde verilen kredinin kalan yüzdesi. */
   function info() {
@@ -134,7 +134,7 @@
     }).join("");
 
     const p = planOf(sel), cur = k.plan && k.plan.id === p.id;
-    $("#cpPerks").innerHTML = [`Her ay ${p.credits} kredi · ≈ ${p.songs || songs(p.credits)} şarkı`, "Cover, uzatma, vokal ve stem dahil", "İstediğin zaman iptal et"]
+    $("#cpPerks").innerHTML = [`Her ay ${p.credits} kredi · ≈ ${songs(p.credits)} şarkı`, "Cover, uzatma, vokal ve stem dahil", "İstediğin zaman iptal et"]
       .map((t) => `<li>${I.tick}<span>${h(t)}</span></li>`).join("");
     $("#cpBuyM").textContent = cur ? "Aboneliği yönet" : k.plan ? "Plana geç" : "Abone ol";
     $("#cpBuyS").textContent = cur ? [p.name, k.meta].filter(Boolean).join(" · ") : `${p.name} · ${price(p)} / ay`;

@@ -11,6 +11,7 @@ const schema = z.object({
     kieUsdPerCredit: z.number().min(0).max(100),
     kieCreditsEstimate: z.record(z.string(), z.number().min(0).max(10_000)).optional(),
   }).optional(),
+  costs: z.record(z.string().regex(/^[a-z-]{2,30}$/), z.number().int().min(0).max(1000)).optional(),
   exploreMax: z.number().int().min(1).max(60).optional(),
   previewSec: z.number().int().min(5).max(120).optional(),
 });
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
       fields["economics.kieUsdPerCredit"] = d.economics.kieUsdPerCredit;
       if (d.economics.kieCreditsEstimate) fields["economics.kieCreditsEstimate"] = d.economics.kieCreditsEstimate;
     }
+    if (d.costs) for (const [k, v] of Object.entries(d.costs)) fields[`pricing.costs.${k}`] = v; // kullanıcıdan düşülen kredi (getCost)
     if (d.exploreMax !== undefined) fields["catalog.exploreMax"] = d.exploreMax;
     if (d.previewSec !== undefined) fields["catalog.previewSec"] = d.previewSec;
     if (!Object.keys(fields).length) return NextResponse.json({ success: false, error: "Değişiklik yok" }, { status: 400 });

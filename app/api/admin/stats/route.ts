@@ -155,6 +155,7 @@ export async function GET(request: Request) {
       success: true,
       period: { days, since, now },
       economics: econ,
+      pricing: { costs: cfg.pricing?.costs || {}, modelCosts: cfg.pricing?.modelCosts || {} },
       kieBalance,
       backfilled,
       users: {
