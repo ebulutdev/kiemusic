@@ -1,4 +1,4 @@
-/* ── CookRapper · Ses kaydedici bileşeni ───────────────────
+/* ── CookFire · Ses kaydedici bileşeni ───────────────────
    Bölümlü kayıt (rap kaydı gibi): kaydet → duraklat → devam et … → bitir → dinle / sar → sil ya da kaydet.
    Duraklatınca "geri al" son bölümü siler; kayıt o noktadan sürer.
    Durumlar: idle → rec ⇄ paused → review → saving → saved

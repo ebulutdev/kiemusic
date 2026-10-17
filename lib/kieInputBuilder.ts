@@ -66,6 +66,23 @@ export function buildCoverInput(d: AudioTaskInput): KieInput {
   });
 }
 
+// ── Mashup (ai-music-api/mashup) ──────────────────────────
+// Zorunlu: upload_url_list (2 adres), model, style, title. lyrics yoksa prompt söz sayılır; ikisi de yoksa
+// servis sözleri yüklenen sesten kendisi çıkarıp yeniden yazar. Analiz: aynı (düzenlenmiş) ses iki kez gider.
+export function buildMashupInput(d: AudioTaskInput): KieInput {
+  return clean({
+    upload_url_list: [d.uploadUrl, d.uploadUrl],
+    model: d.model,
+    title: (d.title || "Mashup").slice(0, 100),
+    style: d.style,
+    lyrics: d.lyrics || undefined,
+    vocal_gender: d.vocalGender,
+    duration: d.duration, // yoksa KIE 20 sn üretir
+    ...tuning(d, true),
+    ...persona(d),
+  });
+}
+
 // ── Extend (ai-music-api/extend) — üretilmiş parça ────────
 export function buildExtendInput(d: AudioTaskInput): KieInput {
   const vocal = !d.instrumental;
@@ -116,9 +133,11 @@ export function buildAddVocalsInput(d: AudioTaskInput): KieInput {
 }
 
 // ── Separate vocals / stems (ai-music-api/separate-vocals) ─
-// Üretilmiş parça: task_id + audio_id zorunlu
+// Ya task_id + audio_id (yalnız Generate / Extend görevinin parçası) ya da tek başına audio_url (en çok 20 MB).
+// Cover, mashup, vokal ekle… sonuçları için rota ses adresini koyar (uploadUrl) → audio_url gider.
 export function buildStemInput(d: AudioTaskInput): KieInput {
-  return clean({ task_id: d.taskId, audio_id: d.audioId, type: d.stemType ?? "separate_vocal" });
+  const type = d.stemType ?? "separate_vocal";
+  return d.uploadUrl ? clean({ audio_url: d.uploadUrl, type }) : clean({ task_id: d.taskId, audio_id: d.audioId, type });
 }
 
 // ── Replace Section (ai-music-api/replace-section) ────────

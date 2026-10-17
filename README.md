@@ -1,8 +1,8 @@
-# CookRapper — Yapay Zekâ Müzik Stüdyosu
+# CookFire — Yapay Zekâ Müzik Stüdyosu
 
 Next.js 15 · TypeScript · Firebase (Auth · Firestore · Storage) · KIE API (arka uç) · PWA · Capacitor 8 (iOS & Android)
 
-> Mağaza adı **CookRapper**. Arayüzde ve mağaza sayfasında üçüncü taraf marka adları (KIE, Suno) kullanılmaz; yalnız sunucu kodunda geçer.
+> Mağaza adı **CookFire**. Arayüzde ve mağaza sayfasında üçüncü taraf marka adları (KIE, Suno) kullanılmaz; yalnız sunucu kodunda geçer.
 
 ---
 
@@ -98,7 +98,7 @@ Kredi düşümü transaction ile atomik; başarısız görevde iade yalnız bir 
 ## Proje Yapısı
 
 ```
-cookrapper/
+cookfire/
 ├── app/
 │   ├── api/
 │   │   ├── callback/          ← KIE webhook (HMAC doğrulamalı)
@@ -244,7 +244,7 @@ MIT
 ```bash
 cp .env.example .env # KIE_API_KEY'i yazın
 npm install
-npm run dev          # http://localhost:3000 → CookRapper mobil arayüzü
+npm run dev          # http://localhost:3000 → CookFire mobil arayüzü
 ```
 
 Ses kaydı / yükleme ve webhook için KIE'nin sunucunuza erişebilmesi gerekir:

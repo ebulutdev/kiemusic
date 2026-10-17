@@ -1,4 +1,4 @@
-/* ── CookRapper · Aylık plan / kredi penceresi ───────────────
+/* ── CookFire · Aylık plan / kredi penceresi ───────────────
    Krediler aylıktır: her dönem başında bakiye plan kredisine (abonelik) ya da ücretsiz kotaya sıfırlanır, devretmez
    (sunucu: lib/data/users.ts settlePeriod). Planlar config/app → pricing.plans (SF.applyPricing → Credits.setPricing);
    plan id = App Store / Play abonelik ürün kimliği.
@@ -9,7 +9,7 @@
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const h = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const money = (v, cur = "TRY") => new Intl.NumberFormat("tr-TR", { style: "currency", currency: cur, maximumFractionDigits: v % 1 ? 2 : 0 }).format(v);
+  const money = (v, cur = "TRY") => new Intl.NumberFormat((window.I18N && window.I18N.loc()) || "tr-TR", { style: "currency", currency: cur, maximumFractionDigits: v % 1 ? 2 : 0 }).format(v);
   const DAY = 864e5;
   const MANAGE = { ios: "https://apps.apple.com/account/subscriptions", android: "https://play.google.com/store/account/subscriptions" };
   const svg = (d, w = 18, sw = 2) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -20,10 +20,23 @@
   };
 
   let plans = [], cfg = { startCredits: 0, periodDays: 30, costs: {} };
-  let sel = null, mode = "manual", prices = {}, priced = false;
+  let custom = 0, sel = null, mode = "manual", prices = {}, priced = false;
   const platform = () => (window.CR && window.CR.platform) || "web";
   const set = () => (window.SF ? window.SF.state().set : { credits: 0 });
   const planOf = (id) => plans.find((p) => p.id === id);
+  // Özel miktar (kaydırıcı): fiyat, plan noktaları arasında doğrusal ara değerle hesaplanır, mağaza fiyat basamağına (…9) yuvarlanır.
+  // Her miktar mağazada `custom_<kredi>_monthly` adlı bir abonelik ürünü olmalı (adım config pricing.custom.step ile seyreltilir).
+  const pts = () => plans.slice().sort((a, b) => a.credits - b.credits);
+  function priceFor(c) {
+    const P = pts();
+    if (c <= P[0].credits) return P[0].price;
+    for (let i = 1; i < P.length; i++) if (c <= P[i].credits) { const a = P[i - 1], b = P[i]; return Math.round(((a.price + ((c - a.credits) / (b.credits - a.credits)) * (b.price - a.price)) + 1) / 10) * 10 - 1; }
+    const L = P[P.length - 1]; // son planın ötesi: aynı kredi başına fiyatla uzar (tasarruf oranı sabit kalır)
+    return Math.round(((L.price / L.credits) * c + 1) / 10) * 10 - 1;
+  }
+  const customPlan = () => ({ id: `custom_${custom}_monthly`, name: "Özel", credits: custom, price: priceFor(custom), currency: (plans[0] || {}).currency || "TRY", songs: songs(custom) });
+  const getPlan = (id) => (id === "custom" ? customPlan() : planOf(id));
+  const saveOf = (p) => Math.round((1 - p.price / p.credits / Math.max(...plans.map((x) => x.price / x.credits))) * 100);
   const price = (p) => prices[p.id] || money(p.price, p.currency);
   const songs = (cr) => Math.floor(cr / (cfg.costs.generate || 12)) * 2; // 1 üretim = 2 şarkı
 
@@ -59,6 +72,7 @@
         <div class="cp-now" id="cpNow"></div>
         <div class="cp-gift" id="cpGift"></div>
         <div class="cp-list" id="cpList" role="radiogroup" aria-label="Aylık planlar"></div>
+        <div class="cp-custom" id="cpCustom" hidden></div>
         <ul class="cp-perks" id="cpPerks"></ul>
       </div>
       <footer class="cp-foot">
@@ -118,7 +132,9 @@
       $("#cpBuy").disabled = true;
       return;
     }
-    if (!planOf(sel)) sel = defaultPlan(k);
+    if (sel !== "custom" && !planOf(sel)) sel = defaultPlan(k);
+    const cc = cfg.custom;
+    if (cc && !custom) custom = Math.min(cc.max, Math.max(cc.min, (planOf(sel) || {}).credits || cc.min));
     const base = Math.max(...plans.map((p) => p.price / p.credits)); // kredi başına en yüksek fiyat → tasarruf oranı
     list.innerHTML = plans.map((p) => {
       const on = p.id === sel, cur = k.plan && k.plan.id === p.id, save = Math.round((1 - p.price / p.credits / base) * 100);
@@ -131,13 +147,34 @@
         </button>`;
     }).join("");
 
-    const p = planOf(sel), cur = k.plan && k.plan.id === p.id;
+    $("#cpCustom").hidden = !cc;
+    if (cc) $("#cpCustom").innerHTML = `<div class="cp-cu-h"><b>Özel miktar</b><span id="cpCuV"></span></div><input type="range" id="cpCuR" min="${cc.min}" max="${cc.max}" step="${cc.step}" value="${custom}" aria-label="Kredi miktarı">`;
+    paintCustom();
+    const p = getPlan(sel), cur = k.plan && k.plan.id === p.id;
     $("#cpPerks").innerHTML = [`Her ay ${p.credits} kredi · ≈ ${songs(p.credits)} şarkı`, "Cover, uzatma, vokal ve stem dahil", "İstediğin zaman iptal et"]
       .map((t) => `<li>${I.tick}<span>${h(t)}</span></li>`).join("");
     $("#cpBuyM").textContent = cur ? "Aboneliği yönet" : k.plan ? "Plana geç" : "Abone ol";
     $("#cpBuyS").textContent = cur ? [p.name, k.meta].filter(Boolean).join(" · ") : `${p.name} · ${price(p)} / ay`;
+    $("#cpCustom").classList.toggle("on", sel === "custom");
     $("#cpBuy").disabled = false;
     $("#cpLegal").textContent = legal();
+  }
+
+  // Özel miktar kartı: değer + tasarruf etiketi; kaydırınca seçim "özel" olur, plan kartlarının seçimi kalkar (yeniden çizmeden)
+  function paintCustom() {
+    const v = $("#cpCuV"); if (!v || !cfg.custom) return;
+    const p = customPlan(), s = saveOf(p);
+    v.innerHTML = `${p.credits} kredi · <b>${h(price(p))}</b>${s >= 5 ? ` <em class="cp-tag">%${s} tasarruf</em>` : ""}`;
+  }
+  function syncCustom() {
+    sel = "custom"; custom = +$("#cpCuR").value; note("");
+    $$(".cp-pl", el).forEach((b) => { b.classList.remove("on"); b.setAttribute("aria-checked", "false"); });
+    const p = customPlan(), k = info();
+    paintCustom();
+    $("#cpCustom").classList.add("on");
+    $("#cpPerks").firstElementChild.querySelector("span").textContent = `Her ay ${p.credits} kredi · ≈ ${p.songs} şarkı`;
+    $("#cpBuyM").textContent = k.plan ? "Plana geç" : "Abone ol";
+    $("#cpBuyS").textContent = `${p.name} · ${price(p)} / ay`;
   }
 
   // Varsayılan seçim: abone değilse önerilen plan; aboneyken kredi bittiyse bir üst plan, yoksa mevcut plan
@@ -158,6 +195,7 @@
       .catch(() => { priced = false; });
   }
 
+  el.addEventListener("input", (e) => { if (e.target.id === "cpCuR") syncCustom(); });
   $("#cpList", el).addEventListener("click", (e) => {
     const b = e.target.closest("[data-id]");
     if (!b || b.dataset.id === sel) return;
@@ -182,7 +220,7 @@
 
   $("#cpBuy").addEventListener("click", async () => {
     if (mode === "guest") return auth("signup");
-    const k = info(), p = planOf(sel), btn = $("#cpBuy");
+    const k = info(), p = getPlan(sel), btn = $("#cpBuy");
     if (!p) return;
     const native = window.CR && window.CR.native;
     if (k.plan && k.plan.id === p.id) {
@@ -240,7 +278,7 @@
     setPricing(p) {
       if (!p) return;
       if (Array.isArray(p.plans)) plans = p.plans;
-      cfg = { startCredits: p.startCredits || 0, periodDays: p.periodDays || 30, costs: p.costs || {} };
+      cfg = { startCredits: p.startCredits || 0, periodDays: p.periodDays || 30, costs: p.costs || {}, custom: p.custom && p.custom.step > 0 ? p.custom : null };
       if (el.classList.contains("open")) render();
     },
   };

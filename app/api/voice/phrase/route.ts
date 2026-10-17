@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { voicePhraseSchema } from "@/lib/validation";
 import { createKieTask } from "@/lib/kie";
+import { takeQuota } from "@/lib/data/users";
 import { requireAccount, errorResponse } from "@/lib/auth";
 import { createTask } from "@/lib/data/tasks";
 import { assertOwnUpload } from "@/lib/data/media";
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
     if (d.vocalEnd <= d.vocalStart) return NextResponse.json({ success: false, error: "Geçersiz ses aralığı" }, { status: 400 });
     await assertOwnUpload(d.voiceUrl, user.uid); // ses klonu yalnız kullanıcının kendi kaydından
 
+    await takeQuota(user.uid, "voice-phrase"); // günlük sınır (config/app limits)
     const kie = await createKieTask("voice-phrase", {
       voice_url: d.voiceUrl, vocal_start_s: d.vocalStart, vocal_end_s: d.vocalEnd, language: d.language,
     });

@@ -1,4 +1,4 @@
-/* ── CookRapper · Yönetim paneli (admin.html) — uygulama renk değişkenlerini (app.css) kullanır ── */
+/* ── CookFire · Yönetim paneli (admin.html) — uygulama renk değişkenlerini (app.css) kullanır ── */
 body.ad{height:auto;min-height:100%;overflow:auto;background:var(--bg)}
 .ad *{box-sizing:border-box}
 .ad-top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:14px 24px;background:color-mix(in srgb,var(--bg) 88%,transparent);
@@ -104,3 +104,12 @@ body.ad{height:auto;min-height:100%;overflow:auto;background:var(--bg)}
   .ad-kpi b{font-size:24px}
   .ad-grid2,.ad-tiles{grid-template-columns:1fr}
 }
+
+/* Bildirimler sekmesi */
+.ad-badge{display:inline-block;min-width:18px;padding:1px 6px;margin-left:4px;border-radius:99px;background:var(--accent);color:var(--on-accent);font:700 11px/1.5 var(--sans)}
+.ad-chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.ad-left th,.ad-left td{text-align:left;vertical-align:top}
+.ad-left td:last-child{text-align:right;white-space:nowrap}
+.ad-left tr.reviewed{opacity:.5}
+tr.clk{cursor:pointer}
+tr.clk:hover td{background:var(--accent-soft)}

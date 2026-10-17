@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>CookRapper</title>
+<title>CookFire</title>
 <meta name="theme-color" content="#0B0A09">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icons/icon-192.png" sizes="192x192">
@@ -60,7 +60,7 @@
         <div class="cc-meta"><span id="ccMeta"></span><span class="cc-go"><span id="ccGo">Planlar</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></div>
       </div>
       <div class="form">
-        <div><div class="lbl">Dil</div><div class="seg" id="langSeg"><button data-v="tr" class="on">Türkçe</button><button data-v="en">English</button></div></div>
+        <div><div class="lbl">Dil</div><div class="seg" id="langSeg" role="group" aria-label="Dil"><button data-v="tr" class="on" lang="tr" title="Türkçe">TR</button><button data-v="en" lang="en" title="English">EN</button><button data-v="de" lang="de" title="Deutsch">DE</button><button data-v="pt" lang="pt" title="Português">PT</button><button data-v="ja" lang="ja" title="日本語">JA</button></div></div>
         <div><div class="lbl">Tema</div><div class="seg" id="themeSeg"><button data-v="auto" class="on">Sistem</button><button data-v="light">Açık</button><button data-v="dark">Koyu</button></div></div>
         <div><div class="lbl">Varsayılan model</div><select class="inp" id="defModel"><option value="V6">Cook v1</option><option value="V6_MINI">Cook v2</option><option value="V6_WILD">Cook v3</option></select></div>      </div>
       <nav class="p-legal" aria-label="Yasal"><a href="/terms" data-legal="terms" target="_blank" rel="noopener">Kullanım Koşulları</a><a href="/privacy" data-legal="privacy" target="_blank" rel="noopener">Gizlilik Politikası</a></nav>
@@ -74,7 +74,9 @@
   <div class="mini" id="mini" hidden>
     <div class="mini-prog"><i id="miniProg"></i></div>
     <button class="mini-main" id="miniOpen"><span class="mini-art" id="miniArt"></span><span class="mini-txt"><b id="miniTitle"></b><small id="miniSub"></small></span></button>
+    <button class="mini-skip" id="miniPrev" aria-label="Önceki"></button>
     <button class="play-md" id="miniPlay" aria-label="Oynat"></button>
+    <button class="mini-skip" id="miniNext" aria-label="Sonraki"></button>
   </div>
   <nav class="tabs" id="tabs" aria-label="Ana menü"><span class="tab-ind" id="tabInd"></span>
     <button class="tab on" data-go="home"></button>
@@ -95,6 +97,7 @@
   <div class="m-body">
     <h1 class="c-title" data-pane="simple">Ne <span>yaratalım?</span></h1>
     <div class="outs" id="outSeg"><button class="out on" data-v="song">Vokal</button><button class="out" data-v="beat">Beat</button></div>
+    <p class="fg-hint mode-hint" id="modeHint"></p>
 
     <div data-pane="simple" class="c-simple">
       <div class="composer"><span class="ring"></span>
@@ -114,21 +117,25 @@
 
     <div data-pane="custom" hidden class="c-form">
       <div class="fg" id="lyrWrap">
-        <div class="fg-l"><span>Sözler</span><button type="button" class="fg-act" id="lyrIdea"></button></div>
-        <textarea class="ta" id="lyrics" rows="8" maxlength="5000" placeholder="Sözlerini yaz ya da yapıştır"></textarea>
+        <div class="fg-l"><span>Sözler</span></div>
+        <div class="ta-wrap"><textarea class="ta" id="lyrics" rows="8" maxlength="5000" placeholder="Sözlerini yaz ya da yapıştır"></textarea><button type="button" class="ai-write" id="lyrIdea"></button></div>
+        <p class="fg-hint">[Verse], [Chorus] gibi etiketler bölümleri ayırır. Vokalli şarkıda zorunlu.</p>
       </div>
       <div class="fg">
         <div class="fg-l"><span>Stil</span></div>
         <input class="inp" id="style" maxlength="1000" placeholder="trap, karanlık, 808">
         <div class="scroll-x chips fade" id="styleChips"></div>
+        <p class="fg-hint">Tür, ruh hali, enstrüman, tempo; virgülle ayır. Zorunlu.</p>
       </div>
       <div class="fg">
-        <div class="fg-row"><input class="inp" id="title" maxlength="80" placeholder="Başlık"><div class="seg" id="genderSeg"><button data-v="f" class="on">Kadın</button><button data-v="m">Erkek</button></div></div>
+        <div class="fg-row"><input class="inp" id="title" maxlength="80" placeholder="Başlık — ör. Gece Yürüyüşü" aria-describedby="titleHint"><div class="seg" id="genderSeg"><button data-v="f" class="on">Kadın</button><button data-v="m">Erkek</button></div></div>
+        <p class="fg-hint" id="titleHint">Parçanın adı; sesi değiştirmez, tarzı Stil belirler. Boş bırakırsan otomatik verilir.</p>
         <select class="inp" id="persona" hidden aria-label="Ses karakteri"></select>
       </div>
       <div class="adv-card">
         <button class="adv-btn" id="advBtn"><span>Gelişmiş</span><small id="advSum"></small><span id="advChev"></span></button>
         <div class="adv" id="adv" hidden>
+          <p class="fg-hint">Emin değilsen varsayılanda bırak; çoğu şarkı için uygundur.</p>
           <label class="sl">Stil bağlılığı<output id="swO"></output><input type="range" id="sw" min="0" max="100" value="70"></label>
           <label class="sl">Deneysellik<output id="wcO"></output><input type="range" id="wc" min="0" max="100" value="30"></label>
           <label class="sl" id="awWrap">Ses ağırlığı<output id="awO"></output><input type="range" id="aw" min="0" max="100" value="60"></label>
@@ -142,7 +149,7 @@
 
     <div data-pane="audio pair" hidden class="c-form">
       <div id="recCard" data-only="audio"></div>
-      <!-- Analiz: vokal ve/veya müzik ayrı yüklenir → ilk 20 sn otomatik düzenlenir (public/chop.js) → önizleme → her parça ayrı cover -->
+      <!-- Analiz: vokal ve/veya müzik ayrı yüklenir → ilk 20 sn otomatik düzenlenir (public/chop.js) → önizleme → seçili ses tek mashup'a iki kez gider -->
       <div class="pair-row" data-only="pair">
         <div class="fg"><div class="fg-l"><span>Vokal</span></div><div id="pvCard"></div></div>
         <div class="fg"><div class="fg-l"><span>Müzik</span></div><div id="pmCard"></div></div>
@@ -152,6 +159,7 @@
         <div class="seg" id="chopSeg"><button data-v="2">2 sn'de bir</button><button data-v="3">3 sn'de bir</button><button data-v="4">4 sn'de bir</button><button data-v="5" class="on">5 sn'de bir</button></div>
         <div class="fg-l chop-l"><span>Kopyalanan kesit süresi</span></div>
         <div class="seg" id="chopLen"><button data-v="1">1 sn</button><button data-v="2">2 sn</button><button data-v="3" class="on">3 sn</button><button data-v="4">4 sn</button></div>
+        <p class="fg-hint">Kesit tekrarı: kaç saniyede bir kesit eklenir. Kesit süresi: eklenen parçanın uzunluğu.</p>
         <div class="chop" id="chopCard" hidden>
           <button class="chop-play" id="chopPlay" aria-label="Dinle"></button>
           <div class="chop-x"><b>Gönderilecek ses</b><small id="chopS"></small></div>
@@ -162,19 +170,23 @@
       <div class="chips" id="opChips" data-only="audio">
         <button class="chip on" data-v="cover">Cover</button><button class="chip" data-v="extend">Uzat</button><button class="chip" data-v="vocals">Vokal ekle</button>
       </div>
-      <textarea class="ta" id="aLyrics" rows="5" maxlength="5000" placeholder="Sözler" hidden></textarea>
+      <p class="fg-hint" id="aOpHint" data-only="audio"></p>
+      <div class="ta-wrap" id="aLyrWrap" hidden><textarea class="ta" id="aLyrics" rows="5" maxlength="5000" placeholder="Sözler"></textarea><button type="button" class="ai-write" id="aLyrWrite"></button></div>
       <div class="fg-row"><input class="inp" id="aTitle" maxlength="80" placeholder="Başlık"><input class="inp" id="aStyle" maxlength="1000" placeholder="Stil"></div>
+      <p class="fg-hint" id="aStyleHint" data-only="pair">Stilin sabit mashup stilinin sonuna eklenir; başlık yalnız parçanın adıdır.</p>
+      <!-- Sesten › Cover çıktı süresi: KIE duration 10–360 sn (tam sayı); kayıt yüklenince kaydın süresine ayarlanır -->
+      <label class="sl" id="aDurWrap" hidden>Süre<output id="aDurO">1:00</output><input type="range" id="aDur" min="10" max="360" step="1" value="60"></label>
       <label class="chk" id="aRightsWrap"><input type="checkbox" id="aRights"><span>Bu kaydın haklarına sahibim ya da kullanma iznim var. Telif ve diğer haklardan doğan sorumluluk bana aittir.</span></label>
     </div>
   </div>
-  <div class="m-foot" id="mFoot"><div class="err" id="createErr"></div><button class="primary" id="createBtn"><span>Oluştur</span><span class="cost" id="createCost"></span></button></div>
+  <div class="m-foot" id="mFoot"><div class="err" id="createErr"></div><p class="need" id="createNeed" aria-live="polite"></p><button class="primary" id="createBtn"><span>Oluştur</span><span class="cost" id="createCost"></span></button></div>
 </div>
 
 <!-- TOOL MODAL -->
 <div class="modal compact" id="mTool" role="dialog" aria-modal="true">
   <div class="m-top"><button class="icon-btn" data-close aria-label="Kapat"></button><h3 id="toolTitle"></h3></div>
   <div class="m-body" id="toolBody"></div>
-  <div class="m-foot"><div class="err" id="toolErr"></div><button class="primary" id="toolGo"></button></div>
+  <div class="m-foot"><div class="err" id="toolErr"></div><p class="need" id="toolNeed" aria-live="polite"></p><button class="primary" id="toolGo"></button></div>
 </div>
 
 <!-- NOW PLAYING -->
@@ -224,6 +236,7 @@
 <script src="/credits.js"></script>
 <script src="/app.js"></script>
 <script src="/auth.js"></script>
+<script src="/i18n-langs.js"></script>
 <script src="/i18n.js"></script>
 <script type="module" src="/fb.js"></script>
 </body>

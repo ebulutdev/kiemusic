@@ -1,5 +1,5 @@
 {
- "version": 8,
+ "version": 17,
  "pricing": {
   "startCredits": 28,
   "periodDays": 30,
@@ -7,37 +7,68 @@
   "costs": {
    "generate": 12,
    "cover": 12,
+   "mashup": 12,
+   "lyrics": 1,
    "extend": 12,
-   "upload-extend": 10,
+   "upload-extend": 12,
    "add-vocals": 12,
-   "remove-vocals": 5,
+   "remove-vocals": 10,
    "replace-section": 5,
-   "split-stem": 25
+   "split-stem": 50
   },
   "modelCosts": {},
   "plans": [
    {
+    "id": "starter_monthly",
+    "name": "Başlangıç",
+    "credits": 150,
+    "price": 99,
+    "currency": "TRY",
+    "songs": 24
+   },
+   {
     "id": "plus_monthly",
     "name": "Plus",
-    "credits": 400,
-    "price": 250,
-    "currency": "TRY"
+    "credits": 420,
+    "price": 249,
+    "currency": "TRY",
+    "songs": 70
    },
    {
     "id": "pro_monthly",
     "name": "Pro",
-    "credits": 950,
-    "price": 500,
+    "credits": 860,
+    "price": 499,
     "currency": "TRY",
+    "songs": 152,
     "best": true
+   },
+   {
+    "id": "max_monthly",
+    "name": "Max",
+    "credits": 1335,
+    "price": 749,
+    "currency": "TRY",
+    "songs": 250
    }
-  ]
+  ],
+  "custom": {
+   "min": 150,
+   "max": 3500,
+   "step": 50
+  }
  },
  "legal": {
-  "version": "2026-10-05",
+  "version": "2026-10-17",
   "terms": "/terms",
   "privacy": "/privacy",
   "contact": ""
+ },
+ "limits": {
+  "persona": 5,
+  "voice-phrase": 6,
+  "voice": 3,
+  "issue": 10
  },
  "catalog": {
   "styles": [
@@ -210,6 +241,10 @@
    "Uzak Frekans"
   ],
   "beatTags": "instrumental beat, drum-focused, punchy drums, minimal melody, no vocals",
+  "mashup": {
+   "style": "mashup continuation, exact same tempo, maintain vocal style, same pitch, same rhythm, hip hop beat",
+   "duration": 120
+  },
   "exploreMax": 20,
   "previewSec": 30
  },
@@ -252,6 +287,7 @@
   "kieCreditsEstimate": {
    "generate": 12,
    "cover": 12,
+   "mashup": 12,
    "extend": 12,
    "upload-extend": 12,
    "add-vocals": 12,

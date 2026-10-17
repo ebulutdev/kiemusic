@@ -6,6 +6,18 @@ import { getConfig } from "./config";
 export class InsufficientCredits extends Error {
   constructor() { super("Kredi yetersiz."); }
 }
+// Başlangıç hediyesi ve harcama yalnız Apple / Google ile bağlı hesaba (uydurma e-postalarla kredi toplanamasın)
+export class TrustedLoginRequired extends Error {
+  constructor() { super("Kredi kullanmak için Apple ya da Google ile giriş yap."); }
+}
+// Koşullar / Gizlilik'in güncel sürümü kabul edilmeden kredi harcanamaz (yeni hesap, eski hesap ve sürüm değişimi için ortak kural)
+export class TermsRequired extends Error {
+  constructor() { super("Güncel Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmeniz gerekmektedir."); }
+}
+// Ücretsiz uçların (persona, ses klonu) kötüye kullanımına karşı günlük sınır
+export class QuotaExceeded extends Error {
+  constructor() { super("Bugünlük sınıra ulaştın, yarın tekrar dene."); }
+}
 
 const DAY = 86_400_000;
 const now = () => FieldValue.serverTimestamp();
@@ -21,7 +33,7 @@ type Doc = Partial<UserDoc>;
 export function settlePeriod(d: Doc, p: AppConfig["pricing"], t = Date.now()): { credits: number; period: CreditPeriod } | null {
   const span = (p.periodDays || 30) * DAY;
   if (!d.period) {
-    const credits = typeof d.credits !== "number" || d.guest ? p.startCredits : d.credits;
+    const credits = typeof d.credits !== "number" || d.guest || d.unverified ? p.startCredits : d.credits;
     return { credits, period: { start: t, end: t + span, grant: Math.max(credits, p.startCredits) } };
   }
   if (t < d.period.end) return null;
@@ -37,7 +49,7 @@ export interface CreditState { credits: number; period: CreditPeriod | null; pla
  *  · Misafir (anonim): kredi her zaman 0 (guest: true işaretlenir).
  *  · Hesap: settlePeriod — ilk dönem hediyesi / dönem sonu sıfırlama.
  */
-export async function ensureUser(uid: string, anon = false): Promise<CreditState> {
+export async function ensureUser(uid: string, anon = false, verified = true, acceptedTerms?: string): Promise<CreditState & { termsOk: boolean }> {
   const { pricing, legal } = await getConfig();
   return adminDb().runTransaction(async (tx) => {
     const ref = userRef(uid);
@@ -46,28 +58,38 @@ export async function ensureUser(uid: string, anon = false): Promise<CreditState
     const created = snap.exists ? {} : { createdAt: now() };
     if (anon) {
       if (d.credits !== 0 || !d.guest) tx.set(ref, { credits: 0, guest: true, updatedAt: now(), ...created }, { merge: true });
-      return { credits: 0, period: null, plan: null };
+      return { credits: 0, period: null, plan: null, termsOk: false };
+    }
+    // Apple / Google ile bağlı olmayan hesap: ilk dönem (hediye) başlamaz, kredi 0
+    if (!verified && !d.period) {
+      if (d.credits !== 0 || !d.unverified) tx.set(ref, { credits: 0, unverified: true, guest: FieldValue.delete(), updatedAt: now(), ...created }, { merge: true });
+      return { credits: 0, period: null, plan: null, termsOk: false };
     }
     const patch = settlePeriod(d, pricing);
-    // İlk dönem = hesabın açıldığı an: giriş ekranında kabul edilen yasal metin sürümü kanıt olarak saklanır
-    const terms = !d.period && !d.terms ? { terms: { version: legal?.version ?? null, at: now() } } : {};
-    if (patch) tx.set(ref, { ...patch, ...terms, guest: FieldValue.delete(), updatedAt: now(), ...created }, { merge: true });
-    return { credits: patch ? patch.credits : d.credits ?? 0, period: patch ? patch.period : d.period ?? null, plan: d.plan ?? null };
+    // Kabul kaydı: istemci yalnız kullanıcı kutuyu işaretleyince / "Kabul ediyorum"a basınca sürümü gönderir; sunucu SÜRÜMÜ güncel yayınla karşılaştırıp
+    // kanıt olarak yazar (users/{uid}.terms). Eski kabul (başka sürüm) güncel sayılmaz.
+    const cur = legal?.version ?? null;
+    const accept = cur && acceptedTerms === cur && d.terms?.version !== cur ? { terms: { version: cur, at: now(), prev: d.terms?.version ?? null } } : {};
+    if (patch || accept.terms) tx.set(ref, { ...(patch || {}), ...accept, guest: FieldValue.delete(), unverified: FieldValue.delete(), updatedAt: now(), ...created }, { merge: true });
+    return { credits: patch ? patch.credits : d.credits ?? 0, period: patch ? patch.period : d.period ?? null, plan: d.plan ?? null, termsOk: !cur || !!accept.terms || d.terms?.version === cur };
   });
 }
 
 /** Krediyi atomik düşer (1 okuma + 1 yazma); dönem bittiyse önce sıfırlar. Yetersizse InsufficientCredits. */
-export async function chargeCredits(uid: string, amount: number) {
+export async function chargeCredits(uid: string, amount: number, verified = true) {
   if (amount <= 0) return;
-  const pricing = (await getConfig()).pricing;
+  const { pricing, legal } = await getConfig();
   await adminDb().runTransaction(async (tx) => {
     const ref = userRef(uid);
     const d = ((await tx.get(ref)).data() || {}) as Doc;
+    if (legal?.version && d.terms?.version !== legal.version) throw new TermsRequired();
     // Yalnız hesaplar harcar (requireAccount) → misafirken kalan guest işareti hesabın ilk dönemini başlatır
+    if (!verified && !d.period) throw new TrustedLoginRequired(); // Apple / Google ile bağlı olmayan hesap harcayamaz
     const patch = settlePeriod(d, pricing);
     const credits = patch ? patch.credits : d.credits ?? 0;
     if (credits < amount) throw new InsufficientCredits();
-    tx.set(ref, { ...patch, ...(d.guest ? { guest: FieldValue.delete() } : {}), credits: credits - amount, updatedAt: now() }, { merge: true });
+    const clear = { ...(d.guest ? { guest: FieldValue.delete() } : {}), ...(d.unverified ? { unverified: FieldValue.delete() } : {}) };
+    tx.set(ref, { ...patch, ...clear, credits: credits - amount, updatedAt: now() }, { merge: true });
   });
 }
 
@@ -89,6 +111,20 @@ export async function startPlan(uid: string, planId: string, expiresAt: number, 
       period: { start: Date.now(), end: expiresAt, grant: plan.credits },
       updatedAt: now(),
     }, { merge: true });
+  });
+}
+
+/** Günlük kota: users/{uid}.quota.{key} = { day, n } (ek koleksiyon yok). Sınır config/app limits.{key}; tanımsızsa sınır yok. */
+export async function takeQuota(uid: string, key: string) {
+  const max = (await getConfig()).limits?.[key];
+  if (!max) return;
+  const day = new Date().toISOString().slice(0, 10);
+  await adminDb().runTransaction(async (tx) => {
+    const ref = userRef(uid);
+    const q = (((await tx.get(ref)).data() || {}) as Doc).quota?.[key];
+    const n = q && q.day === day ? q.n : 0;
+    if (n >= max) throw new QuotaExceeded();
+    tx.set(ref, { quota: { [key]: { day, n: n + 1 } } }, { merge: true });
   });
 }
 

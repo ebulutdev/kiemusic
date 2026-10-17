@@ -27,6 +27,22 @@ export type KieCallback = {
   };
 };
 
+// Üretim servisi kredisi bitti / hız sınırı / kesinti: kullanıcıya "sistem yoğun" gösterilir, admin'e otomatik uyarı düşer
+import { alertProviderBusy, BUSY_MESSAGE } from "./data/issues";
+import { kieUserMessage } from "./kieErrors";
+export class ProviderBusy extends Error {
+  constructor(detail: string) { super(BUSY_MESSAGE); alertProviderBusy(detail); }
+}
+// Servis hatası (busy olmayan): ham ileti yerine resmi kullanıcı metni; ayrıntı yalnız sunucu günlüğüne
+export class KieUserError extends Error {}
+function kieFail(path: string, code: unknown, msg: string): never {
+  const u = kieUserMessage(code, msg);
+  console.error("KIE_ERROR", path, code, msg);
+  if (u.busy) throw new ProviderBusy(`${path} → ${code}: ${msg}`);
+  if (Number(code) === 401 || Number(code) === 403) alertProviderBusy(`${path} → yetki hatası (${code}); API anahtarını kontrol et`);
+  throw new KieUserError(u.message);
+}
+
 // ── Ortak istek ───────────────────────────────────────────
 async function kiePost(path: string, body: unknown) {
   const key = process.env.KIE_API_KEY;
@@ -43,8 +59,8 @@ async function kiePost(path: string, body: unknown) {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.msg || `KIE HTTP ${res.status}`);
-  if (data.code !== 200) throw new Error(data?.msg || "KIE hata döndü.");
+  if (!res.ok) kieFail(path, data?.code ?? res.status, data?.msg ?? "");
+  if (data.code !== 200) kieFail(path, data.code, data?.msg ?? "");
   return data;
 }
 
@@ -78,11 +94,13 @@ function getCallbackUrl() {
 export const KIE_MODEL = {
   generate: "ai-music-api/generate",
   cover: "ai-music-api/upload-and-cover-audio",
+  mashup: "ai-music-api/mashup",
   extend: "ai-music-api/extend",
   "upload-extend": "ai-music-api/upload-and-extend-audio",
   "add-vocals": "ai-music-api/add-vocals",
   "remove-vocals": "ai-music-api/separate-vocals",
   "replace-section": "ai-music-api/replace-section",
+  lyrics: "ai-music-api/generate-lyrics",
   persona: "ai-music-api/generate-persona",
   "voice-phrase": "ai-music-api/validation-phrase",
   voice: "ai-music-api/create-voice",

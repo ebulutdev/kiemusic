@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyKieWebhook } from "@/lib/webhook";
+import { failText } from "@/lib/kieErrors";
+import { BUSY_MESSAGE } from "@/lib/data/issues";
 import { getTask, setResults, failTask, updateTask } from "@/lib/data/tasks";
 import { normalizeResults, stemResults, extraResult } from "@/lib/results";
 import type { TaskStatus } from "@/lib/data/schema";
@@ -47,7 +49,7 @@ export async function POST(request: Request) {
 
     const callbackType: string | undefined = d.callbackType;
     if (callbackType === "error" || FAIL_CODES.has(Number(body.code))) {
-      await failTask(taskId, String(body.code ?? "UNKNOWN"), body.msg ?? "KIE işlemi başarısız.");
+      await failTask(taskId, String(body.code ?? "UNKNOWN"), failText(body.code, body.msg) ?? BUSY_MESSAGE);
       return NextResponse.json({ success: true });
     }
 

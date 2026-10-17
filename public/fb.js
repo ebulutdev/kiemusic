@@ -1,8 +1,10 @@
-// ── CookRapper · Firebase istemci katmanı ─────────────────
+// ── CookFire · Firebase istemci katmanı ─────────────────
 // Kimlik (anonim), Firestore senkronu (çevrimdışı önbellekli) ve API yetkilendirmesi.
 // Şema: lib/data/schema.ts ile aynı yol adları.
 //
-// Giriş: Apple, Google, e-posta+şifre, misafir → arayüz: public/auth.js ("fb-auth" olayı + FB.auth)
+// Giriş: yalnız Apple / Google (+ misafir) → arayüz: public/auth.js ("fb-auth" olayı + FB.auth)
+//   web: açılır pencere / yönlendirme · mobil (Capacitor): telefonun yerel giriş ekranı (@capacitor-firebase/authentication),
+//   dönen kimlik bilgisiyle oturum bu JS katmanında açılır (skipNativeAuth) → misafir bağlama ve kütüphane aynen korunur
 // Okuma maliyeti: toplam 3 dinleyici
 //   config/app           → fiyat + katalog + motor ayarları (tek belge)
 //   users/{uid}          → kredi + ayarlar + personalar + sesler (tek belge)
@@ -15,11 +17,10 @@
 // SDK uygulamaya gömülü (CDN yok): npm run vendor → public/vendor/firebase.js
 import {
   initializeApp,
-  getAuth, onAuthStateChanged, signInAnonymously, signOut as fbSignOut,
-  GoogleAuthProvider, OAuthProvider, EmailAuthProvider,
+  getAuth, initializeAuth, indexedDBLocalPersistence, onAuthStateChanged, signInAnonymously, signOut as fbSignOut,
+  GoogleAuthProvider, OAuthProvider,
   signInWithPopup, signInWithRedirect, linkWithPopup, linkWithRedirect, getRedirectResult,
-  signInWithCredential, linkWithCredential, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  sendPasswordResetEmail, sendEmailVerification, updateProfile,
+  signInWithCredential, linkWithCredential,
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, collection, onSnapshot, writeBatch, serverTimestamp, deleteField,
 } from "./vendor/firebase.js";
@@ -39,13 +40,15 @@ const TRACK_SKIP = new Set(["aligned", "alignFail"]); // cihaz-özel / ağır al
 const BATCH_MAX = 450;
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Mobilde açılır pencere / yönlendirme çözücüsü yüklenmez (uygulama içi web görünümünde çalışmaz); oturum IndexedDB'de kalır
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const auth = NATIVE ? initializeAuth(app, { persistence: indexedDBLocalPersistence }) : getAuth(app);
 const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
 
-auth.languageCode = "tr"; // doğrulama / sıfırlama e-postaları Türkçe
+auth.languageCode = "tr"; // Google / Apple giriş pencereleri Türkçe
 
 let uid = null;
 let timer = 0;
@@ -210,6 +213,9 @@ function publish(u) {
 // Kredi: misafir 0; hesap açılınca (misafirden bağlama dahil) ilk dönem başlangıç hediyesiyle açılır → sunucu /api/me karar verir.
 // Uygulama her açılışta 1 kez çağırır: aylık dönem bittiyse sunucu bakiyeyi orada sıfırlar / yeniler.
 // Hesaba geçişte kimlik jetonu yenilenir ki sunucu artık misafir olmadığını görsün.
+// /api/me: kullanıcı belgesini hazırlar; kabul edilen koşul sürümü varsa sunucuya iletir (sunucu güncel sürümle doğrular)
+const acceptedTerms = () => { try { return localStorage.getItem("cf_terms") || ""; } catch { return ""; } };
+const meCall = (t, terms = acceptedTerms()) => fetch(window.CR ? window.CR.api("/api/me") : "/api/me", { method: "POST", headers: { Authorization: "Bearer " + t, "Content-Type": "application/json" }, body: JSON.stringify(terms ? { terms } : {}) });
 let creditKey = "";
 function syncCredits(u) {
   if (!u) { creditKey = ""; return; }
@@ -217,7 +223,7 @@ function syncCredits(u) {
   if (key === creditKey) return;
   creditKey = key;
   (u.isAnonymous ? u.getIdToken() : u.getIdToken(true))
-    .then((t) => fetch(window.CR ? window.CR.api("/api/me") : "/api/me", { method: "POST", headers: { Authorization: "Bearer " + t } }))
+    .then((t) => meCall(t))
     .catch(() => { creditKey = ""; });
 }
 
@@ -251,7 +257,7 @@ async function recover(e) {
 }
 
 // Yönlendirmeli girişten dönüş (ana ekrana eklenmiş PWA ya da açılır pencere engellendiyse)
-getRedirectResult(auth).then((r) => r && publish(r.user)).catch((e) => recover(e).catch((err) => {
+if (!NATIVE) getRedirectResult(auth).then((r) => r && publish(r.user)).catch((e) => recover(e).catch((err) => {
   window.FB.redirectError = err;
   window.dispatchEvent(new CustomEvent("fb-auth-error", { detail: err }));
 }));
@@ -274,6 +280,33 @@ async function viaProvider(provider) {
   }
 }
 
+// ── Mobil: yerel giriş → kimlik bilgisi → bu katmanda oturum ──
+// Eklenti JS paketi gömülmez: yerel köprüden registerPlugin ile alınır (yapılandırma: capacitor.config.ts › FirebaseAuthentication)
+const NativeAuth = NATIVE && window.Capacitor.registerPlugin ? window.Capacitor.registerPlugin("FirebaseAuthentication") : null;
+async function nativeCredential(kind) {
+  if (kind === "google") {
+    const r = await NativeAuth.signInWithGoogle();
+    return GoogleAuthProvider.credential(r.credential?.idToken, r.credential?.accessToken);
+  }
+  const r = await NativeAuth.signInWithApple({ skipNativeAuth: true });
+  return new OAuthProvider("apple.com").credential({ idToken: r.credential?.idToken, rawNonce: r.credential?.nonce });
+}
+async function viaNative(kind) {
+  if (!NativeAuth) throw Object.assign(new Error("native"), { code: "auth/operation-not-supported-in-this-environment" });
+  let cred;
+  try { cred = await nativeCredential(kind); } catch (e) {
+    // kullanıcı yerel ekranı kapattı → sessiz geç
+    if (/cancel|iptal|1001|12501/i.test(String(e?.message || "") + String(e?.code || ""))) throw Object.assign(new Error("cancelled"), { code: "auth/user-cancelled" });
+    throw e;
+  }
+  const cur = auth.currentUser;
+  if (cur?.isAnonymous) {
+    try { const r = await linkWithCredential(cur, cred); publish(r.user); return r.user; }
+    catch (e) { return (await recover(e)).user; } // hesap zaten varsa ona giriş
+  }
+  return (await signInWithCredential(auth, cred)).user;
+}
+
 function googleProvider() {
   const p = new GoogleAuthProvider();
   p.setCustomParameters({ prompt: "select_account" });
@@ -288,40 +321,17 @@ function appleProvider() {
 }
 
 const authApi = {
-  google: () => viaProvider(googleProvider()),
-  apple: () => viaProvider(appleProvider()),
+  google: () => (NATIVE ? viaNative("google") : viaProvider(googleProvider())),
+  apple: () => (NATIVE ? viaNative("apple") : viaProvider(appleProvider())),
 
-  async signUp({ email, password, name }) {
-    const cur = auth.currentUser;
-    const user = cur?.isAnonymous
-      ? (await linkWithCredential(cur, EmailAuthProvider.credential(email, password))).user
-      : (await createUserWithEmailAndPassword(auth, email, password)).user;
-    if (name) await updateProfile(user, { displayName: name });
-    sendEmailVerification(user).catch(() => {});
-    publish(user);
-    return user;
+  // "Güncellenen koşulları kabul ediyorum" (sürüm değişince / eski hesap): sürümü sunucuya yaz → doğrulandıysa true
+  async acceptTerms(version) {
+    const u = auth.currentUser;
+    if (!u || u.isAnonymous || !version) return false;
+    try { localStorage.setItem("cf_terms", version); } catch {}
+    const j = await (await meCall(await u.getIdToken(), version)).json().catch(() => ({}));
+    return !!j.termsOk;
   },
-
-  signIn: ({ email, password }) => signInWithEmailAndPassword(auth, email, password).then((r) => r.user),
-  // Sıfırlama bağlantısı şifre değişince uygulamaya döner (adres Firebase'de yetkili alan olmalı)
-  reset: (email) => {
-    const base = /^https?:/.test(location.origin) ? location.origin : (window.CR_ENV && window.CR_ENV.apiBase) || "";
-    return sendPasswordResetEmail(auth, email, base ? { url: base + "/" } : undefined).catch((e) => {
-      // dönüş adresi yetkili alan değilse bağlantısız gönder (e-posta yine gider)
-      if (/continue-uri|unauthorized-domain/.test(e?.code || "")) return sendPasswordResetEmail(auth, email);
-      throw e;
-    });
-  },
-  // Sıfırlamadan önce: hesap var mı, şifreli mi? (Google/Apple hesabının şifresi yoktur)
-  checkEmail: async (email) => {
-    const r = await fetch(window.CR ? window.CR.api("/api/auth/email") : "/api/auth/email", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }),
-    });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.success) throw Object.assign(new Error(j.error || "Kontrol edilemedi"), { code: "app/check" });
-    return j;
-  },
-  resendVerification: () => auth.currentUser && sendEmailVerification(auth.currentUser),
 
   async guest() {
     try { localStorage.setItem(GUEST_KEY, "1"); } catch {}
@@ -336,6 +346,7 @@ const authApi = {
     uid = null;
     try { localStorage.removeItem(GUEST_KEY); } catch {}
     await fbSignOut(auth);
+    if (NativeAuth) NativeAuth.signOut().catch(() => {}); // yerel Google / Apple oturumu da kapansın (bir sonraki girişte hesap seçilsin)
     SF()?.resetLocal();
   },
 

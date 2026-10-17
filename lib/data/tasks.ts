@@ -56,6 +56,7 @@ export async function failTask(providerTaskId: string, code: string, message: st
     const snap = await tx.get(r);
     if (!snap.exists) return null;
     const t = snap.data() as TaskDoc;
+    if (t.status === "COMPLETED" && (t.results || []).length) return null; // sesi teslim edilmiş görev: başarısız sayılmaz, iade yok
     const doRefund = !t.refunded && t.cost > 0;
     tx.update(r, { status: "FAILED", errorCode: code, errorMessage: message, refunded: t.refunded || doRefund, updatedAt: now() });
     return doRefund ? { uid: t.userId, cost: t.cost } : null;

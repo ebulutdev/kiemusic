@@ -9,6 +9,7 @@
 //   users/{uid}/tracks/{id}       kütüphane   — parça başına belge; yalnız değişen parça yazılır
 //   tasks/{kieTaskId}             TaskDoc     — yalnız sunucu; belge id = KIE taskId → sorgusuz okuma
 //   tasks/{kieTaskId}/lyrics/{audioId}        — zaman damgalı söz önbelleği; parça açılınca 1 okuma
+//   issues/{id}                   — yalnız sunucu; "Bildir" düğmesi + sistem uyarıları (admin › Bildirimler)
 //   reports/{uid_task_audio}      ReportDoc   — yalnız sunucu; uygulama içi içerik şikâyetleri (inceleme kuyruğu)
 // Storage
 //   uploads/{uid}/{file}          kullanıcı ses kayıtları (KIE'ye kaynak)
@@ -51,10 +52,12 @@ export interface AppConfig {
   // Krediler aylıktır: her dönem (periodDays) sonunda bakiye sıfırlanır; abonelik varsa plan kredisine yenilenir (devretmez).
   // startCredits: yeni hesaba ilk dönem hediyesi · freeMonthly: planı olmayana her dönem verilen kredi (0 = yok)
   // plans: aylık abonelikler (id = App Store / Play abonelik ürün kimliği)
-  pricing: { startCredits: number; periodDays?: number; freeMonthly?: number; costs: Record<string, number>; modelCosts?: Record<string, Record<string, number>>; plans?: PlanConfig[] };
+  pricing: { custom?: { min: number; max: number; step: number }; startCredits: number; periodDays?: number; freeMonthly?: number; costs: Record<string, number>; modelCosts?: Record<string, Record<string, number>>; plans?: PlanConfig[] };
   // Yasal metinler: /terms ve /privacy (public/terms.html, privacy.html) · version: sayfalardaki sürüm (hesap açılışında kabul kaydı)
   // contact: sayfalarda görünen iletişim e-postası (boşsa yer tutucu metin)
   legal?: { version: string; terms: string; privacy: string; contact?: string };
+  // Ücretsiz uçların kullanıcı başına günlük sınırı (persona, voice-phrase, voice) — kötüye kullanım koruması
+  limits?: Record<string, number>;
   // Kâr analizi (admin paneli düzenler): uygulama kredisinin $ değeri, üretim servisi kredisinin $ maliyeti,
   // servis kredisi bilinmeyen görevler için işlem başına tahmini servis kredisi
   economics?: { usdPerCredit: number; kieUsdPerCredit: number; kieCreditsEstimate: Record<string, number> };
@@ -69,6 +72,8 @@ export interface AppConfig {
     lyrics: string[];
     titles: string[];
     beatTags: string;
+    // Analiz → mashup: style = sunucunun her isteğe eklediği sabit stil metni (kullanıcı stilinin önüne) · duration = çıktı süresi (sn)
+    mashup?: { style: string; duration?: number };
   };
   // Üretim motoru ayarları. models[].id sunucuya gider (V6…), label/note yalnız arayüzde görünür (Cook v1…)
   engine: {
@@ -116,7 +121,9 @@ export interface UserDoc {
   period?: CreditPeriod;
   plan?: UserPlan | null;
   guest?: boolean;
-  terms?: { version: string | null; at?: unknown }; // hesap açılışında kabul edilen Kullanım Koşulları / Gizlilik sürümü (yalnız sunucu yazar)
+  unverified?: boolean; // Apple / Google ile bağlı olmayan hesap: başlangıç hediyesi yok (kredi 0)
+  quota?: Record<string, { day: string; n: number }>; // ücretsiz uçların günlük sayaçları (yalnız sunucu yazar)
+  terms?: { version: string | null; at?: unknown; prev?: string | null }; // hesap açılışında kabul edilen Kullanım Koşulları / Gizlilik sürümü (yalnız sunucu yazar)
   settings?: { model?: string; theme?: string };
   personas?: Record<string, PersonaDoc>; // id → persona
   voices?: Record<string, VoiceDoc>;     // id → ses
@@ -126,7 +133,7 @@ export interface UserDoc {
 
 // ── tasks/{kieTaskId} ─────────────────────────────────────
 export type TaskStatus = "QUEUED" | "TEXT_READY" | "FIRST_READY" | "COMPLETED" | "FAILED";
-export type TaskType = "generate" | "cover" | "extend" | "upload-extend" | "add-vocals" | "remove-vocals" | "replace-section" | "persona" | "voice-phrase" | "voice";
+export type TaskType = "generate" | "lyrics" | "cover" | "mashup" | "extend" | "upload-extend" | "add-vocals" | "remove-vocals" | "replace-section" | "persona" | "voice-phrase" | "voice";
 export type MirrorState = "none" | "running" | "done" | "failed";
 
 export interface TaskResult {

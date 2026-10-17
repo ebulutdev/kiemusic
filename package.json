@@ -1,5 +1,5 @@
 {
-  "name": "cookrapper",
+  "name": "cookfire",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -16,6 +16,7 @@
     "admin:grant": "node scripts/grant-admin.mjs"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.5.2",
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "@capacitor/file-transfer": "^2.0.5",

@@ -47,7 +47,7 @@ export type GenerateMusicInput = z.infer<typeof generateMusicSchema>;
 // ── Ses kaynaklı işlemler ─────────────────────────────────
 export const audioTaskSchema = z
   .object({
-    taskType:           z.enum(["cover", "extend", "upload-extend", "add-vocals", "remove-vocals", "replace-section"]),
+    taskType:           z.enum(["cover", "mashup", "extend", "upload-extend", "add-vocals", "remove-vocals", "replace-section"]),
     uploadUrl:          z.string().url("Geçerli bir URL giriniz").optional(),
     audioId:            z.string().optional(),
     taskId:             z.string().optional(),
@@ -77,8 +77,12 @@ export const audioTaskSchema = z
     const need = (ok: unknown, path: string, message: string) => { if (!ok) ctx.addIssue({ code: "custom", path: [path], message }); };
     switch (d.taskType) {
       case "cover":
+      case "mashup":
+        need(d.uploadUrl, "uploadUrl", "Ses dosyası gerekli.");
+        break;
       case "upload-extend":
         need(d.uploadUrl, "uploadUrl", "Ses dosyası gerekli.");
+        need(d.continueAt, "continueAt", "Devam noktası gerekli."); // KIE: 0 < continue_at < ses süresi
         break;
       case "add-vocals":
         need(d.uploadUrl, "uploadUrl", "Ses dosyası gerekli.");
@@ -86,7 +90,8 @@ export const audioTaskSchema = z
         need(d.lyrics || d.prompt, "lyrics", "Sözler gerekli.");
         break;
       case "extend":
-        need(d.audioId, "audioId", "Kaynak parça gerekli.");
+        need(d.taskId && d.audioId, "audioId", "Kaynak parça gerekli."); // taskId: sahiplik kontrolü (KIE'ye gitmez)
+        need(d.continueAt, "continueAt", "Devam noktası gerekli.");
         break;
       case "remove-vocals":
         need(d.taskId && d.audioId, "audioId", "Kaynak parça gerekli.");

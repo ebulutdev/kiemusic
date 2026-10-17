@@ -1,7 +1,7 @@
-/* CookRapper — TR / EN dil desteği
+/* CookFire — TR / EN dil desteği
    Arayüz Türkçe yazılır; İngilizce seçilince metin düğümleri ve placeholder / aria-label / title
    öznitelikleri sözlükten çevrilir. Kullanıcı içeriği (şarkı adı, sözler, stil) çevrilmez.
-   Seçim localStorage'da saklanır: sf_lang = "tr" | "en". */
+   Seçim localStorage'da saklanır: sf_lang = tr | en | de | pt | ja. */
 (function () {
   const D = {
     // gezinme / genel
@@ -138,7 +138,7 @@
     "Seçtiğin aralık yeniden üretilir, şarkının geri kalanı aynı kalır. Aralık en az 10 sn, en çok şarkının yarısı olabilir.": "The selected range is regenerated and the rest of the song stays the same. The range must be at least 10 s and at most half the song.",
     "Üretim başarısız oldu.": "Generation failed.", "İşlem şu an yapılamadı. Biraz sonra tekrar dene.": "Couldn't do that right now. Try again in a moment.",
     // aylık plan / kredi penceresi (credits.js) + profil kredi kartı
-    "Kabul ediyorum:": "I agree to:", "Künye": "Credits", "Sırada": "Up next", "Fikir": "Idea", "Tür": "Type", "Söz": "Lyrics", "Oluşturuldu": "Created", "Stili kopyala": "Copy style", "Devam etmek için koşulları kabul et.": "Accept the terms to continue.", "Kullanım Koşulları ve Gizlilik Politikası'nı okudum, kabul ediyorum": "I've read and agree to the Terms of Use and Privacy Policy", "Koşullar": "Terms", "Yükleniyor…": "Loading…", "Tarayıcıda aç": "Open in browser", "Yasal metinler": "Legal documents", "Sayfa açılamadı. İnternet bağlantını kontrol et.": "Couldn't open the page. Check your internet connection.", "Kullanım Koşulları": "Terms of Use", "Gizlilik Politikası": "Privacy Policy", "Yasal": "Legal",
+    "Kabul ediyorum:": "I agree to:", "Mashup oluştur": "Create mashup", "Ne istediğini anlat; sözleri, stili ve başlığı biz yazarız.": "Describe what you want; we write the lyrics, style and title.", "Sözleri ve stili sen yazarsın; tam kontrol sende.": "You write the lyrics and style; you're in full control.", "Kendi kaydından ya da beat'inden yola çık: cover, uzatma ya da vokal ekleme.": "Start from your own recording or beat: cover, extend or add vocals.", "Sesin kesitlerle düzenlenir ve aynı tarzda devam eden bir mashup üretilir.": "Your audio is rearranged with chops and turned into a mashup that continues in the same style.", "Kaydının melodisini koruyup seçtiğin stilde yeniden üretir.": "Keeps your recording's melody and recreates it in the style you choose.", "Kaydını sonundan devam ettirir; kaydın kendisi aynen kalır.": "Continues your recording from its end; the recording itself stays as is.", "Beat'ine sözlerinle vokal ekler; stil ve söz zorunlu.": "Adds vocals with your lyrics to your beat; style and lyrics are required.", "[Verse], [Chorus] gibi etiketler bölümleri ayırır. Vokalli şarkıda zorunlu.": "Tags like [Verse] and [Chorus] mark sections. Required for vocal songs.", "Tür, ruh hali, enstrüman, tempo; virgülle ayır. Zorunlu.": "Genre, mood, instruments, tempo; separate with commas. Required.", "Emin değilsen varsayılanda bırak; çoğu şarkı için uygundur.": "If unsure, keep the defaults; they suit most songs.", "Kesit tekrarı: kaç saniyede bir kesit eklenir. Kesit süresi: eklenen parçanın uzunluğu.": "Chop repeat: how often a chop is inserted. Chop length: how long each inserted piece is.", "Stilin sabit mashup stilinin sonuna eklenir; başlık yalnız parçanın adıdır.": "Your style is added after the fixed mashup style; the title is just the track name.", "Parçayı seçtiğin noktadan devam ettirir; öncesi aynen kalır.": "Continues the track from the point you pick; everything before stays the same.", "Sarı tutamacı sürükle; yeni bölüm o noktadan başlar.": "Drag the yellow handle; the new part starts there.", "Boş bırakırsan parçanın stili kullanılır.": "Leave empty to use the track's style.", "Yalnız eklenecek bölümün sözleri; boşsa sözleri servis yazar.": "Lyrics for the new part only; leave empty and they're written for you.", "Melodiyi koruyup parçayı yeni stil ya da sözlerle yeniden üretir.": "Keeps the melody and recreates the track with a new style or lyrics.", "Hangi tarza dönüşsün? Boşsa parçanın stili kalır.": "Which style should it become? Empty keeps the track's style.", "Değiştirmezsen orijinal sözler söylenir. Beat'ten vokalli cover için zorunlu.": "Unchanged, the original lyrics are sung. Required for a vocal cover of a beat.", "Beat'ine sözlerinle yeni bir vokal ekler.": "Adds a new vocal with your lyrics to your beat.", "Vokalin tarzı; boşsa beat'in stili kullanılır.": "The vocal's style; empty uses the beat's style.", "Beat üzerinde söylenecek sözler. Zorunlu.": "Lyrics to sing over the beat. Required.", "Parçayı vokal ve enstrümanlara ayırır; her biri kütüphanede ayrı parça olur.": "Splits the track into vocals and instruments; each becomes its own track.", "Vokal + enstrüman: 2 parça. Tüm enstrümanlar: davul, bas, gitar… ayrı ayrı.": "Vocals + instrumental: 2 tracks. All instruments: drums, bass, guitar… separately.", "Seçtiğin aralığı yeniden üretir; şarkının geri kalanı aynı kalır.": "Regenerates the range you pick; the rest of the song stays the same.", "Tutamaçlarla aralığı seç: en az 10 sn, en çok şarkının yarısı.": "Pick the range with the handles: at least 10 s, at most half the song.", "Yalnız seçili aralıkta söylenecek sözler. Zorunlu.": "Lyrics sung only in the selected range. Required.", "Yeni bölüm dahil şarkının güncel tüm sözleri. Zorunlu.": "The song's full updated lyrics, including the new part. Required.", "Bu şarkıdaki vokal karakterini kaydeder; yeni üretimlerde Ses karakteri olarak seçebilirsin.": "Saves this song's vocal character; pick it as a Voice character in new songs.", "Listede bu adla görünür. Zorunlu.": "Shown in the list with this name. Required.", "Kendi sesinden ses modeli oluşturur; şarkılarında senin sesin söyler.": "Creates a voice model from your voice so your songs are sung in it.", "Açıklama": "Description", "Parça": "Track", "Ses kaydı": "Recording", "Hak onayı": "Rights confirmation", "Vokal ya da müzik": "Vocal or music", "En az 10 sn bölüm": "A section of at least 10 s", "E-postanı doğrula": "Verify your email", "Hoş geldin hediyen e-postanı doğrulayınca yüklenir. Gelen kutundaki bağlantıya dokun, sonra buraya dön.": "Your welcome gift arrives once you verify your email. Tap the link in your inbox, then come back here.", "Bağlantıyı yeniden gönder": "Resend link", "Doğruladım": "I've verified", "Kontrol ediliyor…": "Checking…", "Doğrulandı, kredin yükleniyor.": "Verified, your credits are on the way.", "Henüz doğrulanmamış görünüyor. Bağlantıya dokunduktan sonra tekrar dene.": "It doesn't look verified yet. Tap the link, then try again.", "Bağlantıyı e-postana yeniden gönderdik. Spam klasörüne de bak.": "We sent the link to your email again. Check spam too.", "Şu an gönderilemedi, biraz sonra tekrar dene.": "Couldn't send right now, try again in a moment.", "Kredin e-postanı doğrulayınca yüklenecek. Gelen kutundaki bağlantıya dokun.": "Your credits arrive once you verify your email. Tap the link in your inbox.", "Bugünlük sınıra ulaştın, yarın tekrar dene.": "You've reached today's limit, try again tomorrow.", "Kaynak parça bulunamadı.": "Source track not found.", "Başlık — ör. Gece Yürüyüşü": "Title — e.g. Night Walk", "Parçanın adı; sesi değiştirmez, tarzı Stil belirler. Boş bırakırsan otomatik verilir.": "The track's name; it doesn't change the sound, Style does. Leave empty for an automatic name.", "Beat'ten vokalli cover için söz yaz": "Write lyrics for a vocal cover of a beat", "Kaydın süresi okunamadı, yeniden yükle": "Couldn't read the recording length, upload it again", "Devam noktası gerekli.": "A continue point is required.", "Sözler (isteğe bağlı)": "Lyrics (optional)", "Sözler (boş bırakırsan şarkının sözlerinden otomatik yazılır)": "Lyrics (leave empty to write them automatically from the song)", "Künye": "Credits", "Sırada": "Up next", "Fikir": "Idea", "Tür": "Type", "Söz": "Lyrics", "Oluşturuldu": "Created", "Stili kopyala": "Copy style", "Devam etmek için koşulları kabul et.": "Accept the terms to continue.", "Kullanım Koşulları ve Gizlilik Politikası'nı okudum, kabul ediyorum": "I've read and agree to the Terms of Use and Privacy Policy", "Koşullar": "Terms", "Yükleniyor…": "Loading…", "Tarayıcıda aç": "Open in browser", "Yasal metinler": "Legal documents", "Sayfa açılamadı. İnternet bağlantını kontrol et.": "Couldn't open the page. Check your internet connection.", "Kullanım Koşulları": "Terms of Use", "Gizlilik Politikası": "Privacy Policy", "Yasal": "Legal",
     "Hesabını aç": "Create your account",
     "Kredin bitti": "Out of credits",
     "Planın": "Your plan",
@@ -184,10 +184,51 @@
     "Ödeme, onayınla Apple hesabından alınır. Abonelik, dönem bitmeden en az 24 saat önce iptal edilmezse aynı ücretle her ay otomatik yenilenir. App Store hesap ayarlarındaki Abonelikler bölümünden yönetebilir ya da iptal edebilirsin. Krediler her dönem başında yenilenir; kullanılmayan kredi sonraki aya devretmez.": "Payment is charged to your Apple Account at confirmation of purchase. The subscription renews automatically every month at the same price unless cancelled at least 24 hours before the end of the current period. Manage or cancel it under Subscriptions in your App Store account settings. Credits renew at the start of each period; unused credits do not roll over.",
     "Ödeme, onayınla Google Play hesabından alınır. Abonelik, iptal edilmedikçe aynı ücretle her ay otomatik yenilenir. Google Play'de Ödemeler ve abonelikler bölümünden yönetebilir ya da iptal edebilirsin. Krediler her dönem başında yenilenir; kullanılmayan kredi sonraki aya devretmez.": "Payment is charged to your Google Play account at confirmation of purchase. The subscription renews automatically every month at the same price until cancelled. Manage or cancel it under Payments & subscriptions in Google Play. Credits renew at the start of each period; unused credits do not roll over.",
     "Abonelik App Store ya da Google Play üzerinden alınır ve dönem bitmeden en az 24 saat önce iptal edilmezse her ay otomatik yenilenir. Krediler her dönem başında yenilenir; kullanılmayan kredi sonraki aya devretmez.": "Subscriptions are purchased through the App Store or Google Play and renew automatically every month unless cancelled at least 24 hours before the end of the period. Credits renew at the start of each period; unused credits do not roll over.",
+    "Sesi aç": "Turn sound on",
+    "Sesi kapat": "Mute",
+    "Geri kaydır": "Rewind",
+    "İleri kaydır": "Fast forward",
+    "Üretim uzun sürüyor; uygulamayı yeniden açınca tekrar kontrol edilir": "Generation is taking long; it'll be checked again when you reopen the app",
+    "Bağlantı kopyalandı": "Link copied",
+    "Paylaşılamadı": "Couldn't share",
+    "İndirildi": "Downloaded",
+    "Müzik yüklenemedi": "Couldn't load the music",
+    "Kaydetme bu sürümde kullanılamıyor": "Saving isn't available in this version",
+    "Parçayı kaydet": "Save track",
+    "Bu e-posta diğer yöntemle kayıtlı. O yöntemle devam et.": "This email is registered with the other method. Continue with that one.",
+    "Bu cihazda giriş şu an yapılamıyor. Uygulamayı güncelle.": "Sign-in isn't available on this device right now. Update the app.",
+    "Yapay zekâ yaz": "Write with AI",
+    "Sözler şu an yazılamadı": "Couldn't write lyrics right now",
+    "Sözler şu an yazılamadı. Kredin iade edildi, tekrar dene.": "Couldn't write lyrics right now. Your credit was refunded, try again.",
+    "Sistem şu an yoğun": "The system is busy right now",
+    "Yoğunluk nedeniyle isteğin tamamlanamadı. Kredin iade edildi; biraz sonra tekrar dene.": "We couldn't complete your request because of high demand. Your credit was refunded; try again in a moment.",
+    "Sistemde şu an yoğunluk var. Biraz sonra tekrar dene.": "The system is busy right now. Try again in a moment.",
+    "Tamam": "OK",
+    "Sistemde şu anda yoğunluk bulunmaktadır. Lütfen daha sonra tekrar deneyiniz.": "The system is currently busy. Please try again later.",
+    "Yoğunluk nedeniyle isteğiniz tamamlanamadı. Krediniz iade edilmiştir; lütfen daha sonra tekrar deneyiniz.": "Your request could not be completed due to high demand. Your credit has been refunded; please try again later.",
+    "Hizmet şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyiniz.": "The service is currently unavailable. Please try again later.",
+    "İstenen kayıt bulunamadı.": "The requested record was not found.",
+    "Bu işlem daha önce gerçekleştirilmiş.": "This action has already been completed.",
+    "İçerik, kullanım ve telif koşullarına uygun bulunmadı. Lütfen sözleri veya kaynak sesi değiştirerek tekrar deneyiniz.": "The content did not meet our usage and copyright terms. Please change the lyrics or source audio and try again.",
+    "Girilen bilgiler işlenemedi. Lütfen kontrol ederek tekrar deneyiniz.": "The information provided could not be processed. Please check it and try again.",
+    "Kaynak dosyaya erişilemedi. Lütfen dosyayı yeniden yükleyiniz.": "The source file could not be accessed. Please upload the file again.",
+    "İşlem tamamlanamadı. Lütfen daha sonra tekrar deneyiniz.": "The action could not be completed. Please try again later.",
+    "Koşullar güncellendi": "Terms updated",
+    "Devam etmek için güncel Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmeniz gerekmektedir.": "To continue, you need to accept the current Terms of Use and Privacy Policy.",
+    "Güncel Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmeniz gerekmektedir.": "You need to accept the current Terms of Use and Privacy Policy.",
+    "Kabul ediyorum": "I accept",
+    "Teşekkürler. Lütfen işlemi tekrar deneyiniz.": "Thank you. Please try the action again.",
+    "Kaydedilemedi, lütfen tekrar deneyiniz.": "Couldn't save, please try again.",
+    "Kredi yükle": "Add credits",
+    "Özel miktar": "Custom amount",
+    "Kredi miktarı": "Credit amount",
   };
   const MONTHS = { Ocak: "January", Şubat: "February", Mart: "March", Nisan: "April", Mayıs: "May", Haziran: "June", Temmuz: "July",
     Ağustos: "August", Eylül: "September", Ekim: "October", Kasım: "November", Aralık: "December" };
   const RX = [
+    [/^(d+) kredi harcandı$/, "$1 credit used"],
+    [/^Gerekli: (.+)$/, (m, x) => "Required: " + x.split(" · ").map(one).join(" · ")],
+    [/^E-postanı doğrula, (\d+) kredi hediyen yüklensin$/, "Verify your email to get your $1 free credits"],
     [/^(\d+) satır$/, (m, n) => n + (n === "1" ? " line" : " lines")], [/^(\d+) kelime$/, (m, n) => n + (n === "1" ? " word" : " words")],
     [/^(\d+) gün sonra yenilenir$/, "Renews in $1 days"], [/^(\d+) gün sonra sıfırlanır$/, "Resets in $1 days"], [/^(\d+) kredi \/ ay$/, "$1 credits / mo"], [/^%(\d+) tasarruf$/, "Save $1%"], [/^Her ay (\d+) kredi$/, "$1 credits every month"], [/^≈ (\d+) şarkı$/, "≈ $1 songs"], [/^(\d+) gün geçerli$/, "valid for $1 days"], [/^Hesap açana (\d+) kredi hediye$/, "$1 free credits when you sign up"], [/^(.+) \/ ay$/, "$1 / mo"],
     [/^(\d+) şarkı$/, (m, n) => n + (n === "1" ? " song" : " songs")], [/^(\d+) parça$/, (m, n) => n + (n === "1" ? " track" : " tracks")], [/^(\d+) kredi$/, "$1 credits"],
@@ -205,11 +246,33 @@
   const SKIP = "#fpLyr,.song:not(.pin) .t,.gc-t,#fpTitle,#miniTitle,#lfTitle,#fpStyle,.np-q-t b,.menu-head b,script,style,textarea,[data-noi18n]";
   const ATTRS = ["placeholder", "aria-label", "title"];
 
+  // Ek diller (DE / PT / JA): public/i18n-langs.js; metin bulunamazsa İngilizceye düşer
+  const LANGS = ["tr", "en", "de", "pt", "ja"];
+  const PK = {};
+  for (const [l, p] of Object.entries(window.I18N_PACKS || {})) {
+    PK[l] = { d: p.d, months: p.months, date: p.date, rx: p.rx.map(([src, to]) => [new RegExp(src), to]) };
+  }
+  function packOne(pk, p) {
+    if (Object.prototype.hasOwnProperty.call(pk.d, p)) return pk.d[p];
+    const dm = /^(\d{1,2}) (Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık) (\d{4})$/.exec(p);
+    if (dm) return pk.date.replace("{d}", dm[1]).replace("{m}", pk.months[Object.keys(MONTHS).indexOf(dm[2])]).replace("{y}", dm[3]);
+    for (const [re, to] of pk.rx) {
+      const m = re.exec(p);
+      if (!m) continue;
+      if (to.startsWith("@req:")) return to.slice(5) + m[1].split(" · ").map(one).join(" · ");
+      if (to.startsWith("@p:")) { const [a, b] = to.slice(3).split("|"); return p.replace(re, m[1] === "1" ? a : b); }
+      return p.replace(re, to);
+    }
+    return null;
+  }
   function one(p) {
+    const pk = PK[LANG];
+    if (pk) { const r = packOne(pk, p); if (r != null) return r; }
     if (Object.prototype.hasOwnProperty.call(D, p)) return D[p];
     for (const [re, to] of RX) if (re.test(p)) return p.replace(re, to);
     return p;
   }
+  function one2(l, p) { return Object.prototype.hasOwnProperty.call(D, p) || RX.some(([re]) => re.test(p)); }
   function tr(s) {
     const core = s.trim();
     if (!core || !/[A-Za-zÇĞİÖŞÜçğıöşü]/.test(core)) return s;
@@ -227,20 +290,21 @@
   function doText(n) {
     if (skip(n.parentElement)) return;
     let m = textMem.get(n);
-    if (!m || (n.nodeValue !== m.en && n.nodeValue !== m.tr)) { m = { tr: n.nodeValue, en: tr(n.nodeValue) }; textMem.set(n, m); }
-    const want = LANG === "en" ? m.en : m.tr;
+    if (!m || (n.nodeValue !== m.tr && !Object.values(m.x).includes(n.nodeValue))) { m = { tr: n.nodeValue, x: {} }; textMem.set(n, m); }
+    const want = LANG === "tr" ? m.tr : (m.x[LANG] ??= tr(m.tr));
     if (n.nodeValue !== want) n.nodeValue = want;
   }
   function doAttrs(el) {
-    if (skip(el)) return;
+    // textarea içeriği (kullanıcı metni) çevrilmez ama placeholder / aria-label / title çevrilir
+    if (el.tagName === "TEXTAREA" ? skip(el.parentElement) || el.hasAttribute("data-noi18n") : skip(el)) return;
     for (const a of ATTRS) {
       const v = el.getAttribute(a);
       if (v == null) continue;
       let all = attrMem.get(el);
       if (!all) { all = {}; attrMem.set(el, all); }
       let m = all[a];
-      if (!m || (v !== m.en && v !== m.tr)) { m = all[a] = { tr: v, en: tr(v) }; }
-      const want = LANG === "en" ? m.en : m.tr;
+      if (!m || (v !== m.tr && !Object.values(m.x).includes(v))) { m = all[a] = { tr: v, x: {} }; }
+      const want = LANG === "tr" ? m.tr : (m.x[LANG] ??= tr(m.tr));
       if (v !== want) el.setAttribute(a, want);
     }
   }
@@ -263,9 +327,10 @@
   });
 
   function set(l, quiet) {
-    LANG = l === "en" ? "en" : "tr";
+    LANG = LANGS.includes(l) ? l : "tr";
     try { localStorage.setItem("sf_lang", LANG); } catch (e) {}
     document.documentElement.lang = LANG;
+    document.documentElement.dataset.lang = LANG;
     walk(document.body);
     document.querySelectorAll("#langSeg button").forEach((b) => b.classList.toggle("on", b.dataset.v === LANG));
     if (!quiet) window.dispatchEvent(new CustomEvent("sf-lang", { detail: LANG }));
@@ -273,13 +338,18 @@
 
   // confirm / alert metinleri
   const oc = window.confirm.bind(window), oa = window.alert.bind(window);
-  window.confirm = (m) => oc(LANG === "en" ? tr(String(m)) : m);
-  window.alert = (m) => oa(LANG === "en" ? tr(String(m)) : m);
+  window.confirm = (m) => oc(LANG !== "tr" ? tr(String(m)) : m);
+  window.alert = (m) => oa(LANG !== "tr" ? tr(String(m)) : m);
 
   let saved = null;
   try { saved = localStorage.getItem("sf_lang"); } catch (e) {}
-  const start = saved || ((navigator.language || "").toLowerCase().startsWith("tr") ? "tr" : "en");
-  window.I18N = { set, get: () => LANG, t: (s) => (LANG === "en" ? tr(s) : s) };
+  // İlk açılış: cihaz diline göre (tr / de / pt / ja), desteklenmiyorsa İngilizce
+  const dev = (navigator.language || "").toLowerCase().slice(0, 2);
+  const start = LANGS.includes(saved) ? saved : LANGS.includes(dev) ? dev : "en";
+  const LOC = { tr: "tr-TR", en: "en-US", de: "de-DE", pt: "pt-BR", ja: "ja-JP" };
+  window.I18N = { set, get: () => LANG, langs: LANGS, loc: () => LOC[LANG],
+    // geliştirme: metin bu dilde çevrili mi? (eksik çeviri taraması)
+    has: (l, p) => { const pk = PK[l]; return l === "tr" || l === "en" ? one2(l, p) : !!(pk && packOne(pk, p) != null); }, t: (s) => (LANG !== "tr" ? tr(s) : s) };
 
   function boot() {
     mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ATTRS });

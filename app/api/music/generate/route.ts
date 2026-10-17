@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
     const data = parsed.data;
     const cost = await getCost("generate", data.model);
-    await chargeCredits(user.uid, cost);
+    await chargeCredits(user.uid, cost, user.verified);
 
     let providerTaskId: string;
     try {

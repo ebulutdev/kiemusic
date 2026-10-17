@@ -1,4 +1,4 @@
-/* ── CookRapper · Yönetim paneli ───────────────────────────
+/* ── CookFire · Yönetim paneli ───────────────────────────
    Giriş: auth.js (aynı giriş ekranı) + fb.js (Firebase). Veri: /api/admin/* — sunucu "admin" yetkisini denetler.
    Yetki verme: npm run admin:grant -- e-posta@adresi */
 (() => {
@@ -51,7 +51,7 @@
   async function boot() {
     state("Yükleniyor…");
     try {
-      await Promise.all([loadStats(), loadExplore()]);
+      await Promise.all([loadStats(), loadExplore(), loadInbox()]);
       ready = true; state(""); panes();
     } catch (e) {
       if (e.status === 403) state(`<b>Bu hesabın yönetici yetkisi yok</b>Terminalde çalıştır: <code>npm run admin:grant -- ${h(email || "e-posta@adresi")}</code> ardından sayfayı yenile.`);
@@ -68,6 +68,7 @@
     $$("#adTabs [data-tab]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
     panes();
     if (tab === "stats" && data) drawCharts();
+    if (tab === "inbox") loadInbox().catch(() => {});
   });
 
   // ══ Analiz ══════════════════════════════════════════════
@@ -123,7 +124,7 @@
   function userTable(rows) {
     if (!rows.length) return '<div class="ad-empty">Bu dönemde üretim yapan kullanıcı yok</div>';
     return `<table class="ad-table"><thead><tr><th>Kullanıcı</th><th>Üretim</th><th>Harcanan kredi</th><th>Kalan kredi</th><th>Servis kredisi</th><th>Gelir</th><th>Maliyet</th><th>Kâr</th><th>Son üretim</th></tr></thead><tbody>${
-      rows.map((r) => `<tr><td class="who">${r.anon ? "<small>Misafir</small> " : ""}${h(r.email || r.name || r.uid.slice(0, 10) + "…")}</td><td>${n(r.tasks)}</td><td>${n(r.credits)}</td><td>${r.balance == null ? "—" : n(r.balance)}</td>${kieCell(r)}<td>${usd(r.revenue)}</td><td>${usd(r.cost)}</td>${money(r.profit)}<td>${timeAgo(r.lastAt)}</td></tr>`).join("")
+      rows.map((r) => `<tr data-uid="${h(r.uid)}" class="clk" title="Onay kayıtlarını göster"><td class="who">${r.anon ? "<small>Misafir</small> " : ""}${h(r.email || r.name || r.uid.slice(0, 10) + "…")}</td><td>${n(r.tasks)}</td><td>${n(r.credits)}</td><td>${r.balance == null ? "—" : n(r.balance)}</td>${kieCell(r)}<td>${usd(r.revenue)}</td><td>${usd(r.cost)}</td>${money(r.profit)}<td>${timeAgo(r.lastAt)}</td></tr>`).join("")
     }</tbody></table>`;
   }
 
@@ -186,6 +187,47 @@
   }
   let rt;
   addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(drawCharts, 150); });
+
+  // ══ Kullanıcı onay kayıtları (tabloda kullanıcıya dokun) ═══
+  document.addEventListener("click", async (e) => {
+    const tr = e.target.closest("tr[data-uid]"); if (!tr) return;
+    const card = $("#adUser"); card.hidden = false; card.innerHTML = "Yükleniyor…"; card.scrollIntoView({ block: "nearest" });
+    try {
+      const j = await api("/api/admin/user?uid=" + encodeURIComponent(tr.dataset.uid));
+      const dt = (t) => (t ? new Date(t).toLocaleString("tr-TR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—");
+      const OP = { cover: "Cover", mashup: "Mashup", extend: "Uzat", "upload-extend": "Uzat (yükleme)", "add-vocals": "Vokal ekle", voice: "Ses klonu", "voice-phrase": "Ses klonu" };
+      card.innerHTML = `<div class="ad-card-h"><b>${h(j.user.email || j.user.name || j.user.uid)}</b><small>${h((j.user.providers || []).join(" · ") || "misafir")} · kayıt ${dt(j.user.created)}</small><button class="ad-ghost" id="adUserX">Kapat</button></div>
+        <p class="ad-note"><b>Koşullar / Gizlilik:</b> ${j.terms ? `sürüm ${h(j.terms.version)} · ${dt(j.terms.at)}${j.terms.prev ? ` (önceki: ${h(j.terms.prev)})` : ""}` : "kabul kaydı yok"}</p>
+        <div class="ad-scroll">${j.consents.length ? `<table class="ad-table ad-left"><thead><tr><th>Zaman</th><th>Onay</th><th>İşlem</th><th>Parça / ad</th><th>Kaynak</th></tr></thead><tbody>${j.consents.map((c) => `<tr><td>${dt(c.at)}</td><td>${c.kind === "rights" ? "Hak onayı" : "Ses klonu" + (c.version ? " (" + h(c.version) + ")" : "")}</td><td>${h(OP[c.op] || c.op)}</td><td>${h(c.title || "—")}</td><td>${h(c.media || "—")}</td></tr>`).join("")}</tbody></table>` : '<p class="ad-note">Hak / ses klonu onayı kaydı yok.</p>'}</div>`;
+      $("#adUserX").onclick = () => (card.hidden = true);
+    } catch (er) { card.innerHTML = h(er.message); }
+  });
+
+  // ══ Bildirimler ═════════════════════════════════════════
+  let inbox = { issues: [], reports: [] };
+  const KIND = { busy: "Sistem yoğun (kullanıcı)", other: "Diğer (kullanıcı)", "provider-credits": "Üretim servisi kredisi / yoğunluk (otomatik)" };
+  const REASON = { offensive: "Saldırgan içerik", copyright: "Telif", impersonation: "Taklit", sexual: "Uygunsuz içerik", other: "Diğer" };
+  const when = (t) => (t ? new Date(t).toLocaleString("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
+  async function loadInbox() {
+    inbox = await api("/api/admin/issues");
+    const open = inbox.issues.filter((x) => x.status === "open").length + inbox.reports.filter((x) => x.status === "open").length;
+    const b = $("#adInboxN"); b.hidden = !open; b.textContent = open;
+    drawInbox();
+  }
+  function drawInbox() {
+    const all = $("#adInboxAll").checked, vis = (x) => all || x.status === "open";
+    const btn = (col, x) => `<button class="ad-ghost" data-st="${col}|${x.id}|${x.status === "open" ? "reviewed" : "open"}">${x.status === "open" ? "İncelendi" : "Geri aç"}</button>`;
+    const I = inbox.issues.filter(vis), Rr = inbox.reports.filter(vis);
+    $("#tbIssues").innerHTML = I.length ? `<table class="ad-table ad-left"><thead><tr><th>Zaman</th><th>Tür</th><th>İşlem</th><th>Kullanıcı</th><th>Not</th><th></th></tr></thead><tbody>${I.map((x) => `<tr class="${x.status}"><td>${when(x.at)}</td><td>${h(KIND[x.kind] || x.kind)}</td><td>${h(x.op || "—")}</td><td>${h(x.user || (x.source === "system" ? "sistem" : "—"))}</td><td>${h(x.note || "")}</td><td>${btn("issues", x)}</td></tr>`).join("")}</tbody></table>` : '<p class="ad-note">Bildirim yok.</p>';
+    $("#tbReports").innerHTML = Rr.length ? `<table class="ad-table ad-left"><thead><tr><th>Zaman</th><th>Neden</th><th>Parça</th><th>Bildiren</th><th>Not</th><th></th></tr></thead><tbody>${Rr.map((x) => `<tr class="${x.status}"><td>${when(x.at)}</td><td>${h(REASON[x.reason] || x.reason)}</td><td>${h(x.title || "—")}</td><td>${h(x.user || "—")}</td><td>${h(x.note || "")}</td><td>${btn("reports", x)}</td></tr>`).join("")}</tbody></table>` : '<p class="ad-note">Şikâyet yok.</p>';
+  }
+  $("#adInboxAll").addEventListener("change", drawInbox);
+  $("#adInboxReload").addEventListener("click", () => loadInbox().catch((e) => toast(e.message)));
+  $("[data-pane=inbox]").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-st]"); if (!b) return;
+    const [col, id, status] = b.dataset.st.split("|");
+    try { await api("/api/admin/issues", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ col, id, status }) }); await loadInbox(); } catch (er) { toast(er.message); }
+  });
 
   // ══ Keşfet kutuları ═════════════════════════════════════
   async function loadExplore() {
@@ -269,6 +311,9 @@
     const meas = (k) => { const r = byOp.get(k); if (!r || !r.completed) return "ölçülmedi"; const avg = r.kieCredits / r.completed;
       return `${r.estimated ? "≈" : "ölçülen"} ${nf2.format(avg)}${r.estimated ? " (tahmin içerir)" : ""} · n=${r.completed}` };
     $("#adCost").innerHTML = Object.keys(C).map((k) => `<label>${h(OPS[k] || k)}<input type="number" min="0" max="1000" step="1" data-c="${h(k)}" value="${C[k]}"><small class="ad-meas">${h(meas(k))}</small></label>`).join("") || "<small>Analiz yüklenince görünür</small>";
+    const PL = data?.pricing?.plans || [], CU = data?.pricing?.custom || { min: 150, max: 1500, step: 50 };
+    $("#adPlans").innerHTML = PL.map((p) => `<label>${h(p.name)} · kredi<input type="number" min="1" step="1" data-pc="${h(p.id)}" value="${p.credits}"></label><label>${h(p.name)} · fiyat (${h(p.currency)})<input type="number" min="1" step="1" data-pp="${h(p.id)}" value="${p.price}"></label>`).join("") || "<small>Analiz yüklenince görünür</small>";
+    $("#adCustom").innerHTML = [["min", "En az kredi"], ["max", "En çok kredi"], ["step", "Adım"]].map(([k, t]) => `<label>${t}<input type="number" min="1" step="1" data-cu="${k}" value="${CU[k]}"></label>`).join("");
     $("#adEst").innerHTML = keys.map((k) => `<label>${h(OPS[k] || k)}<input type="number" min="0" step="0.5" data-k="${h(k)}" value="${E.kieCreditsEstimate?.[k] ?? 0}"></label>`).join("");
   }
   $("#adEcon").addEventListener("submit", async (e) => {
@@ -276,11 +321,14 @@
     const f = e.currentTarget, msg = $("#adEconMsg"), est = {}, costs = {};
     $$("#adCost input").forEach((i) => (costs[i.dataset.c] = Math.max(0, Math.round(+i.value || 0))));
     $$("#adEst input").forEach((i) => (est[i.dataset.k] = Math.max(0, +i.value || 0)));
+    const plans = $$("#adPlans [data-pc]").map((i) => ({ id: i.dataset.pc, credits: Math.round(+i.value || 0), price: Math.round(+$(`#adPlans [data-pp="${i.dataset.pc}"]`).value || 0) }));
+    const cu = {}; $$("#adCustom input").forEach((i) => (cu[i.dataset.cu] = Math.round(+i.value || 0)));
     msg.textContent = "Kaydediliyor…";
     try {
       await api("/api/admin/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
         economics: { usdPerCredit: +f.usdPerCredit.value, kieUsdPerCredit: +f.kieUsdPerCredit.value, kieCreditsEstimate: est },
         ...(Object.keys(costs).length ? { costs } : {}),
+        ...(plans.length ? { plans } : {}), ...(cu.min ? { custom: cu } : {}),
         exploreMax: Math.round(+f.exploreMax.value), previewSec: Math.round(+f.previewSec.value),
       }) });
       msg.textContent = "Kaydedildi ✓ — analiz yenileniyor";

@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "807604270953",
+    "project_id": "rapper-fcc44",
+    "storage_bucket": "rapper-fcc44.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:807604270953:android:360f4859f1e49ae517aff8",
+        "android_client_info": {
+          "package_name": "com.fetsangrup.cookrapper"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "807604270953-m00ksp9l9ug9i8snkptgrn26vccb5rui.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.fetsangrup.cookrapper",
+            "certificate_hash": "b31833b2789b18f670cc9d1a4a9461aba628188e"
+          }
+        },
+        {
+          "client_id": "807604270953-mpbrn3tg4aead1go2n1uig6l325jb83f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCnj4s7H0QR_jTeATSbvhqEVCMeSjIb2fs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "807604270953-mpbrn3tg4aead1go2n1uig6l325jb83f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "807604270953-4nn98bo0sl3ftm6b1up3vkubj3i5v6do.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.fetsangrup.cookrapper"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

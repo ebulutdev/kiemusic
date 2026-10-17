@@ -1,4 +1,4 @@
-/* ── CookRapper · Yasal metin penceresi (Kullanım Koşulları / Gizlilik Politikası) ──────────
+/* ── CookFire · Yasal metin penceresi (Kullanım Koşulları / Gizlilik Politikası) ──────────
    Uygulamadan çıkmadan, alttan açılan pencerede (geniş ekranda orta kart) gösterir — ödeme penceresiyle aynı tasarım.
    Metin uygulama paketindeki terms.html / privacy.html'den okunur → anında ve çevrimdışı açılır. Aynı sayfalar sunucuda
    /terms ve /privacy adresindedir (mağazaya verilen adres) → "Tarayıcıda aç".
@@ -33,9 +33,10 @@
   };
 
   const FILES = { terms: "terms.html", privacy: "privacy.html" };
-  let links = { terms: "/terms", privacy: "/privacy" }, contact = "", cur = "terms", seq = 0, opener = null;
+  let links = { terms: "/terms", privacy: "/privacy" }, contact = "", legalVersion = "", cur = "terms", seq = 0, opener = null;
   const cache = {}; // "terms:tr" → <article> (ayrıştırılmış, bir kez)
-  const lang = () => (document.documentElement.lang === "en" ? "en" : "tr");
+  // Yasal metinler Türkçe ve İngilizce yayımlanır; diğer dillerde (DE / PT / JA) İngilizce gösterilir (çelişkide Türkçe geçerli)
+  const lang = () => (document.documentElement.lang === "tr" ? "tr" : "en");
   const webUrl = (k) => { const u = links[k] || "/" + k; return window.CR ? window.CR.api(u) : u; };
   const svg = (d, w) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
@@ -174,11 +175,12 @@
   }
 
   window.Docs = {
-    open, close, url: webUrl,
+    open, close, url: webUrl, version: () => legalVersion,
     setLegal(l) {
       if (!l) return;
       if (l.terms) links.terms = l.terms;
       if (l.privacy) links.privacy = l.privacy;
+      legalVersion = l.version || "";
       contact = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(l.contact || "") ? l.contact : "";
     },
   };

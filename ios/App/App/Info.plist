@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>tr</string>
 	<key>CFBundleDisplayName</key>
-        <string>CookRapper</string>
+        <string>CookFire</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -66,7 +66,7 @@
 	<true/>
 	<!-- Mikrofon: Sesten (cover / uzat / vokal ekle) ve Ses klonu kayıtları -->
 	<key>NSMicrophoneUsageDescription</key>
-	<string>CookRapper, kendi sesinden şarkı, cover ve ses klonu üretebilmen için mikrofonla kayıt alır. Kayıt yalnız sen kaydet dediğinde gönderilir. (CookRapper records with the microphone so you can create songs, covers and voice clones from your own voice.)</string>
+	<string>CookFire, kendi sesinden şarkı, cover ve ses klonu üretebilmen için mikrofonla kayıt alır. Kayıt yalnız sen kaydet dediğinde gönderilir. (CookFire records with the microphone so you can create songs, covers and voice clones from your own voice.)</string>
 	<!-- Arka planda / ekran kilitliyken müzik çalmaya devam et -->
 	<key>UIBackgroundModes</key>
 	<array>
@@ -79,6 +79,17 @@
 	<array>
 		<string>tr</string>
 		<string>en</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.807604270953-4nn98bo0sl3ftm6b1up3vkubj3i5v6do</string>
+			</array>
+		</dict>
 	</array>
 </dict>
 </plist>

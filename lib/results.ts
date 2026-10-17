@@ -36,8 +36,24 @@ function stemInfo(v: Any): Any | null {
     ?? v?.resultObject?.vocal_removal_info ?? v?.resultObject?.vocal_separation_info
     ?? (v && (v.vocal_url || v.vocalUrl || v.origin_data) ? v : null);
 }
+// recordInfo (durum sorgusu): resultJson.resultUrls — yalnız adres listesi; stem adı dosya adının sonunda (…_Vocals.mp3)
+const STEM_BY_SUFFIX = STEM_URLS.map(([, stem]) => stem).sort((a, b) => b.length - a.length); // Backing_Vocals, Vocals'tan önce
+function stemOfUrl(u: string): string | null {
+  let name = "";
+  try { name = decodeURIComponent(new URL(u).pathname.split("/").pop() || ""); } catch { name = u.split("?")[0].split("/").pop() || ""; }
+  const base = name.replace(/\.[a-z0-9]+$/i, "").toLowerCase();
+  return STEM_BY_SUFFIX.find((s) => base.endsWith("_" + s.toLowerCase()) || base === s.toLowerCase()) ?? null;
+}
 export function stemResults(raw: unknown): TaskResult[] {
-  const info = stemInfo(parse(raw));
+  const v = parse(raw);
+  const urls: unknown = v?.resultUrls ?? v?.resultObject?.resultUrls;
+  if (Array.isArray(urls) && !stemInfo(v)) {
+    return urls
+      .filter((u): u is string => typeof u === "string")
+      .map((u) => ({ stem: stemOfUrl(u), audio_url: u }))
+      .filter((x): x is { stem: string; audio_url: string } => !!x.stem); // ham karışım (origin) ve tanınmayan dosyalar atlanır
+  }
+  const info = stemInfo(v);
   if (!info) return [];
   const od: Any[] = Array.isArray(info.origin_data) ? info.origin_data : [];
   if (od.length && od[0]?.audio_url) {
@@ -71,4 +87,18 @@ export function extraResult(raw: unknown): Record<string, unknown> | null {
     error: v.errorMessage ?? v.error_message,
   });
   return Object.keys(out).length ? out : null;
+}
+
+/**
+ * Söz zamanlaması sahte mi? Üretim servisi bazen gerçek hizalama yerine kelimeleri eşit aralıklarla dağıtır
+ * (hepsi aynı süre; toplam 240 sn ya da 30 sn gibi sabit bir uzunluğa yayılır). Bu zamanlamayla sözler şarkıdan
+ * kayar → kullanılmaz, istemci satır oranlı yedek moda geçer.
+ */
+export function syntheticTimings(words: { w?: string; s: number; e: number }[], duration?: number): boolean {
+  if (words.length < 6) return false;
+  const d = words.map((x) => x.e - x.s);
+  const uniform = d.filter((v) => Math.abs(v - d[0]) < 0.002).length / d.length >= 0.95;
+  const last = words[words.length - 1].e;
+  const overrun = !!duration && last > duration + 5; // şarkıdan uzun
+  return uniform || overrun;
 }

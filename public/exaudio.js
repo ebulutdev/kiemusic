@@ -1,4 +1,4 @@
-/* ── CookRapper · Keşfet müzik motoru ──────────────────────
+/* ── CookFire · Keşfet müzik motoru ──────────────────────
    Ana sayfadaki odak kutusunun müziğini çalar; kutu değişince yumuşak geçiş yapar:
    giriş kısık başlar → normal sese çıkar · çıkış azalarak söner.
    Performans: şarkı sayısından bağımsız yalnız 2 çalar (A/B) · yalnız odaktaki kutu yüklenir ·

@@ -1,4 +1,4 @@
-/* ── CookRapper · Yerel (iOS / Android) köprüsü ────────────
+/* ── CookFire · Yerel (iOS / Android) köprüsü ────────────
    Capacitor içinde çalışırken yerel eklentileri, web'de tarayıcı API'lerini kullanır.
    app.js yalnız window.CR üzerinden çağırır:
      CR.media   kilit ekranı / bildirim kontrolleri (MediaSession)  — arka planda çalma
@@ -40,7 +40,8 @@
     },
   };
 
-  const safeName = (s, ext) => (String(s || "parca").normalize("NFKD").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-").slice(0, 60) || "parca") + "." + ext;
+  // Dosya adı: başlıktaki harfler (Türkçe, Almanca, Japonca… dahil) korunur; yasak karakterler atılır, boşluk → tire
+  const safeName = (s, ext) => (String(s || "parca").normalize("NFC").replace(/[^\p{L}\p{N}\- _.]+/gu, "").trim().replace(/\s+/g, "-").replace(/^[.\-]+/, "").slice(0, 60) || "cookfire") + "." + ext;
   const extOf = (url) => { const m = String(url).split("?")[0].match(/\.(mp3|m4a|wav|aac|ogg|flac)$/i); return m ? m[1].toLowerCase() : "mp3"; };
 
   // ── Cihaza kaydet
@@ -52,7 +53,7 @@
       const { uri } = await FS.getUri({ directory: "CACHE", path: name });
       const r = await FT.downloadFile({ url, path: uri });
       // iOS: "Dosyalara Kaydet" · Android: indirilenlere / Drive'a kaydet, uygulamayla aç
-      await SH.share({ title: title || "CookRapper", files: [r.path || uri], dialogTitle: "Parçayı kaydet" });
+      await SH.share({ title: title || "CookFire", files: [r.path || uri], dialogTitle: "Parçayı kaydet" });
       return "shared";
     }
     try {

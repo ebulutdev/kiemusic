@@ -1,4 +1,4 @@
-/* ── CookRapper · Dalga formu seçici ───────────────────────
+/* ── CookFire · Dalga formu seçici ───────────────────────
    Parçayı dinleyerek kesim yapma: dalga formu üzerinde sürüklenebilir tutamaçlar.
      range  → başlangıç + bitiş (Bölüm değiştir)      point → tek nokta (Uzat: devam noktası)
    Kullanım:
@@ -294,7 +294,7 @@
       value,
       stop,
       get id() { return S.id; },
-      destroy() { stop(); au.removeAttribute("src"); cancelAnimationFrame(raf); ro.disconnect(); root.innerHTML = ""; },
+      destroy() { S.url = ""; stop(); au.removeAttribute("src"); cancelAnimationFrame(raf); ro.disconnect(); root.innerHTML = ""; }, // S.url boş: geç gelen dalga formu yanıtı yok sayılır
     };
   };
 })();

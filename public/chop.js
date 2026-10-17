@@ -1,4 +1,4 @@
-/* ── CookRapper · Analiz kesit motoru ─────────────────────
+/* ── CookFire · Analiz kesit motoru ─────────────────────
    Vokal ve müzik AYNI kesim listesiyle düzenlenir (birbirinden kaymaz): pencerede (ilk `win` sn) her `every` saniyede bir,
    şarkının biraz ilerisinden `len` saniyelik bir kesit araya eklenir ("el|ma ar|mut" → "el + ar + ma ar…").
    Kesimler vokalin hece başlarına oturtulur, eklemelerde kısa eşit güçlü geçiş yapılır (tıkırtı olmaz).

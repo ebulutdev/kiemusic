@@ -6,6 +6,8 @@ import { mirrorIfNeeded } from "@/lib/data/mirror";
 import { applyExtra } from "@/lib/data/extras";
 import { normalizeResults, stemResults, extraResult } from "@/lib/results";
 import type { TaskDoc, TaskResult, TaskStatus } from "@/lib/data/schema";
+import { alertProviderBusy, isBusyText, BUSY_MESSAGE } from "@/lib/data/issues";
+import { failText, KIE_MSG } from "@/lib/kieErrors";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ id: string }> };
@@ -35,7 +37,10 @@ async function refresh(task: TaskDoc): Promise<TaskDoc> {
     if (EXTRA_TYPES.has(task.taskType)) await applyExtra(task, true);
     return { ...task, status: "FAILED", errorMessage: msg };
   };
-  if (state === "fail") return fail(String(d.failCode ?? ""), d.failMsg || "İşlem başarısız");
+  if (state === "fail") {
+    if (isBusyText(d.failMsg)) { alertProviderBusy(String(d.failMsg)); return fail(String(d.failCode ?? ""), BUSY_MESSAGE); }
+    return fail(String(d.failCode ?? ""), failText(d.failCode, d.failMsg) ?? BUSY_MESSAGE);
+  }
 
   if (EXTRA_TYPES.has(task.taskType)) {
     const extra = extraResult(d.resultJson);
@@ -53,6 +58,9 @@ async function refresh(task: TaskDoc): Promise<TaskDoc> {
   // Aşama: müzik görevlerinde ayrıntı uç noktası gerçek aşamayı verir (PENDING → TEXT_SUCCESS → FIRST_SUCCESS → SUCCESS)
   // ve ara sonuçları (kapak, başlık, sözler, akış adresi) erkenden döndürür. Yüzde bilgisi yok; istemci aşama + süreden ilerler.
   let found = task.taskType === "remove-vocals" ? stemResults(d.resultJson) : normalizeResults(d.resultJson);
+  // Stem listesi henüz okunamadıysa "tamamlandı" sayma: geri çağrı ya da sonraki sorgu doldurur
+  // (sonuçsuz tamamlanma istemcide "Stem bulunamadı" olur ve hazır stemler kaybolurdu)
+  if (task.taskType === "remove-vocals" && !found.length) return task;
   let detail: string | undefined;
   if (task.taskType !== "remove-vocals" && state !== "success") {
     try {
@@ -62,7 +70,7 @@ async function refresh(task: TaskDoc): Promise<TaskDoc> {
       if (partial.length) found = partial;
     } catch {}
   }
-  if (detail && DETAIL_FAIL.has(detail)) return fail(detail, detail === "SENSITIVE_WORD_ERROR" ? "İçerik kurallara takıldı; sözleri ya da stili değiştirip tekrar dene." : "Üretim başarısız oldu.");
+  if (detail && DETAIL_FAIL.has(detail)) return fail(detail, detail === "SENSITIVE_WORD_ERROR" ? KIE_MSG.content : KIE_MSG.failed);
   const hasAudio = found.some((r) => r.audio_url || r.stream_audio_url);
   const seen: TaskStatus = state === "success" ? "COMPLETED"
     : (detail && DETAIL_STAGE[detail]) || (hasAudio ? "FIRST_READY" : state === "generating" ? "TEXT_READY" : task.status);

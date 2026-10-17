@@ -4,7 +4,7 @@ import { voiceSchema, VOICE_CONSENT_VERSION } from "@/lib/validation";
 import { assertOwnUpload } from "@/lib/data/media";
 import { createKieTask } from "@/lib/kie";
 import { requireAccount, errorResponse } from "@/lib/auth";
-import { saveVoice } from "@/lib/data/users";
+import { saveVoice, takeQuota } from "@/lib/data/users";
 import { createTask, getTask } from "@/lib/data/tasks";
 
 // Ses klonu 2. adım — ai-music-api/create-voice
@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     const consent = { at: new Date().toISOString(), version: VOICE_CONSENT_VERSION };
 
     const id = d.id || crypto.randomUUID();
+    await takeQuota(user.uid, "voice"); // günlük sınır (config/app limits)
     const kie = await createKieTask("voice", {
       task_id: d.validationTaskId,
       verify_url: d.verifyUrl,

@@ -1,6 +1,6 @@
 {
-  "name": "CookRapper — Yapay Zekâ Müzik Stüdyosu",
-  "short_name": "CookRapper",
+  "name": "CookFire — Yapay Zekâ Müzik Stüdyosu",
+  "short_name": "CookFire",
   "description": "Yapay zekâ ile şarkı, beat ve cover üret",
   "start_url": "/",
   "display": "standalone",

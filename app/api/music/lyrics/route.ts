@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getTimestampedLyrics } from "@/lib/kie";
 import { requireUser, errorResponse } from "@/lib/auth";
 import { getTask } from "@/lib/data/tasks";
+import { syntheticTimings } from "@/lib/results";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { path } from "@/lib/data/schema";
 
@@ -24,16 +25,34 @@ export async function POST(request: Request) {
     const { audioId } = parsed.data;
     const providerTaskId = parsed.data.providerTaskId || parsed.data.taskId;
     const task = providerTaskId ? await getTask(providerTaskId) : null;
-    if (!task || task.userId !== user.uid) {
+    if (!task || task.userId !== user.uid || !(task.results || []).some((r) => r.id === audioId)) {
       return NextResponse.json({ success: false, error: "Görev bulunamadı" }, { status: 404 });
     }
 
+    const dur = (task.results || []).find((r) => r.id === audioId)?.duration;
     const cache = adminDb().doc(path.lyrics(task.providerTaskId, audioId));
     const hit = await cache.get();
-    if (hit.exists) return NextResponse.json({ success: true, words: hit.get("words"), cached: true });
+    if (hit.exists) {
+      let words = hit.get("words") || [];
+      if (syntheticTimings(words, dur)) words = []; // eskiden önbelleğe alınmış sahte zamanlama da kullanılmaz
+      const at = hit.get("createdAt")?.toMillis?.() ?? 0;
+      // Boş / başarısız sonuç da 1 gün önbellekte: aynı parça için servise tekrar tekrar gidilmez (ücretli olabilir)
+      if (words.length || Date.now() - at < 86_400_000) return NextResponse.json({ success: true, words, cached: true });
+    }
 
-    const words = await getTimestampedLyrics(task.providerTaskId, audioId);
-    if (words.length) await cache.set({ words, createdAt: new Date() });
+    let words: Awaited<ReturnType<typeof getTimestampedLyrics>> = [];
+    try {
+      words = await getTimestampedLyrics(task.providerTaskId, audioId);
+    } catch (err) {
+      await cache.set({ words: [], failed: true, createdAt: new Date() });
+      throw err;
+    }
+    // Sahte (eşit aralıklı) zamanlama: kaydetme, kullanma — istemci yedek moda geçer
+    if (syntheticTimings(words, dur)) {
+      await cache.set({ words: [], failed: true, synthetic: true, createdAt: new Date() });
+      return NextResponse.json({ success: true, words: [], synthetic: true });
+    }
+    await cache.set({ words, createdAt: new Date() });
     return NextResponse.json({ success: true, words });
   } catch (error) {
     return errorResponse(error, "LYRICS_SYNC_ERROR");

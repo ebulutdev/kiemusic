@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   // geri kalanını (index.html, app.js, fontlar…) kopyalamaz → canlıda ana sayfa 404 olur.
   // Sunucunun ihtiyaç duyduğu tek dosya (config/app.json) derlemede koda gömülü (lib/data/config.ts).
   outputFileTracingExcludes: { "*": ["public/**/*"] },
-  // Ana sayfa: mobil CookRapper arayüzü (public/index.html)
+  // Ana sayfa: mobil CookFire arayüzü (public/index.html)
   async rewrites() {
     return {
       beforeFiles: [

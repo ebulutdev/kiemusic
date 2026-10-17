@@ -1,4 +1,4 @@
-/* ── CookRapper · yasal sayfalar: dil (TR/EN), tema, iletişim adresi ──
+/* ── CookFire · yasal sayfalar: dil (TR/EN), tema, iletişim adresi ──
    Dil: ?lang=en|tr → uygulamadaki seçim (sf_lang) → cihaz dili. Tema: uygulamadaki seçim (sf2_set.theme) → sistem.
    İletişim e-postası config/app.json → legal.contact (boşsa sayfadaki yer tutucu metin kalır). */
 (() => {
@@ -17,7 +17,7 @@
   }
   const q = new URLSearchParams(location.search).get("lang");
   const pref = q || read("sf_lang") || ((navigator.language || "").toLowerCase().startsWith("tr") ? "tr" : "en");
-  setLang(pref === "en" ? "en" : "tr");
+  setLang(pref === "tr" ? "tr" : "en"); // TR dışındaki diller (en, de, pt, ja) İngilizce metni gösterir
   btns.forEach((b) => b.addEventListener("click", () => setLang(b.dataset.l)));
 
   fetch("config/app.json", { cache: "no-store" })

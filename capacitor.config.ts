@@ -5,7 +5,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // Derleme: npm run mobile:build   ·   Xcode: npx cap open ios   ·   Android Studio: npx cap open android
 const config: CapacitorConfig = {
   appId: "com.fetsangrup.cookrapper",
-  appName: "CookRapper",
+  appName: "CookFire",
   webDir: "www",
   backgroundColor: "#0B0A09",
   server: {
@@ -18,6 +18,14 @@ const config: CapacitorConfig = {
   },
   android: {
     allowMixedContent: false,
+  },
+  plugins: {
+    // Apple / Google girişi telefonun yerel ekranında; oturum Firebase JS katmanında açılır (public/fb.js → viaNative).
+    // Kurulum: iOS GoogleService-Info.plist + URL şeması + Sign in with Apple yetkisi · Android google-services.json + SHA-1
+    FirebaseAuthentication: {
+      skipNativeAuth: true,
+      providers: ["google.com", "apple.com"],
+    },
   },
 };
 

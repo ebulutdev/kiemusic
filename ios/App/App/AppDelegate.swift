@@ -10,7 +10,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Müzik uygulaması: sessiz moddayken de çal, uygulama arka plandayken / ekran kilitliyken çalmaya devam et
         // (Info.plist → UIBackgroundModes: audio). Oturum burada etkinleştirilmez; diğer uygulamaların sesi
-        // yalnız kullanıcı CookRapper'da çalmaya başlayınca durur. Kayıt sırasında WebKit kategoriyi kendisi değiştirir.
+        // yalnız kullanıcı CookFire'da çalmaya başlayınca durur. Kayıt sırasında WebKit kategoriyi kendisi değiştirir.
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
         } catch {
