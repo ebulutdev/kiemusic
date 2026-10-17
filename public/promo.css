@@ -1,0 +1,116 @@
+/* CookFire · Tanıtım videosu (/promo) — yalnız web */
+:root{--bg:#0B0908;--el:#16130F;--el2:#1F1B16;--line:rgba(255,255,255,.09);--text:#F5F0E8;--muted:#A39C91;--faint:#6E675E;
+  --gold:#F5B83D;--fire:#FF7A2F;--grad:linear-gradient(135deg,#FFD978 0%,#F5B83D 42%,#FF7A2F 100%);color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.pm{min-height:100dvh;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:28px;padding:16px 24px;align-items:center;justify-items:center;
+  background:radial-gradient(60% 50% at 30% 20%,rgba(245,184,61,.07),transparent 70%),var(--bg)}
+.pm-stage{position:relative;height:calc(100dvh - 32px);max-height:1100px;aspect-ratio:9/16;max-width:100%;border-radius:30px;overflow:hidden;background:#000;
+  box-shadow:0 0 0 1px var(--line),0 40px 100px rgba(0,0,0,.65)}
+.pm-stage canvas{display:block;width:100%;height:100%}
+.pm-empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;transition:opacity .4s}
+.pm-empty b{font:700 22px "Bricolage Grotesque",sans-serif;margin-top:10px}
+.pm-empty small{color:var(--muted)}
+.pm-plus{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:var(--grad);color:#1A1208;box-shadow:0 14px 40px rgba(255,122,47,.35);transition:transform .25s}
+.pm-plus svg{width:30px;height:30px;stroke-width:2.4}
+.pm-empty:hover .pm-plus{transform:scale(1.06)}
+.pm-empty[hidden]{display:flex;opacity:0;pointer-events:none}
+.pm-rec{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(10px);font-size:13px;font-weight:600}
+.pm-rec[hidden]{display:none}
+.pm-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pm-rec i{width:9px;height:9px;border-radius:50%;background:#E8344E;animation:pmBlink 1s infinite}
+@keyframes pmBlink{50%{opacity:.25}}
+
+.pm-side{width:100%;max-width:360px;display:flex;flex-direction:column;gap:14px}
+.pm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.pm-head span{display:block}
+.pm-head b{display:block;font:700 34px "Grenze Gotisch",serif;color:var(--gold);line-height:1}
+.pm-head span{color:var(--muted);font-size:13.5px}
+.pm-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pm-it{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 8px;border-radius:16px;background:var(--el);border:1px solid var(--line);animation:pmIn .35s cubic-bezier(.22,1,.36,1)}
+@keyframes pmIn{from{opacity:0;transform:translateY(6px)}}
+.pm-it img{width:48px;height:48px;border-radius:10px;object-fit:cover;flex-shrink:0;background:var(--el2)}
+.pm-it-t{flex:1;min-width:0;cursor:pointer}
+.pm-it-t b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-it-t small{color:var(--muted);font-size:12.5px}
+.pm-it-n{width:20px;text-align:center;color:var(--faint);font:600 12px "Geist Mono",monospace}
+.pm-ib{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--muted);transition:background .2s,color .2s}
+.pm-ib:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.pm-ib:disabled{opacity:.25;pointer-events:none}
+.pm-ib svg{width:16px;height:16px}
+.pm-add{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:16px;border:1.5px dashed rgba(245,184,61,.35);color:var(--gold);font-weight:600;transition:background .2s,border-color .2s}
+.pm-add:hover{background:rgba(245,184,61,.06);border-color:rgba(245,184,61,.6)}
+.pm-add svg{width:18px;height:18px}
+.pm-fields{display:flex;flex-direction:column;gap:10px}
+.pm-fields label,.pm-row label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--muted)}
+.pm-fields small{font-weight:400;color:var(--faint)}
+input:not([type=file]){width:100%;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:var(--el);color:var(--text);font-size:15px;outline:none;transition:border-color .2s}
+input:not([type=file]):focus{border-color:rgba(245,184,61,.55)}
+.pm-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.pm-btn{padding:13px 16px;border-radius:14px;background:var(--el2);border:1px solid var(--line);font-weight:600;transition:transform .15s,opacity .2s,background .2s}
+.pm-btn:hover{background:#2a251f}
+.pm-btn:active{transform:scale(.98)}
+.pm-btn:disabled{opacity:.4;pointer-events:none}
+.pm-primary{background:var(--grad);color:#1A1208;border:0;box-shadow:0 10px 30px rgba(255,122,47,.25)}
+.pm-primary:hover{background:var(--grad);filter:brightness(1.05)}
+.pm-note{margin:0;color:var(--faint);font-size:12.5px;line-height:1.5}
+.pm-note.warn{color:var(--fire)}
+
+/* Şarkı penceresi */
+.pm-modal{width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--line);border-radius:24px;background:var(--el);color:var(--text);
+  box-shadow:0 40px 120px rgba(0,0,0,.7);overflow:auto}
+.pm-modal::backdrop{background:rgba(5,4,3,.72);backdrop-filter:blur(6px)}
+.pm-modal[open]{animation:pmUp .35s cubic-bezier(.22,1,.36,1)}
+@keyframes pmUp{from{opacity:0;transform:translateY(16px) scale(.98)}}
+.pm-m{display:flex;flex-direction:column;gap:14px;padding:18px 20px 20px}
+.pm-m-h{display:flex;align-items:center;justify-content:space-between}
+.pm-m-h b{font:700 20px "Bricolage Grotesque",sans-serif}
+.pm-x{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.07);color:var(--muted)}
+.pm-x svg{width:16px;height:16px}
+.pm-files{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pm-file{position:relative;display:flex;align-items:center;gap:10px;padding:10px;border-radius:16px;background:var(--el2);border:1.5px solid var(--line);cursor:pointer;transition:border-color .2s;min-width:0}
+.pm-file:hover{border-color:rgba(245,184,61,.4)}
+.pm-file.ok{border-color:rgba(245,184,61,.55)}
+.pm-file input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.pm-fi{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;background:rgba(245,184,61,.1);color:var(--gold);overflow:hidden}
+.pm-thumb img,.pm-thumb video{width:100%;height:100%;object-fit:cover}
+.pm-ft{min-width:0}
+.pm-ft b{display:block;font-size:14px}
+.pm-ft small{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pm-pick{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:18px;background:var(--el2);border:1px solid var(--line)}
+.pm-pick[hidden]{display:none}
+.pm-pick-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13.5px}
+.pm-pick-h span{font:500 12.5px "Geist Mono",monospace;color:var(--gold)}
+#mWave{width:100%;height:104px;display:block;touch-action:none;cursor:grab;border-radius:12px}
+#mWave.drag{cursor:grabbing}
+.pm-pick-f{display:flex;align-items:center;gap:10px}
+.pm-pp{width:42px;height:42px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;background:var(--text);color:#14110D}
+.pm-pp svg{fill:currentColor;stroke:none;width:18px;height:18px}
+.pm-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.pm-chips button{padding:7px 11px;border-radius:99px;font-size:12.5px;font-weight:600;white-space:nowrap;background:rgba(255,255,255,.06);color:var(--muted);transition:background .2s,color .2s}
+.pm-chips button.on{background:rgba(245,184,61,.16);color:var(--gold)}
+.pm-chips button:disabled{opacity:.3}
+.pm-hint{color:var(--faint);font-size:12px}
+.pm-m-f{display:flex;align-items:center;gap:8px}
+.pm-sp{flex:1}
+.pm-del{color:#ff8a7a}
+
+@media (max-width:860px){
+  .pm{grid-template-columns:1fr;gap:18px;padding:12px 16px calc(24px + env(safe-area-inset-bottom))}
+  .pm-stage{height:auto;width:100%;max-width:440px;border-radius:24px}
+  .pm-side{max-width:440px}
+}
+@media (max-width:560px){
+  .pm-modal{width:100vw;max-width:100vw;max-height:94dvh;margin:auto 0 0;border-radius:24px 24px 0 0;border-bottom:0}
+  .pm-modal[open]{animation:pmSheet .38s cubic-bezier(.22,1,.36,1)}
+  @keyframes pmSheet{from{transform:translateY(100%)}}
+  .pm-m{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+  .pm-files,.pm-row{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

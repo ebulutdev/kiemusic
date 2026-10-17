@@ -32,7 +32,8 @@ const I={
   flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
   beat:'<ellipse cx="12" cy="7.5" rx="8" ry="3"/><path d="M4 7.5v8.5c0 1.7 3.6 3 8 3s8-1.3 8-3V7.5M8 10.3v8.4M16 10.3v8.4"/>',
   code:'<path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/>',
-  file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>'
+  file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
+  film:'<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 9.5v5l4-2.5z" fill="currentColor" stroke="none"/>'
 };
 function ic(n,s=20){return `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`}
 const MARK='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--accent)"/><path d="M5.5 13.5c1.6-4.6 3.4-4.6 5 0s3.4 4.6 5 0 2-3.5 3-2" stroke="var(--accent-ink)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
@@ -640,12 +641,17 @@ function renderLib(){
   const it=all.length>libLimit?all.slice(0,libLimit):all,more=all.length>it.length;
   renderCats();$('#sortBtn').innerHTML=ic('sort',16)+(S.sort==='new'?'En yeni':'En eski');$('#viewBtn').innerHTML=ic(grid?'list':'grid',20);
   const liked=S.lib.filter(t=>t.like===1).length;
-  const pin=S.filter==='all'&&!q&&!grid?`<button class="song pin" id="pinLiked"><span class="thumb liked">${ic('like',24)}</span><div class="song-body"><div class="song-t"><span class="t">Beğenilen şarkılar</span></div><div class="song-s">Liste • ${liked} şarkı</div></div></button>`:'';
+  const pin=S.filter==='all'&&!q&&!grid?`<button class="song pin" id="pinLiked"><span class="thumb liked">${ic('like',24)}</span><div class="song-body"><div class="song-t"><span class="t">Beğenilen şarkılar</span></div><div class="song-s">Liste • ${liked} şarkı</div></div></button>${isAdmin()?`<button class="song pin" id="pinPromo"><span class="thumb promo">${ic('film',24)}</span><div class="song-body"><div class="song-t"><span class="t">Tanıtım videosu</span></div><div class="song-s">Reels • Story • şarkılarını tanıt</div></div></button>`:''}`:'';
   const L=$('#libList');L.classList.toggle('lgrid',grid);
   patchList(L,it.length?pin+it.map(grid?card:row).join('')+(more?'<div class="lib-more" id="libMore" aria-hidden="true"></div>':''):pin+`<div class="empty">${S.filter==='like'&&!q?'Beğendiğin şarkılar burada görünür':S.lib.length?'Sonuç yok':'Kütüphane boş'}</div>`);
   watchLibMore();
 }
-$('#libList').addEventListener('click',e=>{if(e.target.closest('#pinLiked')){S.filter='like';renderLib()}});
+$('#libList').addEventListener('click',e=>{if(e.target.closest('#pinLiked')){S.filter='like';renderLib()}if(e.target.closest('#pinPromo'))openPromo()});
+// Tanıtım videosu (Reels / Story): yalnız yöneticiye görünür (admin claim); promo.html tam ekran katmanda açılır, çalan müzik durur
+const isAdmin=()=>!!(window.FB&&FB.authState&&FB.authState.admin);
+window.addEventListener('fb-admin',()=>renderLib());
+function openPromo(){if(!isAdmin())return;let el=$('#promoLayer');if(!el){el=document.createElement('div');el.id='promoLayer';el.className='promo-layer';el.innerHTML='<iframe title="Tanıtım videosu" src="promo.html" allow="autoplay"></iframe>';document.body.appendChild(el);el._onClose=()=>{const f=el.querySelector('iframe');if(f&&f.contentWindow)f.contentWindow.postMessage('promo:stop',location.origin)};el.getBoundingClientRect()}if(isEl()&&!P.el.paused)P.el.pause();openLayer(el)}
+window.addEventListener('message',e=>{if(e.origin===location.origin&&e.data==='promo:close'){const el=$('#promoLayer');if(el)closeLayer(el)}});
 $('#sortBtn').onclick=()=>{S.sort=S.sort==='new'?'old':'new';renderLib()};
 $('#viewBtn').onclick=()=>{S.set.libView=S.set.libView==='grid'?'list':'grid';save();renderLib()};
 $('#searchBtn').onclick=()=>{const r=$('#searchRow');r.hidden=!r.hidden;if(!r.hidden)$('#q').focus();else{$('#q').value='';S.q='';renderLib()}};

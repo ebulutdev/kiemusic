@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
         { source: "/admin", destination: "/admin.html" }, // yönetim paneli (yetki: /api/admin/* sunucuda denetlenir)
         { source: "/privacy", destination: "/privacy.html" }, // Gizlilik Politikası (mağaza bağlantısı)
         { source: "/terms", destination: "/terms.html" },     // Kullanım Koşulları
+        { source: "/promo", destination: "/promo.html" }, // Tanıtım videosu (Reels / Story; yalnız web)
       ],
     };
   },

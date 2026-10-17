@@ -208,6 +208,12 @@ function publish(u) {
   if (window.FB) window.FB.authState = authState;
   window.dispatchEvent(new CustomEvent("fb-auth", { detail: authState }));
   syncCredits(u);
+  // Yönetici yetkisi (admin claim): yalnız arayüz için (ör. Tanıtım videosu kutusu); asıl denetim sunucuda /api/admin/*
+  if (u && !u.isAnonymous) u.getIdTokenResult().then((r) => {
+    if (!authState || authState.uid !== u.uid) return;
+    authState.admin = !!r.claims.admin;
+    window.dispatchEvent(new CustomEvent("fb-admin", { detail: authState.admin }));
+  }).catch(() => {});
 }
 
 // Kredi: misafir 0; hesap açılınca (misafirden bağlama dahil) ilk dönem başlangıç hediyesiyle açılır → sunucu /api/me karar verir.
