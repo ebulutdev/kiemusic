@@ -89,7 +89,7 @@
 <div class="modal" id="mCreate" role="dialog" aria-modal="true" aria-label="Oluştur">
   <div class="m-top">
     <div class="m-side"><button class="icon-btn" data-close aria-label="Kapat"></button></div>
-    <div class="m-tabs" id="modeTabs"><button data-v="simple" class="on">Basit</button><button data-v="custom">Özel</button><button data-v="audio">Sesten</button></div>
+    <div class="m-tabs" id="modeTabs"><button data-v="simple" class="on">Basit</button><button data-v="custom">Özel</button><button data-v="audio">Sesten</button><button data-v="pair">Analiz</button></div>
     <div class="m-side"><span class="cr-chip" aria-label="Kredi"><span id="crIc"></span><b class="cr">0</b></span></div>
   </div>
   <div class="m-body">
@@ -140,9 +140,26 @@
       </div>
     </div>
 
-    <div data-pane="audio" hidden class="c-form">
-      <div id="recCard"></div>
-      <div class="chips" id="opChips">
+    <div data-pane="audio pair" hidden class="c-form">
+      <div id="recCard" data-only="audio"></div>
+      <!-- Analiz: vokal ve/veya müzik ayrı yüklenir → ilk 20 sn otomatik düzenlenir (public/chop.js) → önizleme → her parça ayrı cover -->
+      <div class="pair-row" data-only="pair">
+        <div class="fg"><div class="fg-l"><span>Vokal</span></div><div id="pvCard"></div></div>
+        <div class="fg"><div class="fg-l"><span>Müzik</span></div><div id="pmCard"></div></div>
+      </div>
+      <div class="fg" data-only="pair">
+        <div class="fg-l"><span>Kesit tekrarı</span></div>
+        <div class="seg" id="chopSeg"><button data-v="2">2 sn'de bir</button><button data-v="3">3 sn'de bir</button><button data-v="4">4 sn'de bir</button><button data-v="5" class="on">5 sn'de bir</button></div>
+        <div class="fg-l chop-l"><span>Kopyalanan kesit süresi</span></div>
+        <div class="seg" id="chopLen"><button data-v="1">1 sn</button><button data-v="2">2 sn</button><button data-v="3" class="on">3 sn</button><button data-v="4">4 sn</button></div>
+        <div class="chop" id="chopCard" hidden>
+          <button class="chop-play" id="chopPlay" aria-label="Dinle"></button>
+          <div class="chop-x"><b>Gönderilecek ses</b><small id="chopS"></small></div>
+          <button class="icon-btn chop-dl" id="chopDl" aria-label="MP3 olarak indir" title="MP3 olarak indir"></button>
+          <div class="seg" id="chopMix"><button data-v="mix" class="on">İkisi</button><button data-v="v">Vokal</button><button data-v="m">Müzik</button></div>
+        </div>
+      </div>
+      <div class="chips" id="opChips" data-only="audio">
         <button class="chip on" data-v="cover">Cover</button><button class="chip" data-v="extend">Uzat</button><button class="chip" data-v="vocals">Vokal ekle</button>
       </div>
       <textarea class="ta" id="aLyrics" rows="5" maxlength="5000" placeholder="Sözler" hidden></textarea>
@@ -201,6 +218,7 @@
 <script src="/native.js"></script>
 <script src="/exaudio.js"></script>
 <script src="/recorder.js"></script>
+<script src="/chop.js"></script>
 <script src="/wave.js"></script>
 <script src="/docs.js"></script>
 <script src="/credits.js"></script>

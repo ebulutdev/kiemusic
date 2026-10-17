@@ -396,6 +396,31 @@ input[type=range]{width:100%;accent-color:var(--accent);height:24px;margin:0}
 .list.lgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 14px;padding-top:6px}
 @media (min-width:620px){.list.lgrid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (min-width:1000px){.list.lgrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* sayfalı kütüphane: görünmez işaretçi, ekrana yaklaşınca sıradaki sayfa çizilir */
+.lib-more{grid-column:1/-1;height:1px}
+/* Analiz: vokal ve müzik kartları yan yana, küçültülmüş kaydedici */
+.pair-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pair-row .fg{min-width:0;margin:0}
+.pair-row .rec{gap:8px;padding:14px 8px 10px;border-radius:18px}
+.pair-row .rec-wave{height:34px}
+.pair-row .rec-time{font-size:15px}
+.pair-row .rec-ctrl{grid-template-columns:34px 50px 34px;gap:8px}
+.pair-row .rec-btn{width:50px;height:50px}
+.pair-row .rec-small{width:34px;height:34px}
+.pair-row .rec-btn svg{width:22px;height:22px}.pair-row .rec-small svg{width:17px;height:17px}
+.pair-row .rec-note{font-size:11px;text-align:center}
+/* Analiz: düzenlenmiş vokal + müzik önizlemesi */
+.chop{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px 12px;margin-top:10px;padding:12px;border-radius:14px;background:var(--surface)}
+.chop-play{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--on-accent)}
+.chop-play:disabled{opacity:.4}
+.chop-x b{display:block;font-size:14px}.chop-x small{font:500 12px var(--mono);color:var(--muted)}
+.chop .seg{grid-column:1/-1}.chop .seg[hidden],.chop .seg button[hidden]{display:none}.chop .seg button{height:32px;font-size:13px}
+#chopSeg button,#chopLen button{font-size:13px}
+.chop-l{margin-top:12px}
+@media (max-width:480px){#mCreate #modeTabs button{padding:0 9px;font-size:13px}}   /* 4 sekme + kredi rozeti dar ekrana sığsın */
+/* kapak yüklenince yumuşak belirir */
+img.fi{opacity:0;transition:opacity .25s ease}
+img.fi.ld{opacity:1}
 .gcard{min-width:0;cursor:pointer;animation:cardIn .5s cubic-bezier(.16,1,.3,1) both}
 .gcard:nth-child(2){animation-delay:40ms}.gcard:nth-child(3){animation-delay:80ms}.gcard:nth-child(4){animation-delay:120ms}.gcard:nth-child(n+5){animation-delay:160ms}
 @keyframes cardIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
@@ -740,9 +765,6 @@ input[type=range]{width:100%;accent-color:var(--accent);height:24px;margin:0}
 .cp-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:4px 20px 6px;scrollbar-width:none}
 .cp-body::-webkit-scrollbar{display:none}
 .cp-hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:14px 10px 20px;touch-action:none}
-.cp-orb{position:relative;width:62px;height:62px;border-radius:21px;display:grid;place-items:center;margin-bottom:16px;color:#1C1103;background:var(--cp-grad);
-  box-shadow:0 12px 32px rgba(255,122,47,.32),inset 0 1px 0 rgba(255,255,255,.55),inset 0 -2px 6px rgba(160,60,0,.25)}
-.cp-orb i{position:absolute;z-index:-1;inset:-14px;border-radius:50%;background:conic-gradient(from 0deg,transparent 0 55%,rgba(255,196,90,.55) 75%,transparent 95%);filter:blur(12px);animation:cp-rot 7s linear infinite}
 .cp h2{margin:0;font:600 46px/.95 'Grenze Gotisch',ui-serif,Georgia,serif;letter-spacing:-.005em}
 .cp h2 em{font-style:normal;color:var(--cp-gold)}
 .cp-sub{margin:10px 0 0;max-width:31ch;text-wrap:balance;color:var(--cp-muted);font-size:14.5px;line-height:1.45}
@@ -825,7 +847,7 @@ input[type=range]{width:100%;accent-color:var(--accent);height:24px;margin:0}
   .cp-grab{display:none}
   .cp-hero{padding-top:30px}
 }
-@media (max-height:700px){.cp-hero{padding:6px 10px 14px}.cp-orb{width:50px;height:50px;border-radius:17px;margin-bottom:12px}.cp h2{font-size:38px}}
+@media (max-height:700px){.cp-hero{padding:6px 10px 14px}.cp h2{font-size:38px}}
 @media (prefers-reduced-motion:reduce){.cp,.cp *{animation:none!important;transition:none!important}}
 .cr-chip,.credit-card{cursor:pointer}
 .p-legal{display:flex;flex-wrap:wrap;gap:6px 18px;max-width:520px;margin:30px 0 8px;font-size:13px}

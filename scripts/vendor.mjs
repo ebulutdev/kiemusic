@@ -40,4 +40,14 @@ for (const f of FONTS) {
   copyFileSync(join(dir, "LICENSE"), join(outDir, `LICENSE-${f.family.replace(/ /g, "")}.txt`));
 }
 writeFileSync(join(outDir, "fonts.css"), css);
-console.log("vendor: public/vendor/firebase.js + public/fonts hazır");
+
+// 3) MP3 kodlayıcı (LAME, LGPL-3.0) → ayrı, değiştirilebilir klasik betik (window.lamejs).
+//    Yalnız web'de "MP3 indir" ile isteğe bağlı yüklenir; mobil pakete girmez (scripts/build-www.mjs).
+await build({
+  stdin: { contents: 'export { Mp3Encoder } from "@breezystack/lamejs";', resolveDir: root },
+  outfile: join(pub, "vendor/lame.js"),
+  bundle: true, format: "iife", globalName: "lamejs", minify: false, target: ["es2020", "safari15"],
+  legalComments: "inline", logLevel: "warning",
+});
+copyFileSync(join(root, "node_modules/@breezystack/lamejs/LICENSE"), join(pub, "vendor/LICENSE-lamejs.txt"));
+console.log("vendor: public/vendor/firebase.js + lame.js + public/fonts hazır");

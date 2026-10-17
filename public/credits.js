@@ -15,7 +15,6 @@
   const svg = (d, w = 18, sw = 2) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const I = {
     x: svg('<path d="M6 6l12 12M18 6 6 18"/>', 16, 2.2),
-    spark: svg('<path d="M12 2.5l2.1 6.4 6.4 2.1-6.4 2.1L12 19.5l-2.1-6.4L3.5 11l6.4-2.1z"/><path d="M19 17v4M17 19h4"/>', 28, 1.9),
     check: svg('<path d="m5 12.5 4.5 4.5L19 7.5"/>', 13, 3),
     tick: svg('<circle cx="12" cy="12" r="9.5"/><path d="m8 12.2 2.8 2.8L16.2 9.5"/>', 20, 1.8),
   };
@@ -54,7 +53,6 @@
       <button class="cp-x" type="button" aria-label="Kapat">${I.x}</button>
       <div class="cp-body">
         <header class="cp-hero">
-          <div class="cp-orb" aria-hidden="true"><i></i>${I.spark}</div>
           <h2 id="cpT"></h2>
           <p class="cp-sub" id="cpSub"></p>
         </header>

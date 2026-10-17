@@ -16,6 +16,7 @@ Yanıt dili: Türkçe. Hedef: iOS/Android mağaza uygulaması (`ios/`, `android/
 - `auth.js` + `auth.css` giriş/kayıt kapısı ve profil hesap kartı · e-posta sıfırlama ön kontrolü `/api/auth/email`
 - `i18n.js` TR/EN: arayüz Türkçe yazılır, EN seçilince metin düğümleri + placeholder/aria-label/title sözlükten çevrilir (`window.I18N.t`); `localStorage.sf_lang`. Kullanıcı içeriği `data-noi18n` / SKIP listesiyle çevrilmez
 - `recorder.js` bölümlü ses kaydı (duraklat/devam, geri al = son bölüm), AudioWorklet PCM → WAV → `/api/upload`; `loadUrl` (keşfet müziği) — Sesten ekranı ve ses klonu kullanır
+- Analiz sekmesi (Oluştur › `pair` modu): vokal ve/veya müzik ayrı yüklenir, seçilince ilk 20 sn.ye kırpılır → `chop.js` cihazda düzenler (her 2/3/4/5 sn'de bir 1–4 sn'lik kesit, iki parçaya aynı kesim listesi, hece başına hizalı) → “Gönderilecek ses” önizlemesi → yüklü her parça ayrı `cover` görevi olarak gider (app.js `CH`, `chopRun`)
 - `wave.js` dalga formu seçici `createWavePicker` (range = Bölüm değiştir, point = Uzat); ses `/api/media` üzerinden çözülür (Storage CORS vermez)
 - `exaudio.js` keşfet müzik motoru (2 çalar, yumuşak geçiş, SETTLE; Storage CORS → seed) · kutular: config/app `catalog.genres[i]` {label, style, prompt, action custom|cover, preview}, en fazla `catalog.exploreMax`
 - `credits.js` aylık plan penceresi + `Credits.info()` · planlar config/app `pricing.plans` · satın alma `window.CR.purchase` = mağaza içi abonelik (henüz bağlı değil)
@@ -23,7 +24,7 @@ Yanıt dili: Türkçe. Hedef: iOS/Android mağaza uygulaması (`ios/`, `android/
 - Yasal: `/privacy` `/terms` → `privacy.html` `terms.html` (TR+EN) + `legal.css|js` (yalnız web) · config/app `legal` {version, terms, privacy, contact} · kayıt/Apple/Google “Okudum ve kabul ediyorum” işaretlenmeden çalışmaz (auth.js `terms`/`accepted`) · kabul edilen sürüm `users/{uid}.terms`
 - `admin.html|js|css` → `/admin` yönetim paneli (yalnız web, mobil pakete girmez)
 - `native.js` yerel köprü `window.CR` (api adresi, media = kilit ekranı/bildirim, save, share) · `env.js` (mobilde build-www yeniden yazar)
-- `config/app.json` dinamik sabitlerin seed kaynağı (fiyat, katalog, KIE, legal, economics) · `vendor/firebase.js` + `fonts/` gömülü (CDN yok)
+- `config/app.json` dinamik sabitlerin seed kaynağı (fiyat, katalog, KIE, legal, economics) · `vendor/firebase.js` + `fonts/` gömülü (CDN yok) · `vendor/lame.js` MP3 kodlayıcı (LGPL; Analiz önizlemesini “MP3 indir”, yalnız web, mobil pakete girmez)
 
 **Sunucu (Next.js, yalnız API; sayfalar `next.config.ts` rewrite ile `public/*.html`)**
 - `app/api/` rotalar: `music/generate` · `music/audio` (cover/extend/add-vocals/stem/replace) · `music/tasks/[id]` (durum + KIE yedek sorgu + medya kopya + persona/ses sonucu) · `music/lyrics` · `me` · `upload` · `media` (kendi sesini same-origin verir) · `persona` · `voice/phrase` → `voice` (ses klonu 2 adım) · `report` (→ `reports`) · `auth/email` (IP başına 10/dk) · `callback` (KIE webhook) · `health` · `admin/{stats,explore,config}`

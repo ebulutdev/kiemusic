@@ -85,7 +85,12 @@ S.lib.forEach(t=>{if(t.output==='instrumental')t.output='beat';if(t.fav&&t.like=
 // Yeni başlayan üretim (görev numarası birkaç sn içinde gelir) korunur — başka sekme/cihaz onu silmesin.
 const junk=t=>!t||(t.status==='ready'&&!t.audioUrl)||(t.status==='gen'&&!t.taskId&&Date.now()-(t.created||0)>6e5);
 S.lib=S.lib.filter(t=>!junk(t));
-const save=()=>{store.set('sf2_lib',S.lib);store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);if(window.FB)FB.schedule()};
+// Kütüphanenin yerel kopyası MB'larca JSON olabilir → her değişiklikte değil, tarayıcı boşta kalınca bir kez yazılır; sekme gizlenince/kapanınca bekleyen yazım hemen yapılır
+let libDirty=false;
+const flushLib=()=>{if(!libDirty)return;libDirty=false;store.set('sf2_lib',S.lib)};
+const persistLib=()=>{if(libDirty)return;libDirty=true;if(window.requestIdleCallback)requestIdleCallback(flushLib,{timeout:2000});else setTimeout(flushLib,500)};
+addEventListener('pagehide',flushLib);document.addEventListener('visibilitychange',()=>{if(document.hidden)flushLib()});
+const save=()=>{persistLib();store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);if(window.FB)FB.schedule()};
 /* ---------- Firebase köprüsü (public/fb.js) ---------- */
 const fbWait=()=>window.FB?Promise.resolve(window.FB):new Promise(r=>{const t=setTimeout(()=>r(null),4000);addEventListener('fb-ready',()=>{clearTimeout(t);r(window.FB)},{once:true})});
 // API adresi: web'de aynı sunucu, mobil uygulamada tam adres (public/native.js → CR.api)
@@ -113,11 +118,13 @@ window.SF={
     if(settings){if(settings.model)S.set.model=settings.model;if(settings.theme&&settings.theme!==S.set.theme){S.set.theme=settings.theme;applyTheme()}}
     if(personas)S.personas=personas;if(voices)S.voices=voices;
     store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);renderAll();if(personas||voices)renderStudio()},
-  applyRemote(kind,changes){const arr=S[kind];
-    changes.forEach(c=>{const i=arr.findIndex(x=>x.id===c.id);if(c.removed||(kind==='lib'&&junk(c.data))){if(i>=0)arr.splice(i,1);return}
-      if(i>=0)Object.assign(arr[i],c.data);else arr.push({...c.data,id:c.id})});
+  // İlk eşitlemede binlerce değişiklik gelebilir → kimlik dizini (Map) ile tek geçiş; silinenler sonda tek filtreyle
+  applyRemote(kind,changes){const arr=S[kind],at=new Map(arr.map(x=>[x.id,x])),gone=new Set();
+    changes.forEach(c=>{const o=at.get(c.id);if(c.removed||(kind==='lib'&&junk(c.data))){if(o){gone.add(o);at.delete(c.id)}return}
+      if(o)Object.assign(o,c.data);else{const n={...c.data,id:c.id};arr.push(n);at.set(c.id,n)}});
+    if(gone.size)S[kind]=arr.filter(x=>!gone.has(x));
     if(kind==='lib')S.lib.sort((a,b)=>(b.created||0)-(a.created||0)||(a.version||0)-(b.version||0));
-    store.set('sf2_lib',S.lib);renderAll();
+    persistLib();renderAll();
     if(P.cur&&changes.some(c=>c.id===P.cur.id)){const t=find(P.cur.id);if(t){P.cur=t;syncPlayer()}else stopAll()}},
 };
 // Yedek yapılandırma (Firestore config/app gelene kadar ya da çevrimdışıyken)
@@ -138,7 +145,8 @@ function coverSVG(seed){
   return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="100" height="100" fill="${p[1]}"/>${g}</svg>`;
 }
 
-function art(t){return t&&t.image?`<img src="${esc(t.image)}" alt="" loading="lazy">`:coverSVG(t.seed)}
+// Kapak: tembel yükleme + ana iş parçacığını bloklamayan çözme; yüklenince yumuşak belirir (boş kutu → ani görsel sıçraması olmaz)
+function art(t){return t&&t.image?`<img src="${esc(t.image)}" class="fi" alt="" loading="lazy" decoding="async" onload="this.classList.add('ld')">`:coverSVG(t.seed)}
 
 /* ---------- content ---------- */
 // Katalog (stil, öneri, tür, örnek söz): Firestore config/catalog → yedek /catalog.json (SF.applyCatalog)
@@ -305,7 +313,7 @@ const beatStyle=st=>{st=(st||'').trim().slice(0,1000-BEAT_TAGS.length-2);return 
 function simpleReq(d,out){const st=styleFromDesc(d),beat=out==='beat';
   return {url:'/api/music/generate',body:{customMode:false,instrumental:beat,model:S.set.model,prompt:d.slice(0,3000),style:beat?beatStyle(st):st}}}
 /* ---------- create modal ---------- */
-function setMode(v){S.mode=v;$('#mCreate').dataset.mode=v;$('#mFoot').hidden=v==='simple';$$('#modeTabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==v);syncCreate()}
+function setMode(v){S.mode=v;$('#mCreate').dataset.mode=v;$('#mFoot').hidden=v==='simple';$$('#modeTabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('[data-pane]').forEach(p=>p.hidden=!p.dataset.pane.split(' ').includes(v));$$('#mCreate [data-only]').forEach(e=>e.hidden=e.dataset.only!==v);syncCreate()}
 function setOut(v){S.output=v;$$('#outSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));syncCreate()}
 function openCreate(tab,o={}){setMode(tab||'simple');setOut(S.output);$('#simpleErr').textContent='';if(o.style){$('#style').value=o.style;syncChips()}if(o.desc){if(tab==='custom'&&!$('#style').value)$('#style').value=styleFromDesc(o.desc);$('#desc').value=o.desc}$('#createErr').textContent='';openLayer($('#mCreate'))}
 bindSeg($('#modeTabs'),setMode);bindSeg($('#outSeg'),setOut);
@@ -314,13 +322,14 @@ $('#opChips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(
 // Sesten işlemleri → sunucu görev türü
 const AOP={cover:{type:'cover',cta:'Cover oluştur',lab:'cover'},extend:{type:'upload-extend',cta:'Uzat',lab:'uzun'},vocals:{type:'add-vocals',cta:'Vokal ekle',lab:'vokal'}};
 function syncCreate(){
-  const song=S.output==='song',audio=S.mode==='audio',op=AOP[S.aop]||AOP.cover;
+  const song=S.output==='song',audio=S.mode==='audio',pair=S.mode==='pair',op=AOP[S.aop]||AOP.cover;
   $('#lyrWrap').hidden=!song;$('#genderSeg').hidden=!song;$('#awWrap').hidden=!song;advSummary();
-  $('#outSeg').hidden=audio&&S.aop==='vocals';      // vokal ekle: sonuç her zaman vokalli
+  $('#outSeg').hidden=pair||audio&&S.aop==='vocals';      // vokal ekle: sonuç her zaman vokalli · analiz: vokal → vokalli, müzik → enstrümantal
+  $('#aRightsWrap').hidden=audio&&!!(S.src&&S.src.explore);
   const aly=audio&&(S.aop==='vocals'||song);$('#aLyrics').hidden=!aly;$('#aLyrics').placeholder=S.aop==='vocals'?'Sözler':'Sözler (isteğe bağlı)';
-  const cm=S.mode==='custom'?$('#model').value:S.set.model;$('#createCost').innerHTML=ic('create',11)+costOf(audio?op.type:'generate',cm);
+  const cm=S.mode==='custom'?$('#model').value:S.set.model;$('#createCost').innerHTML=ic('create',11)+(pair?costOf('cover',cm)*Math.max(1,!!S.pv+!!S.pm):costOf(audio?op.type:'generate',cm));
   let sc=$('#cSendCost');if(!sc){sc=document.createElement('span');sc.id='cSendCost';sc.className='cost-badge';$('#cSend').appendChild(sc)}sc.innerHTML=ic('create',9)+costOf('generate',S.set.model);
-  $('#createBtn span').textContent=audio?op.cta:'Oluştur';
+  $('#createBtn span').textContent=pair?AOP.cover.cta:audio?op.cta:'Oluştur';
   $('#createErr').textContent='';
 }
 $('#lyrIdea').onclick=()=>{$('#lyrics').value=pick(LYRICS)};
@@ -337,9 +346,55 @@ $('#dur').addEventListener('input',()=>$('#durO').textContent=fmt(+$('#dur').val
 // Kayıt / dosya → dinle, sil ya da kaydet (Firebase Storage: /api/upload). Üretim servisi en az 6 sn ister.
 async function uploadBlob(blob,name){const fd=new FormData();fd.append('file',blob,name);const r=await api('/api/upload',{method:'POST',body:fd});const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(j.error||'Yükleme başarısız');return j.url}
 const REC=createRecorder($('#recCard'),{minSec:6,maxSec:480,label:'Kayıt',upload:uploadBlob,onChange:v=>{S.src=v;$('#createErr').textContent='';$('#aRightsWrap').hidden=!!(v&&v.explore)}}); // keşfet müziği admin içeriği: hak onayı gerekmez
+// Analiz: vokal ve/veya müzik ayrı kartlarda. Seçilen dosya hemen ilk 20 sn'ye kırpılır (kart 0:20 gösterir).
+// Hangisi yüklüyse cihazda otomatik düzenlenir (public/chop.js): her N sn'de bir (2–5) seçilen süredeki (1–4 sn) kesit araya eklenir;
+// gönderilecek ses önizlenir, yüklü olan her parça ayrı bir cover olarak gider (tek başına da gönderilebilir).
+const CLIP=20;
+function pairChange(rec,k,v){S[k]=null;$('#createErr').textContent='';
+  if(v&&v.dur>CLIP+.05){$('#chopCard').hidden=false;$('#chopS').textContent='Hazırlanıyor…';$('#chopPlay').disabled=true;   // uzun dosya → ilk 20 sn'yi kırpıp karta yeniden yükle
+    Chop.decode(v.file).then(ab=>rec.load(new File([Chop.wav(Chop.slice(ab,0,CLIP))],v.name.replace(/\.[a-z0-9]+$/i,'')+' (20 sn).wav',{type:'audio/wav'})),()=>{S[k]=v;chopRun()});return}
+  S[k]=v;chopRun()}
+const PV=createRecorder($('#pvCard'),{minSec:6,maxSec:900,label:'Vokal',upload:uploadBlob,onChange:v=>pairChange(PV,'pv',v)});
+const PM=createRecorder($('#pmCard'),{minSec:6,maxSec:900,label:'Müzik',upload:uploadBlob,onChange:v=>pairChange(PM,'pm',v)});
+const CH={every:5,len:3,key:'',tok:0,job:null,res:null,which:'mix',urls:{},el:null,ab:new WeakMap()};
+const chopAb=f=>{if(!CH.ab.has(f))CH.ab.set(f,Chop.decode(f));return CH.ab.get(f)};
+function chopStop(){if(CH.el)CH.el.pause()}
+function chopRun(){
+  const v=S.pv&&S.pv.file,m=S.pm&&S.pm.file,any=!!(v||m);syncCreate();
+  if(any&&CH.job&&CH.fv===v&&CH.fm===m&&CH.key===CH.every+'/'+CH.len)return;   // aynı dosyalar, aynı ayar → yeniden işleme
+  const tok=++CH.tok;Object.assign(CH,{fv:v,fm:m,key:CH.every+'/'+CH.len,res:null});chopStop();
+  $('#chopCard').hidden=!any;
+  if(!any){CH.job=null;return}
+  $('#chopS').textContent='Hazırlanıyor…';$('#chopPlay').disabled=true;
+  CH.job=Promise.all([v,m].filter(Boolean).map(chopAb)).then(abs=>{const r=Chop.make(abs,{win:CLIP,every:CH.every,len:CH.len}),t=[...r.tracks],o={dur:r.dur};
+    o.t={};if(v)o.t.v=t.shift();if(m)o.t.m=t.shift();if(v&&m)o.t.mix=Chop.mix(r.tracks);   // ham parçalar: MP3 indirme için
+    for(const k in o.t)o[k]=Chop.wav(o.t[k]);return o});
+  CH.job.then(r=>{if(tok!==CH.tok)return;CH.res=r;
+    Object.values(CH.urls).forEach(u=>URL.revokeObjectURL(u));CH.urls={};['mix','v','m'].forEach(k=>{if(r[k])CH.urls[k]=URL.createObjectURL(r[k])});
+    const av=Object.keys(CH.urls);if(!av.includes(CH.which))CH.which=av[0];   // tek parça → seçici gizli, o parça çalınır
+    $$('#chopMix button').forEach(b=>{b.hidden=!av.includes(b.dataset.v);b.classList.toggle('on',b.dataset.v===CH.which)});$('#chopMix').hidden=av.length<2;
+    chopSrc();$('#chopS').textContent=fmt(r.dur)+' · '+CH.every+" sn'de bir "+CH.len+' sn';$('#chopPlay').disabled=false},
+    ()=>{if(tok===CH.tok)$('#chopS').textContent='Ses çözülemedi, başka bir dosya dene'});
+}
+// Önizleme: İkisi / Vokal / Müzik arasında geçişte konum ve çalma durumu korunur
+function chopSrc(){const el=CH.el,u=CH.urls[CH.which];if(!u)return;const t=el.currentTime||0,was=!el.paused;el.src=u;
+  el.addEventListener('loadedmetadata',()=>{el.currentTime=Math.min(t,el.duration||0);if(was)el.play().catch(()=>{})},{once:true});chopIcon()}
+function chopIcon(){const p=!CH.el.paused;$('#chopPlay').innerHTML=ic(p?'pause':'play',20);$('#chopPlay').setAttribute('aria-label',p?'Duraklat':'Dinle')}
+$('#chopPlay').onclick=()=>{const el=CH.el;if(!CH.res)return;
+  if(el.paused){if(P.el&&!P.el.paused)P.el.pause();el.play().catch(()=>{})}else el.pause()};
+CH.el=new Audio();CH.el.playsInline=true;['play','pause','ended'].forEach(ev=>CH.el.addEventListener(ev,chopIcon));
+bindSeg($('#chopSeg'),v=>{CH.every=+v;chopRun()});bindSeg($('#chopLen'),v=>{CH.len=+v;chopRun()});
+bindSeg($('#chopMix'),v=>{CH.which=v;chopSrc()});
+// Önizlemede seçili olanı (İkisi / Vokal / Müzik) MP3 olarak indir — yalnız web (kodlayıcı LGPL, mobil pakete girmez)
+$('#chopDl').innerHTML=ic('download',20);$('#chopDl').hidden=!!(window.CR&&CR.native);
+$('#chopDl').onclick=async()=>{const r=CH.res,b=$('#chopDl');if(!r||b.disabled)return;b.disabled=true;
+  try{const blob=await Chop.mp3(r.t[CH.which]),name=($('#aTitle').value.trim()||'analiz').replace(/[\\/:*?"<>|]+/g,'').slice(0,60)+'-'+{mix:'karisim',v:'vokal',m:'muzik'}[CH.which]+'.mp3';
+    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:name});document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),30e3)}
+  catch(e){toast('MP3 hazırlanamadı')}finally{b.disabled=false}};
+$('#mCreate')._onClose=chopStop;
 let VREC=null;
-const recLive=()=>REC.busy()||!!(VREC&&VREC.busy());
-function recStop(){REC.stop();REC.pause();if(VREC){VREC.stop();VREC.pause()}}
+const recLive=()=>REC.busy()||PV.busy()||PM.busy()||!!(VREC&&VREC.busy());
+function recStop(){[REC,PV,PM,VREC].forEach(r=>{if(r){r.stop();r.pause()}})}
 
 /* ---------- generation ---------- */
 function spend(n){if(S.set.credits<n){if(window.Credits)Credits.open('empty');else toast('Kredi yetersiz');return false}S.set.credits-=n;return true}
@@ -459,6 +514,16 @@ $('#createBtn').onclick=()=>{
     const body={customMode:true,instrumental:!song,model:$('#model').value,title:title.slice(0,80),style:song?st:beatStyle(st),negativeTags:$('#neg').value.trim()||undefined,duration:+$('#dur').value,styleWeight:+$('#sw').value/100,weirdnessConstraint:+$('#wc').value/100,variety:S.variety,...personaPick()};
     if(song)Object.assign(body,{lyrics:ly,vocalGender:S.gender,audioWeight:+$('#aw').value/100});
     ok=spawn({title,style:st,lyrics:song?ly:'',output:out,duration:+$('#dur').value,model:$('#model').value},2,costOf('generate',$('#model').value),{url:'/api/music/generate',body})}
+  else if(S.mode==='pair'){if(recLive())return fail('Önce kaydı bitir (✓)');const ks=[S.pv&&['v',false,'vokal'],S.pm&&['m',true,'müzik']].filter(Boolean);
+    if(!ks.length||!CH.job)return fail('Vokal ya da müzik dosyası yükle');
+    if(!$('#aRights').checked)return fail('Kaydın haklarına sahip olduğunu onayla');
+    const cost=costOf('cover',S.set.model);if(needAccount())return;if(S.set.credits<cost*ks.length){if(window.Credits)Credits.open('empty');else toast('Kredi yetersiz');return}
+    const title=$('#aTitle').value.trim()||'Kaydım',style=$('#aStyle').value.trim(),job=CH.job,dur=CH.res?CH.res.dur:30;chopStop();
+    // Yüklü her parça düzenlenmiş haliyle ayrı bir KIE cover'a gider (vokal → vokalli, müzik → enstrümantal); düzenleme bitmediyse yükleme onu bekler
+    const send=(k,inst,lab)=>spawn({title:`${title} (${lab})`,style:style||'cover',lyrics:'',output:inst?'beat':'song',duration:Math.max(30,Math.round(dur))},2,cost,
+      async()=>{const r=await job;return {url:'/api/music/audio',body:{taskType:'cover',model:S.set.model,title:title.slice(0,80),style:style||undefined,instrumental:inst,
+        duration:Math.min(360,Math.max(10,Math.round(r.dur))),rightsConfirmed:true,uploadUrl:await uploadBlob(r[k],`${title}-${lab}.wav`)}}});
+    ok=ks.flatMap(([k,inst,lab])=>send(k,inst,lab))}
   else{const src=S.src;if(recLive())return fail('Önce kaydı bitir (✓)');if(!src)return fail('Önce ses kaydet ya da yükle');
     if(!src.explore&&!$('#aRights').checked)return fail('Kaydın haklarına sahip olduğunu onayla');
     const op=AOP[S.aop]||AOP.cover,vocal=S.aop==='vocals'||song,title=$('#aTitle').value.trim()||'Kaydım',style=$('#aStyle').value.trim(),lyr=$('#aLyrics').value.trim();
@@ -508,13 +573,22 @@ function renderCats(){$('#cats').innerHTML=(S.filter!=='all'?`<button class="chi
 $('#cats').addEventListener('click',e=>{const c=e.target.closest('[data-cat]');if(!c)return;S.filter=c.dataset.cat===S.filter?'all':c.dataset.cat;renderLib()});
 function match(t,f){return f==='all'||(f==='like'?t.like===1:f==='stem'?t.kind==='stem':t.output===f)}
 function libItems(){const q=S.q.toLocaleLowerCase('tr');let it=S.lib.filter(t=>match(t,S.filter)&&(!q||(t.title+' '+t.style).toLocaleLowerCase('tr').includes(q)));if(S.sort==='old')it=[...it].reverse();return it}
+// Sayfalı çizim: önce LIB_PAGE öğe, liste sonuna ~1,5 ekran kala sıradaki sayfa eklenir → DOM, çizim süresi ve kapak indirmesi parça sayısından bağımsız.
+// Filtre/arama/sıralama/görünüm değişince baştan başlar. Çalma sırası DOM'dan değil libItems()'tan kurulur (çizilmemiş parçalar da sırada).
+const LIB_PAGE=48;let libLimit=LIB_PAGE,libKey='',libIO=null;
+function watchLibMore(){const m=$('#libMore');if(libIO)libIO.disconnect();if(!m)return;
+  if(!libIO)libIO=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){libLimit+=LIB_PAGE;renderLib()}},{root:$('main'),rootMargin:'0px 0px 1000px 0px'});
+  libIO.observe(m)}
 function renderLib(){
-  const it=libItems(),grid=S.set.libView==='grid',q=S.q.trim();
+  const all=libItems(),grid=S.set.libView==='grid',q=S.q.trim(),key=[S.filter,q,S.sort,grid].join('|');
+  if(key!==libKey){libKey=key;libLimit=LIB_PAGE}
+  const it=all.length>libLimit?all.slice(0,libLimit):all,more=all.length>it.length;
   renderCats();$('#sortBtn').innerHTML=ic('sort',16)+(S.sort==='new'?'En yeni':'En eski');$('#viewBtn').innerHTML=ic(grid?'list':'grid',20);
   const liked=S.lib.filter(t=>t.like===1).length;
   const pin=S.filter==='all'&&!q&&!grid?`<button class="song pin" id="pinLiked"><span class="thumb liked">${ic('like',24)}</span><div class="song-body"><div class="song-t"><span class="t">Beğenilen şarkılar</span></div><div class="song-s">Liste • ${liked} şarkı</div></div></button>`:'';
   const L=$('#libList');L.classList.toggle('lgrid',grid);
-  patchList(L,it.length?pin+it.map(grid?card:row).join(''):pin+`<div class="empty">${S.filter==='like'&&!q?'Beğendiğin şarkılar burada görünür':S.lib.length?'Sonuç yok':'Kütüphane boş'}</div>`);
+  patchList(L,it.length?pin+it.map(grid?card:row).join('')+(more?'<div class="lib-more" id="libMore" aria-hidden="true"></div>':''):pin+`<div class="empty">${S.filter==='like'&&!q?'Beğendiğin şarkılar burada görünür':S.lib.length?'Sonuç yok':'Kütüphane boş'}</div>`);
+  watchLibMore();
 }
 $('#libList').addEventListener('click',e=>{if(e.target.closest('#pinLiked')){S.filter='like';renderLib()}});
 $('#sortBtn').onclick=()=>{S.sort=S.sort==='new'?'old':'new';renderLib()};
@@ -526,7 +600,7 @@ function markRows(){$$('#libList [data-id],#feed [data-id]').forEach(el=>{const 
   const o=el.querySelector('.thumb-ov,.gc-play');if(o&&!el.classList.contains('is-gen')){const want=cur&&P.playing?'pause':'play';if(o.dataset.ic!==want){o.innerHTML=ic(want,20);o.dataset.ic=want}}})}
 function renderAll(){renderFeed();if(S.view==='library')renderLib();if(S.view==='profile')renderProfile();$$('.cr').forEach(c=>c.textContent=S.set.credits);syncMini()}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const s=a.closest('[data-id]');if(!s||!s.closest('#libList,#feed'))return;const t=S.lib.find(x=>x.id===s.dataset.id);if(!t)return;
-  const list=s.closest('#libList,#feed'),ids=[...list.querySelectorAll('[data-id]')].map(x=>x.dataset.id),name=list.id==='feed'?'Son üretilenler':S.filter==='like'?'Beğenilen şarkılar':'Kütüphane';
+  const list=s.closest('#libList,#feed'),ids=list.id==='libList'?libItems().map(x=>x.id):[...list.querySelectorAll('[data-id]')].map(x=>x.dataset.id),name=list.id==='feed'?'Son üretilenler':S.filter==='like'?'Beğenilen şarkılar':'Kütüphane';
   if(a.dataset.act==='play')play(t.id,false,ids,name);if(a.dataset.act==='open')play(t.id,true,ids,name);if(a.dataset.act==='more')openMenu(t.id)});
 
 /* uzun bas → parça menüsü */

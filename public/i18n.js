@@ -106,6 +106,10 @@
     "Sesin sana ait olduğunu onayla": "Confirm that this is your own voice",
     "Bu kaydın haklarına sahibim ya da kullanma iznim var. Telif ve diğer haklardan doğan sorumluluk bana aittir.": "I own the rights to this recording or have permission to use it. I'm responsible for any copyright or other rights claims.",
     "Kaydın haklarına sahip olduğunu onayla": "Confirm that you have the rights to this recording",
+    // analiz (vokal + müzik, kesit tekrarı)
+    "Analiz": "Analyze", "Müzik": "Music", "Kesit tekrarı": "Chop repeat", "2 sn'de bir": "Every 2 s", "3 sn'de bir": "Every 3 s", "4 sn'de bir": "Every 4 s", "5 sn'de bir": "Every 5 s",
+    "Gönderilecek ses": "Audio to send", "MP3 olarak indir": "Download as MP3", "MP3 hazırlanamadı": "Couldn't prepare the MP3", "Kopyalanan kesit süresi": "Copied chop length", "1 sn": "1 s", "2 sn": "2 s", "3 sn": "3 s", "4 sn": "4 s", "İkisi": "Both", "Vokal silindi": "Vocal deleted", "Müzik silindi": "Music deleted",
+    "Vokal ya da müzik dosyası yükle": "Upload a vocal or music file", "Ses çözülemedi, başka bir dosya dene": "Couldn't read the audio, try another file",
     "Bildir": "Report", "İçeriği bildir": "Report content", "Başka bir sebep": "Something else", "Açıklama (isteğe bağlı)": "Details (optional)",
     "Nefret söylemi, şiddet ya da saldırgan içerik": "Hate speech, violence or offensive content", "Cinsel ya da uygunsuz içerik": "Sexual or inappropriate content",
     "Telif hakkı ihlali": "Copyright infringement", "Başka birinin sesini ya da kimliğini taklit": "Impersonates someone's voice or identity",
