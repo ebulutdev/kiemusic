@@ -283,8 +283,8 @@
     g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 24;
     const title = upper(k.title || T("Adsız"));
     fitFont(title, 800, 60, '"Bricolage Grotesque"', 880);
-    g.fillStyle = "#fff"; g.fillText(title, W / 2, 1196 + dy);
-    if (k.artist) { fitFont(k.artist, 500, 36, "Geist", 860); g.fillStyle = "rgba(255,255,255,.66)"; g.fillText(k.artist, W / 2, 1250 + dy); }
+    g.fillStyle = "#fff"; g.fillText(title, W / 2, (k.artist ? 1254 : 1296) + dy); // ilerleme çubuğuna yakın
+    if (k.artist) { fitFont(k.artist, 500, 36, "Geist", 860); g.fillStyle = "rgba(255,255,255,.66)"; g.fillText(k.artist, W / 2, 1300 + dy); }
     g.shadowColor = "transparent";
     // İlerleme çizgisi
     const x0 = 190, x1 = 890, py = 1352;
