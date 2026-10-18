@@ -101,6 +101,21 @@
     }
     return out;
   }
+  async function bassOf(buf) {
+    const sr = 8000, oc = new OfflineAudioContext(1, Math.ceil(buf.duration * sr), sr);
+    const src = oc.createBufferSource(), lp = oc.createBiquadFilter();
+    src.buffer = buf; lp.type = "lowpass"; lp.frequency.value = 140; lp.Q.value = 0.7;
+    src.connect(lp).connect(oc.destination); src.start();
+    return peaksOf(await oc.startRendering());
+  }
+  // t anındaki bas vuruşu (0–1): son 160 ms'deki tepeler hızla sönerek; zayıf bas yok sayılır (yalnız vuruşlarda titrer)
+  function bassAt(k, t) {
+    if (!k.bass) return 0;
+    const i = Math.floor(t * FPS);
+    let e = 0;
+    for (let j = Math.max(0, i - 8); j <= Math.min(i, k.bass.length - 1); j++) e = Math.max(e, (k.bass[j] / k.bassNorm) * Math.exp(-((i - j) / FPS) * 9));
+    return Math.pow(clamp((e - 0.3) / 0.6), 1.2);
+  }
   function peakAt(k, t, dt) {
     const a = Math.floor(t * FPS), b = Math.max(a + 1, Math.floor((t + dt) * FPS));
     if (b <= 0 || a >= k.fine.length) return 0;
@@ -237,12 +252,15 @@
     const sc = Math.min(440 / sw, 500 / sh); // çok büyük olmasın
     return [Math.round(sw * sc) + 24, Math.round(sh * sc) + 24];
   }
+  let SHAKE = { e: 0, t: 0 };
   function drawCard(k, r, intro, pulse) {
-    const T = cardTf(r), s = T.s * (r > -0.5 && r < 0.5 ? 1 + pulse : 1) * lerp(0.92, 1, intro);
+    const w = clamp(1 - Math.abs(r) * 2), e = SHAKE.e * w, tt = SHAKE.t; // yalnız öndeki kart
+    const T = cardTf(r), s = T.s * (1 + pulse * w + e * 0.03) * lerp(0.92, 1, intro);
     if (T.a <= 0.01) return;
     const [cw, ch] = cardSize(k);
     g.save();
-    g.translate(T.x, CY + T.y + (1 - intro) * 40); g.rotate(T.rot); g.scale(s, s);
+    g.translate(T.x + Math.sin(tt * 53) * 5 * e, CY + T.y + (1 - intro) * 40 + Math.cos(tt * 47) * 4 * e);
+    g.rotate(T.rot + Math.sin(tt * 37) * 0.008 * e); g.scale(s, s);
     g.globalAlpha = T.a * intro;
     g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 80; g.shadowOffsetY = 34;
     pill(-cw / 2, -ch / 2, cw, ch, 44); g.fillStyle = "#fff"; g.fill();
@@ -449,14 +467,15 @@
     glow.addColorStop(0, hsl(pa.h, pa.s, pa.l, 0.05 + amp * 0.1)); glow.addColorStop(1, hsl(pa.h, pa.s, pa.l, 0));
     g.fillStyle = glow; g.fillRect(0, 0, W, H);
     if (P.playing) drawWords(t, pa, intro * fade, u, intro); else drawStatic(pa);
+    SHAKE = { e: P.playing ? bassAt(o.k, o.k.start + clamp(t - o.T, 0, o.d)) * fade : 0, t };
     // Kart yığını: uzaktaki önce, çalan en son (en önde)
     TL.map((_, j) => j).filter((j) => Math.abs(j - pos) < 2).sort((a, b) => Math.abs(b - pos) - Math.abs(a - pos))
-      .forEach((j) => drawCard(TL[j].k, j - pos, intro * fade, amp * 0.015));
+      .forEach((j) => drawCard(TL[j].k, j - pos, intro * fade, amp * 0.008));
     // Video kapaklar yalnız ekrandayken oynar (geçişte ikisi birden)
     TL.forEach((x, j) => {
       const v = x.k.cover && x.k.cover.type === "video" ? x.k.cover.el : null;
       if (!v) return;
-      const on = P.playing && Math.abs(j - pos) < 1.5;
+      const on = P.playing && j - pos < 0.95 && j - pos > -0.6;
       if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause();
     });
     const ia = clamp(1 - Math.abs(pos - n) * 2.4) * intro * fade;
@@ -648,7 +667,8 @@
     try {
       const buf = await audio().decodeAudioData(await f.arrayBuffer());
       const pk = peaksOf(buf);
-      Object.assign(D, { buf, fine: pk.fine, norm: pk.norm, beats: beatsOf(pk.fine, pk.norm), audioName: f.name });
+      const bs = await bassOf(buf).catch(() => null);
+      Object.assign(D, { buf, fine: pk.fine, norm: pk.norm, beats: beatsOf(pk.fine, pk.norm), bass: bs && bs.fine, bassNorm: bs && bs.norm, audioName: f.name });
       const len = Math.min(30, Math.floor(buf.duration));
       D.start = bestWindow(D, len); D.end = Math.min(buf.duration, D.start + len);
       if (!$("#mTitle").value.trim()) $("#mTitle").value = f.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim().slice(0, 60);
