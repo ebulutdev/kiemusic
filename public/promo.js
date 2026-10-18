@@ -198,9 +198,10 @@
 
   // Arka plan: yüklenen görsel / video tüm ekranı kaplar (net); alttan koyulaşan gölge yukarı doğru açılır.
   // Yavaş yakınlaşma + şarkılar arası yumuşak geçiş (alfa). Video kapak canlı oynar.
-  function drawBg(k, a, t) {
+  // z: geçiş yakınlaşması (giden büyüyerek söner, gelen yakından yerine oturur) · amp: vuruşla hafif nefes
+  function drawBg(k, a, t, z = 0, amp = 0) {
     if (a <= 0) return;
-    const s = 1.04 + Math.sin(t * 0.21) * 0.025, dx = Math.sin(t * 0.15) * 14;
+    const s = 1.04 + Math.sin(t * 0.21) * 0.025 + z + amp * 0.012, dx = Math.sin(t * 0.15) * 14;
     g.save(); g.globalAlpha = a;
     const el = k.cover ? k.cover.el : null;
     if (el) coverFit(g, el, (W - W * s) / 2 + dx, (H - H * s) / 2, W * s, H * s);
@@ -428,24 +429,26 @@
     if (!TL.length) return drawEmpty(t);
     const intro = P.playing ? ease(clamp(t / INTRO)) : 1;
     const pos = posAt(TL, t), base = Math.min(TL.length - 1, Math.floor(pos)), f = pos - base;
-    drawBg(TL[base].k, 1, t);
-    if (TL[base + 1]) drawBg(TL[base + 1].k, f, t);
-    // Ritimle nefes alan ışık
     const n = Math.min(TL.length - 1, Math.round(pos)), o = TL[n];
     const amp = P.playing ? peakAt(o.k, o.k.start + clamp(t - o.T, 0, o.d), 0.08) : 0;
-    const pa = TL[base].k.pal.a, glow = g.createRadialGradient(540, CY, 0, 540, CY, 760);
-    glow.addColorStop(0, hsl(pa.h, pa.s, pa.l, 0.18 + amp * 0.16)); glow.addColorStop(1, hsl(pa.h, pa.s, pa.l, 0));
-    g.fillStyle = glow; g.fillRect(0, 0, W, H);
     const u = P.playing ? outroAt(t) : 0, fade = 1 - u;
+    // Tam ekran görsel: girişte siyahtan yakınlaşarak açılır; şarkı değişince giden büyüyüp söner, gelen yakından yerine oturur
+    g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    drawBg(TL[base].k, intro, t, f * 0.09 + (1 - intro) * 0.08, amp);
+    if (TL[base + 1] && f > 0) drawBg(TL[base + 1].k, f * intro, t, (1 - f) * 0.12, amp);
+    if (u > 0) { g.fillStyle = `rgba(0,0,0,${u * 0.55})`; g.fillRect(0, 0, W, H); } // sonda marka öne çıksın
+    // Ritimle nefes alan hafif ışık
+    const pa = TL[base].k.pal.a, glow = g.createRadialGradient(540, CY, 0, 540, CY, 760);
+    glow.addColorStop(0, hsl(pa.h, pa.s, pa.l, 0.05 + amp * 0.1)); glow.addColorStop(1, hsl(pa.h, pa.s, pa.l, 0));
+    g.fillStyle = glow; g.fillRect(0, 0, W, H);
     if (P.playing) drawWords(t, pa, intro * fade, u, intro); else drawStatic(pa);
-    const order = TL.map((_, j) => j).sort((a, b) => Math.abs(b - pos) - Math.abs(a - pos));
-    for (const j of order) {
-      const r = j - pos, k = TL[j].k;
-      const v = k.cover && k.cover.type === "video" ? k.cover.el : null;
-      if (v) { const on = P.playing && Math.abs(r) < 0.6; if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause(); }
-      if (r <= -1 || r >= 2) continue;
-      drawCard(k, r, intro * fade, amp * 0.02);
-    }
+    // Video kapaklar yalnız ekrandayken oynar (geçişte ikisi birden)
+    TL.forEach((x, j) => {
+      const v = x.k.cover && x.k.cover.type === "video" ? x.k.cover.el : null;
+      if (!v) return;
+      const on = P.playing && Math.abs(j - pos) < 1;
+      if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause();
+    });
     const ia = clamp(1 - Math.abs(pos - n) * 2.4) * intro * fade;
     if (ia > 0.01) drawInfo(o, t, ia, P.playing);
     drawBrand(t, intro, u);
