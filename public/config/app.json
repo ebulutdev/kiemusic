@@ -1,5 +1,5 @@
 {
- "version": 17,
+ "version": 18,
  "pricing": {
   "startCredits": 28,
   "periodDays": 30,
@@ -46,8 +46,8 @@
    {
     "id": "max_monthly",
     "name": "Max",
-    "credits": 1335,
-    "price": 749,
+    "credits": 1425,
+    "price": 799,
     "currency": "TRY",
     "songs": 250
    }
@@ -59,10 +59,10 @@
   }
  },
  "legal": {
-  "version": "2026-10-17",
+  "version": "2026-10-18",
   "terms": "/terms",
   "privacy": "/privacy",
-  "contact": ""
+  "contact": "emircanbulut04@gmail.com"
  },
  "limits": {
   "persona": 5,

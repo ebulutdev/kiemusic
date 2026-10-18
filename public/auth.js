@@ -7,6 +7,7 @@
   const q = (s, r = document) => r.querySelector(s);
   const qa = (s, r = document) => [...r.querySelectorAll(s)];
   const h = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const tr = (m) => (window.I18N && window.I18N.t ? window.I18N.t(m) : m);
   const say = (m) => (typeof toast === "function" ? toast(m) : null);
 
   const sv = (d, w = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
@@ -160,7 +161,8 @@
     const av = st.photo ? `<img src="${h(st.photo)}" alt="" referrerpolicy="no-referrer">` : h(name.charAt(0).toLocaleUpperCase("tr"));
     const via = st.providers.map((p) => PROV[p]).filter(Boolean).join(" · ");
     el.innerHTML = `<div class="acct-row"><span class="acct-av">${av}</span><div class="acct-t"><b>${h(st.email || name)}</b>${via ? `<small>${h(via)} ile giriş</small>` : ""}</div></div>
-      <div class="acct-act"><button class="acct-btn danger" data-a="out">Çıkış yap</button></div>`;
+      <div class="acct-act"><button class="acct-btn danger" data-a="out">Çıkış yap</button></div>
+      <button class="acct-del" data-a="del">Hesabımı sil</button>`;
   }
   async function onAccount(e) {
     const a = e.target.closest("[data-a]")?.dataset.a;
@@ -170,6 +172,10 @@
       if (!confirm("Çıkış yapılsın mı? Kütüphanen hesabında kayıtlı kalır.")) return;
       await window.FB.auth.signOut();
       say("Çıkış yapıldı");
+    } else if (a === "del") {
+      if (!confirm(tr("Hesabın kalıcı olarak silinsin mi?") + "\n\n" + tr("Şarkıların, yüklediğin sesler ve kalan kredin silinir; bu işlem geri alınamaz. Mağaza aboneliğin varsa App Store / Google Play ayarlarından ayrıca iptal etmelisin."))) return;
+      try { await window.FB.auth.deleteAccount(); say(tr("Hesabın silindi")); }
+      catch (err) { alert(tr((err && err.message) || "Hesap silinemedi. Biraz sonra tekrar dene.")); }
     }
   }
 

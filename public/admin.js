@@ -299,6 +299,13 @@
   });
 
   // ══ Ayarlar ═════════════════════════════════════════════
+  // Paket tasarrufu: kredi başına fiyat, en pahalı pakete göre (kredi penceresindeki "%N tasarruf" etiketiyle aynı hesap)
+  function planSave() {
+    const rows = $("#adPlans [data-pc]").map((i) => ({ id: i.dataset.pc, c: +i.value || 0, p: +$(`#adPlans [data-pp="${i.dataset.pc}"]`).value || 0 })).filter((r) => r.c > 0);
+    const base = Math.max(...rows.map((r) => r.p / r.c));
+    rows.forEach((r) => { const el = $(`#adPlans [data-ps="${r.id}"]`); if (el) { const v = Math.round((1 - r.p / r.c / base) * 100); el.textContent = v >= 1 ? `%${v} tasarruf` : "en yüksek birim fiyat"; } });
+  }
+  document.addEventListener("input", (e) => { if (e.target.closest && e.target.closest("#adPlans")) planSave(); });
   function fillSettings() {
     const f = $("#adEcon"), E = data?.economics || { usdPerCredit: 0.01, kieUsdPerCredit: 0.005, kieCreditsEstimate: {} };
     f.usdPerCredit.value = E.usdPerCredit;
@@ -312,7 +319,8 @@
       return `${r.estimated ? "≈" : "ölçülen"} ${nf2.format(avg)}${r.estimated ? " (tahmin içerir)" : ""} · n=${r.completed}` };
     $("#adCost").innerHTML = Object.keys(C).map((k) => `<label>${h(OPS[k] || k)}<input type="number" min="0" max="1000" step="1" data-c="${h(k)}" value="${C[k]}"><small class="ad-meas">${h(meas(k))}</small></label>`).join("") || "<small>Analiz yüklenince görünür</small>";
     const PL = data?.pricing?.plans || [], CU = data?.pricing?.custom || { min: 150, max: 1500, step: 50 };
-    $("#adPlans").innerHTML = PL.map((p) => `<label>${h(p.name)} · kredi<input type="number" min="1" step="1" data-pc="${h(p.id)}" value="${p.credits}"></label><label>${h(p.name)} · fiyat (${h(p.currency)})<input type="number" min="1" step="1" data-pp="${h(p.id)}" value="${p.price}"></label>`).join("") || "<small>Analiz yüklenince görünür</small>";
+    $("#adPlans").innerHTML = PL.map((p) => `<label>${h(p.name)} · kredi<input type="number" min="1" step="1" data-pc="${h(p.id)}" value="${p.credits}"></label><label>${h(p.name)} · fiyat (${h(p.currency)})<input type="number" min="1" step="1" data-pp="${h(p.id)}" value="${p.price}"><small class="ad-meas" data-ps="${h(p.id)}"></small></label>`).join("") || "<small>Analiz yüklenince görünür</small>";
+    planSave();
     $("#adCustom").innerHTML = [["min", "En az kredi"], ["max", "En çok kredi"], ["step", "Adım"]].map(([k, t]) => `<label>${t}<input type="number" min="1" step="1" data-cu="${k}" value="${CU[k]}"></label>`).join("");
     $("#adEst").innerHTML = keys.map((k) => `<label>${h(OPS[k] || k)}<input type="number" min="0" step="0.5" data-k="${h(k)}" value="${E.kieCreditsEstimate?.[k] ?? 0}"></label>`).join("");
   }

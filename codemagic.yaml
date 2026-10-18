@@ -1,0 +1,46 @@
+# Codemagic: iOS derlemesi (Mac gerekmez) → TestFlight
+# Kurulum: Codemagic'te depoyu bağla; Team settings > Integrations > Developer Portal'a
+# App Store Connect API anahtarını "CookFire ASC" adıyla ekle (Issuer ID, Key ID, .p8).
+# Derleme: Codemagic'te "ios-testflight" iş akışını başlat.
+workflows:
+  ios-testflight:
+    name: iOS → TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: CookFire ASC
+    environment:
+      node: 22
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.emircanbulut.cookfire
+      vars:
+        APP_STORE_APPLE_ID: 6824189190
+    scripts:
+      - name: Bağımlılıklar
+        script: npm ci
+      - name: Web paketi + Capacitor senkronu
+        script: npm run mobile:build
+      - name: İmzalama profilleri
+        script: xcode-project use-profiles --project ios/App/App.xcodeproj
+      - name: Derleme numarasını artır
+        script: |
+          cd ios/App
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          agvtool new-version -all $((LATEST + 1))
+      - name: IPA derle
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+      email:
+        recipients:
+          - emircanbulut04@gmail.com
+        notify:
+          success: true
+          failure: true

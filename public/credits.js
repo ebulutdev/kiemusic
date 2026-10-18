@@ -133,7 +133,7 @@
       return;
     }
     if (sel !== "custom" && !planOf(sel)) sel = defaultPlan(k);
-    const cc = cfg.custom;
+    const cc = window.CR && window.CR.native ? null : cfg.custom; // özel miktar mağazada ürün olmadığı için uygulamada gizli
     if (cc && !custom) custom = Math.min(cc.max, Math.max(cc.min, (planOf(sel) || {}).credits || cc.min));
     const base = Math.max(...plans.map((p) => p.price / p.credits)); // kredi başına en yüksek fiyat → tasarruf oranı
     list.innerHTML = plans.map((p) => {
@@ -229,7 +229,7 @@
       return;
     }
     // Mağaza içi abonelik: StoreKit / Play Billing → sunucu makbuzu doğrular, krediyi plana göre yeniler
-    if (!native || typeof window.CR.purchase !== "function") return note("Abonelik iPhone ve Android uygulamasından alınır.");
+    if (!native || typeof window.CR.purchase !== "function") return note(native ? "Bu cihazda abonelik yakında açılacak." : "Abonelik iPhone uygulamasından alınır.");
     btn.disabled = true;
     btn.classList.add("busy");
     note("");

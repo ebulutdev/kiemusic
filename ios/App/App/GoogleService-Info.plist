@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>807604270953-4nn98bo0sl3ftm6b1up3vkubj3i5v6do.apps.googleusercontent.com</string>
+	<string>807604270953-31eoft2451lq4lvfekfmoku57pcrg9sr.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.807604270953-4nn98bo0sl3ftm6b1up3vkubj3i5v6do</string>
+	<string>com.googleusercontent.apps.807604270953-31eoft2451lq4lvfekfmoku57pcrg9sr</string>
 	<key>ANDROID_CLIENT_ID</key>
-	<string>807604270953-m00ksp9l9ug9i8snkptgrn26vccb5rui.apps.googleusercontent.com</string>
+	<string>807604270953-7n19gtnc65oab2krotti46u9e61gii9p.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyD-7P8T_vRySRKIct8LpYe82ZZJ24MNJbs</string>
 	<key>GCM_SENDER_ID</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.fetsangrup.cookrapper</string>
+	<string>com.emircanbulut.cookfire</string>
 	<key>PROJECT_ID</key>
 	<string>rapper-fcc44</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:807604270953:ios:74e01f85b1b8de1417aff8</string>
+	<string>1:807604270953:ios:7c2abe2aed7aa43f17aff8</string>
 </dict>
 </plist>

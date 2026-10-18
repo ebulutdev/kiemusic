@@ -278,6 +278,15 @@
     "Profili ziyaret et": "Visit the profile",
     "Marka altı": "Under the brand",
     "Uygulamayı ücretsiz indir": "Download the app free",
+    "Hesabımı sil": "Delete my account",
+    "Hesabın kalıcı olarak silinsin mi?": "Permanently delete your account?",
+    "Şarkıların, yüklediğin sesler ve kalan kredin silinir; bu işlem geri alınamaz. Mağaza aboneliğin varsa App Store / Google Play ayarlarından ayrıca iptal etmelisin.": "Your songs, uploaded audio and remaining credits will be deleted; this can't be undone. If you have a store subscription, cancel it separately in your App Store / Google Play settings.",
+    "Hesabın silindi": "Your account was deleted",
+    "Hesap silinemedi. Biraz sonra tekrar dene.": "Couldn't delete the account. Try again a little later.",
+    "Bu cihazda abonelik yakında açılacak.": "Subscriptions are coming soon on this device.",
+    "Abonelik iPhone uygulamasından alınır.": "Subscriptions are purchased in the iPhone app.",
+    "Abonelik doğrulanamadı. Tekrar dene.": "Couldn't verify the subscription. Try again.",
+    "Bu abonelik başka bir CookFire hesabına bağlı.": "This subscription is linked to another CookFire account.",
   };
   const MONTHS = { Ocak: "January", Şubat: "February", Mart: "March", Nisan: "April", Mayıs: "May", Haziran: "June", Temmuz: "July",
     Ağustos: "August", Eylül: "September", Ekim: "October", Kasım: "November", Aralık: "December" };

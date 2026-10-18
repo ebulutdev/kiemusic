@@ -276,7 +276,7 @@ Farklı sunucu: `CR_API_BASE=https://... npm run mobile:build`
 
 | Konu | Nerede |
 |---|---|
-| Paket kimliği | `com.fetsangrup.cookrapper` (capacitor.config.ts, Xcode, build.gradle) |
+| Paket kimliği | `com.emircanbulut.cookfire` (capacitor.config.ts, Xcode, build.gradle) |
 | Mikrofon izni | iOS `NSMicrophoneUsageDescription` · Android `RECORD_AUDIO` |
 | Arka planda çalma | iOS `UIBackgroundModes: audio` + AppDelegate `AVAudioSession .playback` · Android medya ön plan hizmeti (`@capgo/capacitor-media-session`) |
 | Kilit ekranı / bildirim | `public/native.js → CR.media` (iOS: WKWebView mediaSession · Android: eklenti) |

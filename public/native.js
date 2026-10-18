@@ -82,10 +82,53 @@
     try { await navigator.clipboard.writeText(url ? `${text}\n${url}` : text); return "copied"; } catch (e) { return "failed"; }
   }
 
+  // ── App Store aboneliği (yalnız iOS; Android Play hesabı açılınca eklenecek)
+  //   @capgo/native-purchases (StoreKit 2). Satın alma hesaba appAccountToken ile bağlanır (sunucu verir);
+  //   imzalı işlem (JWS) /api/billing/apple'a gider, sunucu Apple imzasını doğrulayıp planı başlatır.
+  const IAP = platform === "ios" ? plug("NativePurchases") : null;
+  const api = (u) => (/^https?:/.test(u) ? u : base + u);
+  async function billing(method, body) {
+    const h = window.FB && window.FB.headers ? await window.FB.headers({ "Content-Type": "application/json" }) : {};
+    const r = await fetch(api("/api/billing/apple"), { method, headers: h, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.success === false) throw new Error(j.error || "Abonelik doğrulanamadı. Tekrar dene.");
+    return j;
+  }
+  const jwsOf = (list) => (list || []).map((t) => t && t.jwsRepresentation).filter(Boolean);
+  async function sendActive() {
+    const r = await IAP.getPurchases({ productType: "subs" }).catch(() => ({ purchases: [] }));
+    const jws = jwsOf(r.purchases);
+    return jws.length ? billing("POST", { jws }) : { active: false };
+  }
+  const iap = IAP ? {
+    async products(ids) {
+      const r = await IAP.getProducts({ productIdentifiers: ids, productType: "subs" });
+      return (r.products || []).map((p) => ({ id: p.identifier || p.productIdentifier, price: p.priceString }));
+    },
+    async purchase(id) {
+      const { token } = await billing("GET");
+      let t;
+      try { t = await IAP.purchaseProduct({ productIdentifier: id, productType: "subs", quantity: 1, appAccountToken: token }); }
+      catch (e) { if (/cancel/i.test(String((e && (e.message || e.code)) || ""))) throw new Error("cancelled"); throw e; }
+      const jws = jwsOf([t]);
+      if (!jws.length) throw new Error("Satın alma doğrulanamadı. \"Satın alımları geri yükle\" ile tekrar dene.");
+      const j = await billing("POST", { jws });
+      if (!j.active) throw new Error("Abonelik etkinleşmedi. \"Satın alımları geri yükle\" ile tekrar dene.");
+      return j;
+    },
+    async restore() {
+      await IAP.restorePurchases().catch(() => {});
+      return (await sendActive()).active;
+    },
+  } : {};
+  // Uygulama açılınca (hesapla giriş yapılmışsa) etkin abonelik sunucuya bildirilir → yenilenen ay kredisi yüklenir
+  if (IAP) window.addEventListener("fb-auth", (e) => { if (e.detail && !e.detail.anon) setTimeout(() => sendActive().catch(() => {}), 1500); });
+
   window.CR = {
     native,
     platform,
-    api: (u) => (/^https?:/.test(u) ? u : base + u),
+    api,
     media, save, share,
+    ...iap,
   };
 })();

@@ -1,4 +1,4 @@
-package com.fetsangrup.cookrapper;
+package com.emircanbulut.cookfire;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -12,11 +12,12 @@ Son güncelleme: 17 Ekim 2026. Bitenleri `[x]` yap. "Sıradaki" bölümünü tek
 - [ ] **2. Xcode'da imzalama ekibini seç.** `npm run mobile:ios` ile aç, Signing bölümünden ekibini seç. Bu adım "Sign in with Apple" yetkisini Apple tarafına da kaydeder. iOS'u Windows'ta derleyemediğim için sen derleyip denemelisin.
 - [ ] **3. Android yayınından önce:** yayın anahtarının ve Google Play imza anahtarının SHA-1 parmak izlerini Firebase'deki Android uygulamasına ekle, sonra `google-services.json` dosyasını yeniden indir. Yoksa Play'den inen uygulamada Google girişi çalışmaz.
 - [ ] **4. Firebase Console › Authentication › Sign-in method › Email/Password** yöntemini kapat (sunucu bu hesaplara zaten kredi vermiyor; kapatınca hiç açılamazlar).
-- [ ] **5. Mağaza abonelik ürünlerini aç:** App Store Connect ve Google Play'de aynı abonelik grubunda dört aylık ürün: `starter_monthly` (₺99 · 150 kredi), `plus_monthly` (₺249 · 420), `pro_monthly` (₺499 · 860), `max_monthly` (₺749 · 1335).
+- [ ] **5. Mağaza abonelik ürünlerini aç:** App Store Connect ve Google Play'de aynı abonelik grubunda dört aylık ürün: `starter_monthly` (₺99 · 150 kredi), `plus_monthly` (₺249 · 420), `pro_monthly` (₺499 · 860), `max_monthly` (₺799 · 1425).
 - [ ] **6. Gizlilik politikası adresini mağazalara gir:** `https://kiemusic--rapper-fcc44.us-east4.hosted.app/privacy` (App Store Connect + Play Console). Play'de "Data safety", App Store'da "App Privacy" formlarını doldur.
 - [ ] **7. İletişim e-postasını yaz:** `public/config/app.json` › `legal.contact` (boşsa sayfalarda "yakında yayınlanacak" yazıyor) → ardından `npm run db:seed`.
 - [ ] **8. Veri sorumlusunun kimliğini belirle:** KVKK, kişi ya da şirket adı ister; yalnızca "CookFire" yetmeyebilir. Yasal metinleri yayından önce bir avukata göster.
 - [ ] **9. Canlı yayın gizlileri (App Hosting):** `kie-api-key` değerinin dolu olduğunu doğrula; `kie-webhook-hmac-key` oluştur ve backend `kiemusic` için erişim ver. Eksikse sonuç bildirimleri reddedilir.
+- [ ] **11. Eski Firebase uygulamalarını sil:** Paket kimliği `com.emircanbulut.cookfire` oldu; yeni uygulamalar CookFire iOS / CookFire Android. Firebase Console › Proje ayarları › Your apps › **CookRapper iOS** ve **CookRapper Android** → Remove this app (geri alınamaz).
 - [ ] **10. KIE anahtarını yenile:** anahtar sohbette paylaşıldı; panelden yeni anahtar üret, gizliyi güncelle.
 
 ---

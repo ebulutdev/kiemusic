@@ -4,7 +4,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // API istekleri tam adrese gider: www/env.js → CR_ENV.apiBase (scripts/build-www.mjs, varsayılan: apphosting.yaml APP_URL)
 // Derleme: npm run mobile:build   ·   Xcode: npx cap open ios   ·   Android Studio: npx cap open android
 const config: CapacitorConfig = {
-  appId: "com.fetsangrup.cookrapper",
+  appId: "com.emircanbulut.cookfire",
   appName: "CookFire",
   webDir: "www",
   backgroundColor: "#0B0A09",

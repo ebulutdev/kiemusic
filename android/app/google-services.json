@@ -7,17 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:807604270953:android:360f4859f1e49ae517aff8",
+        "mobilesdk_app_id": "1:807604270953:android:1dbd5fcb2d595b6617aff8",
         "android_client_info": {
-          "package_name": "com.fetsangrup.cookrapper"
+          "package_name": "com.emircanbulut.cookfire"
         }
       },
       "oauth_client": [
         {
-          "client_id": "807604270953-m00ksp9l9ug9i8snkptgrn26vccb5rui.apps.googleusercontent.com",
+          "client_id": "807604270953-7n19gtnc65oab2krotti46u9e61gii9p.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.fetsangrup.cookrapper",
+            "package_name": "com.emircanbulut.cookfire",
             "certificate_hash": "b31833b2789b18f670cc9d1a4a9461aba628188e"
           }
         },
@@ -39,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "807604270953-4nn98bo0sl3ftm6b1up3vkubj3i5v6do.apps.googleusercontent.com",
+              "client_id": "807604270953-31eoft2451lq4lvfekfmoku57pcrg9sr.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.fetsangrup.cookrapper"
+                "bundle_id": "com.emircanbulut.cookfire"
               }
             }
           ]

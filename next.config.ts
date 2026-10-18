@@ -15,6 +15,7 @@ const nextConfig: NextConfig = {
         { source: "/privacy", destination: "/privacy.html" }, // Gizlilik Politikası (mağaza bağlantısı)
         { source: "/terms", destination: "/terms.html" },     // Kullanım Koşulları
         { source: "/promo", destination: "/promo.html" }, // Tanıtım videosu (Reels / Story; yalnız web)
+        { source: "/support", destination: "/support.html" }, // Destek (App Store Support URL)
       ],
     };
   },

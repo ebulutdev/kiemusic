@@ -356,6 +356,22 @@ const authApi = {
     SF()?.resetLocal();
   },
 
+  // Hesabı kalıcı olarak sil (sunucu: kullanıcı belgesi, parçalar, yüklenen sesler, kimlik). Bekleyen yazımlar gönderilmez.
+  async deleteAccount() {
+    const u = auth.currentUser;
+    if (!u || u.isAnonymous) throw new Error("Silinecek hesap yok");
+    const r = await fetch(window.CR ? window.CR.api("/api/account") : "/api/account", { method: "DELETE", headers: { Authorization: "Bearer " + (await u.getIdToken(true)) } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.success === false) throw new Error(j.error || "Hesap silinemedi. Biraz sonra tekrar dene.");
+    clearTimeout(timer);
+    stopSync();
+    uid = null;
+    try { localStorage.removeItem(GUEST_KEY); localStorage.removeItem("cf_terms"); } catch {}
+    await fbSignOut(auth).catch(() => {});
+    if (NativeAuth) NativeAuth.signOut().catch(() => {});
+    SF()?.resetLocal();
+  },
+
   isGuestChosen: () => { try { return localStorage.getItem(GUEST_KEY) === "1"; } catch { return false; } },
 };
 

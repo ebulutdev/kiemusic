@@ -24,6 +24,7 @@ export const COL = {
   lyrics: "lyrics",
   config: "config",
   reports: "reports",
+  iap: "iap", // iap/{originalTransactionId} = { uid }: mağaza aboneliği tek hesaba bağlı (yalnız sunucu)
 } as const;
 
 export const path = {
