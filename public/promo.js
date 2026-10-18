@@ -196,12 +196,24 @@
   }
   function pill(x, y, w, hh, r) { g.beginPath(); g.roundRect(x, y, w, hh, r); }
 
+  // Arka plan: yüklenen görsel / video tüm ekranı kaplar (net); alttan koyulaşan gölge yukarı doğru açılır.
+  // Yavaş yakınlaşma + şarkılar arası yumuşak geçiş (alfa). Video kapak canlı oynar.
   function drawBg(k, a, t) {
     if (a <= 0) return;
-    const s = 1.06 + Math.sin(t * 0.23) * 0.03, dx = Math.sin(t * 0.17) * 18;
-    g.globalAlpha = a;
-    g.drawImage(k.bg, (W - W * s) / 2 + dx, (H - H * s) / 2, W * s, H * s);
-    g.globalAlpha = 1;
+    const s = 1.04 + Math.sin(t * 0.21) * 0.025, dx = Math.sin(t * 0.15) * 14;
+    g.save(); g.globalAlpha = a;
+    const el = k.cover ? k.cover.el : null;
+    if (el) coverFit(g, el, (W - W * s) / 2 + dx, (H - H * s) / 2, W * s, H * s);
+    else g.drawImage(k.bg, 0, 0, W, H);
+    const P = k.pal.a, sh = g.createLinearGradient(0, 0, 0, H);
+    sh.addColorStop(0, "rgba(0,0,0,.30)");
+    sh.addColorStop(0.2, "rgba(0,0,0,.06)");
+    sh.addColorStop(0.42, "rgba(0,0,0,.12)");
+    sh.addColorStop(0.6, hsl(P.h, P.s * 0.4, 0.05, 0.62));
+    sh.addColorStop(0.8, hsl(P.h, P.s * 0.4, 0.04, 0.86));
+    sh.addColorStop(1, hsl(P.h, P.s * 0.4, 0.03, 0.95));
+    g.fillStyle = sh; g.fillRect(0, 0, W, H);
+    g.restore();
   }
 
   function cardTf(r) {
@@ -210,18 +222,26 @@
     const q = r - 1;
     return { x: 840 + q * 200, s: 0.78 - q * 0.1, a: 1 - q, rot: 0.055 + q * 0.03, dim: 0.42 };
   }
+  // Kart görselin kendi oranında (kırpılmadan tam görünür): en çok 560 geniş × 640 yüksek
+  function cardSize(k) {
+    const el = k.cover ? k.cover.el : k.ph, [sw, sh] = srcSize(el);
+    if (!sw || !sh) return [CS, CS];
+    const sc = Math.min(560 / sw, 640 / sh);
+    return [Math.round(sw * sc) + 24, Math.round(sh * sc) + 24];
+  }
   function drawCard(k, r, intro, pulse) {
     const T = cardTf(r), s = T.s * (r > -0.5 && r < 0.5 ? 1 + pulse : 1) * lerp(0.92, 1, intro);
     if (T.a <= 0.01) return;
+    const [cw, ch] = cardSize(k);
     g.save();
     g.translate(T.x, CY + (1 - intro) * 40); g.rotate(T.rot); g.scale(s, s);
     g.globalAlpha = T.a * intro;
-    g.shadowColor = "rgba(0,0,0,.5)"; g.shadowBlur = 80; g.shadowOffsetY = 34;
-    pill(-CS / 2, -CS / 2, CS, CS, 52); g.fillStyle = "#fff"; g.fill();
+    g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 80; g.shadowOffsetY = 34;
+    pill(-cw / 2, -ch / 2, cw, ch, 44); g.fillStyle = "#fff"; g.fill();
     g.shadowColor = "transparent";
-    pill(-CS / 2 + 14, -CS / 2 + 14, CS - 28, CS - 28, 40); g.clip();
-    coverFit(g, k.cover ? k.cover.el : k.ph, -CS / 2 + 14, -CS / 2 + 14, CS - 28, CS - 28);
-    if (T.dim > 0) { g.fillStyle = `rgba(0,0,0,${T.dim})`; g.fillRect(-CS / 2, -CS / 2, CS, CS); }
+    pill(-cw / 2 + 12, -ch / 2 + 12, cw - 24, ch - 24, 34); g.clip();
+    coverFit(g, k.cover ? k.cover.el : k.ph, -cw / 2 + 12, -ch / 2 + 12, cw - 24, ch - 24);
+    if (T.dim > 0) { g.fillStyle = `rgba(0,0,0,${T.dim})`; g.fillRect(-cw / 2, -ch / 2, cw, ch); }
     g.restore();
   }
 
@@ -261,9 +281,9 @@
     g.save(); g.globalAlpha = a; g.textAlign = "center"; g.textBaseline = "alphabetic";
     g.shadowColor = "rgba(0,0,0,.35)"; g.shadowBlur = 24;
     const title = upper(k.title || T("Adsız"));
-    fitFont(title, 800, 76, '"Bricolage Grotesque"', 900);
-    g.fillStyle = "#fff"; g.fillText(title, W / 2, 1192 + dy);
-    if (k.artist) { fitFont(k.artist, 500, 46, "Geist", 880); g.fillStyle = "rgba(255,255,255,.66)"; g.fillText(k.artist, W / 2, 1258 + dy); }
+    fitFont(title, 800, 60, '"Bricolage Grotesque"', 880);
+    g.fillStyle = "#fff"; g.fillText(title, W / 2, 1196 + dy);
+    if (k.artist) { fitFont(k.artist, 500, 36, "Geist", 860); g.fillStyle = "rgba(255,255,255,.66)"; g.fillText(k.artist, W / 2, 1250 + dy); }
     g.shadowColor = "transparent";
     // İlerleme çizgisi
     const x0 = 190, x1 = 890, py = 1352;
@@ -304,7 +324,7 @@
     let w = 0;
     for (const word of words) {
       const ww = g.measureText(word).width;
-      if (w + ww > 920 && lines[lines.length - 1].length) { lines.push([]); w = 0; }
+      if (w + ww > 820 && lines[lines.length - 1].length) { lines.push([]); w = 0; }
       lines[lines.length - 1].push({ word, ww }); w += ww + sp;
     }
     return { lines, sp };
@@ -313,8 +333,8 @@
     const list = phrases(tl), key = JSON.stringify(list) + BEATS.length;
     if (key === PHR.key) return PHR.list;
     PHR = { key, list: list.map((p) => {
-      let size = 92, lay;
-      do { lay = layoutPhrase(p, size); size -= 4; } while (lay.lines.length > 3 && size > 52);
+      let size = 68, lay;
+      do { lay = layoutPhrase(p, size); size -= 4; } while (lay.lines.length > 3 && size > 44);
       const n = lay.lines.reduce((acc, l) => acc + l.length, 0);
       return { ...p, size: size + 4, lay, times: wordTimes(n, p.t0) };
     }) };
@@ -354,7 +374,7 @@
   function drawBrand(t, intro, u) {
     const brand = $("#brand").value.trim();
     if (!brand) return;
-    const env = beatEnv(t), size = lerp(70, 188, u), y = lerp(1796, 1000, u), sc = 1 + env * lerp(0.035, 0.11, u);
+    const env = beatEnv(t), size = lerp(58, 168, u), y = lerp(1796, 1000, u), sc = 1 + env * lerp(0.035, 0.11, u);
     g.save(); g.globalAlpha = 0.95 * intro; g.textAlign = "center"; g.textBaseline = "middle";
     if (u > 0) {
       const r = g.createRadialGradient(W / 2, y, 0, W / 2, y, 520 + env * 90);
@@ -371,7 +391,7 @@
     // Marka altı: küçük, sade indirme çağrısı (ok simgesiyle)
     const sub = $("#sub").value.trim();
     if (!sub) return;
-    const fs2 = lerp(27, 40, u), sy = y + lerp(52, 126, u);
+    const fs2 = lerp(23, 34, u), sy = y + lerp(52, 126, u);
     g.save(); g.globalAlpha = lerp(0.72, 0.9, u) * intro; g.textAlign = "center"; g.textBaseline = "middle";
     g.font = `600 ${fs2}px Geist`;
     if (g.letterSpacing !== undefined) g.letterSpacing = `${(fs2 * 0.06).toFixed(1)}px`;
