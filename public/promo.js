@@ -217,17 +217,24 @@
     g.restore();
   }
 
+  // Kart konumu (r = kartın sırası − çalan konum): önde (0) ortada; arkadaki (|r| = 1) biraz sağda, küçük ve gölgeli.
+  // Geçişte giden kart sola kayıp arkaya yerleşir, gelen öne çıkar (kart karıştırma); daha uzaktakiler görünmez.
   function cardTf(r) {
-    if (r < 0) return { x: 540 + r * 760, s: 1 + r * 0.14, a: 1 + r, rot: r * 0.07, dim: 0 };
-    if (r <= 1) return { x: 540 + r * 300, s: 1 - r * 0.22, a: 1, rot: r * 0.055, dim: r * 0.42 };
-    const q = r - 1;
-    return { x: 840 + q * 200, s: 0.78 - q * 0.1, a: 1 - q, rot: 0.055 + q * 0.03, dim: 0.42 };
+    const d = Math.min(Math.abs(r), 1), arc = Math.sin(Math.PI * d);
+    return {
+      x: 540 + d * 150 + (r < 0 ? -arc * 250 : arc * 40),
+      y: -d * 26 - arc * 18,
+      s: 1 - d * 0.16 + (r < 0 ? arc * 0.03 : 0),
+      a: Math.abs(r) > 1 ? clamp(2 - Math.abs(r)) : 1,
+      rot: d * 0.06 + (r < 0 ? -arc * 0.05 : 0),
+      dim: d * 0.55,
+    };
   }
   // Kart görselin kendi oranında (kırpılmadan tam görünür): en çok 560 geniş × 640 yüksek
   function cardSize(k) {
     const el = k.cover ? k.cover.el : k.ph, [sw, sh] = srcSize(el);
     if (!sw || !sh) return [CS, CS];
-    const sc = Math.min(560 / sw, 640 / sh);
+    const sc = Math.min(440 / sw, 500 / sh); // çok büyük olmasın
     return [Math.round(sw * sc) + 24, Math.round(sh * sc) + 24];
   }
   function drawCard(k, r, intro, pulse) {
@@ -235,7 +242,7 @@
     if (T.a <= 0.01) return;
     const [cw, ch] = cardSize(k);
     g.save();
-    g.translate(T.x, CY + (1 - intro) * 40); g.rotate(T.rot); g.scale(s, s);
+    g.translate(T.x, CY + T.y + (1 - intro) * 40); g.rotate(T.rot); g.scale(s, s);
     g.globalAlpha = T.a * intro;
     g.shadowColor = "rgba(0,0,0,.55)"; g.shadowBlur = 80; g.shadowOffsetY = 34;
     pill(-cw / 2, -ch / 2, cw, ch, 44); g.fillStyle = "#fff"; g.fill();
@@ -442,11 +449,14 @@
     glow.addColorStop(0, hsl(pa.h, pa.s, pa.l, 0.05 + amp * 0.1)); glow.addColorStop(1, hsl(pa.h, pa.s, pa.l, 0));
     g.fillStyle = glow; g.fillRect(0, 0, W, H);
     if (P.playing) drawWords(t, pa, intro * fade, u, intro); else drawStatic(pa);
+    // Kart yığını: uzaktaki önce, çalan en son (en önde)
+    TL.map((_, j) => j).filter((j) => Math.abs(j - pos) < 2).sort((a, b) => Math.abs(b - pos) - Math.abs(a - pos))
+      .forEach((j) => drawCard(TL[j].k, j - pos, intro * fade, amp * 0.015));
     // Video kapaklar yalnız ekrandayken oynar (geçişte ikisi birden)
     TL.forEach((x, j) => {
       const v = x.k.cover && x.k.cover.type === "video" ? x.k.cover.el : null;
       if (!v) return;
-      const on = P.playing && Math.abs(j - pos) < 1;
+      const on = P.playing && Math.abs(j - pos) < 1.5;
       if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause();
     });
     const ia = clamp(1 - Math.abs(pos - n) * 2.4) * intro * fade;
