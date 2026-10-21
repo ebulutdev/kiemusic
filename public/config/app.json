@@ -298,5 +298,368 @@
    "voice-phrase": 0,
    "voice": 0
   }
+ },
+ "notify": {
+  "enabled": false,
+  "quietHours": [
+   11,
+   21
+  ],
+  "caps": {
+   "day": 1,
+   "week": 3
+  },
+  "templates": {
+   "tr": {
+    "_untitled": {
+     "title": "Şarkın",
+     "body": ""
+    },
+    "song_ready": {
+     "title": "Fırından taze çıktı 🔥",
+     "body": "{title} hazır, 2 versiyon seni bekliyor. Kulaklığını tak!"
+    },
+    "cover_ready": {
+     "title": "Cover'ın servise hazır 🎙️",
+     "body": "{title} senin melodinle yeniden pişti."
+    },
+    "mashup_ready": {
+     "title": "Mashup'ın karıştı 🌀",
+     "body": "{title}: vokal ve müzik kesitleri birleşti, dinlemeye hazır."
+    },
+    "extend_ready": {
+     "title": "Şarkın uzadı ⏩",
+     "body": "{title} kaldığı yerden devam ediyor, dinlemeye hazır."
+    },
+    "vocals_ready": {
+     "title": "Vokal eklendi 🎤",
+     "body": "{title} artık vokalli, hemen dinle."
+    },
+    "stems_ready": {
+     "title": "Kanallar ayrıldı 🎚️",
+     "body": "{title}: vokal ve enstrüman ayrı ayrı hazır."
+    },
+    "voice_ready": {
+     "title": "Sesin hazır 🗣️",
+     "body": "Kendi sesinle ilk şarkını pişirmeye ne dersin?"
+    },
+    "job_failed": {
+     "title": "Ocakta bir aksilik oldu ⚠️",
+     "body": "{title} tamamlanamadı, {credits} kredin iade edildi. Tek dokunuşla tekrar dene."
+    },
+    "credit_low": {
+     "title": "İlhamın yarıda kalmasın 🎵",
+     "body": "Kredin azaldı. Planını büyüterek üretmeye devam et."
+    },
+    "sub_renewed": {
+     "title": "Ocak yandı ⚡",
+     "body": "{credits} kredin yüklendi. Bu ay ne pişiriyoruz?"
+    },
+    "pay_failed": {
+     "title": "Aboneliğin yenilenemedi",
+     "body": "Kredilerin durmasın diye ödeme yöntemini kontrol et."
+    },
+    "gift_reminder": {
+     "title": "Hediye kredin seni bekliyor 🎁",
+     "body": "İlk şarkını henüz pişirmedin, 1 dakikada hazır."
+    },
+    "unplayed": {
+     "title": "Şarkını unuttun mu? 👀",
+     "body": "{title} pişti ama hiç dinlemedin. Belki aradığın hit odur."
+    },
+    "comeback3": {
+     "title": "Ritim seni çağırıyor 🎹",
+     "body": "Keşfet'te yeni tarzlar var, tek dokunuşla dene."
+    },
+    "comeback7": {
+     "title": "Stüdyo seni özledi",
+     "body": "Son şarkının tarzında yenisini pişirelim mi?"
+    },
+    "announce": {
+     "title": "{title}",
+     "body": "{text}"
+    }
+   },
+   "en": {
+    "_untitled": {
+     "title": "Your song",
+     "body": ""
+    },
+    "song_ready": {
+     "title": "Fresh out of the oven 🔥",
+     "body": "{title} is ready, 2 versions are waiting. Put your headphones on!"
+    },
+    "cover_ready": {
+     "title": "Your cover is served 🎙️",
+     "body": "{title} was cooked again with your melody."
+    },
+    "mashup_ready": {
+     "title": "Your mashup is mixed 🌀",
+     "body": "{title}: vocal and music chops are blended, ready to play."
+    },
+    "extend_ready": {
+     "title": "Your song got longer ⏩",
+     "body": "{title} picks up where it left off, ready to play."
+    },
+    "vocals_ready": {
+     "title": "Vocals added 🎤",
+     "body": "{title} now has vocals, listen now."
+    },
+    "stems_ready": {
+     "title": "Stems separated 🎚️",
+     "body": "{title}: vocals and instruments are ready separately."
+    },
+    "voice_ready": {
+     "title": "Your voice is ready 🗣️",
+     "body": "How about cooking your first song with your own voice?"
+    },
+    "job_failed": {
+     "title": "Something went wrong in the kitchen ⚠️",
+     "body": "{title} couldn't be finished, {credits} credits were refunded. Tap to try again."
+    },
+    "credit_low": {
+     "title": "Keep the inspiration going 🎵",
+     "body": "Your credits are running low. Upgrade your plan to keep creating."
+    },
+    "sub_renewed": {
+     "title": "The stove is on ⚡",
+     "body": "{credits} credits were added. What are we cooking this month?"
+    },
+    "pay_failed": {
+     "title": "Your subscription couldn't renew",
+     "body": "Check your payment method so your credits don't stop."
+    },
+    "gift_reminder": {
+     "title": "Your gift credits are waiting 🎁",
+     "body": "You haven't cooked your first song yet, it's ready in a minute."
+    },
+    "unplayed": {
+     "title": "Forgot your song? 👀",
+     "body": "{title} is ready but you haven't played it. It might be your hit."
+    },
+    "comeback3": {
+     "title": "The beat is calling 🎹",
+     "body": "New styles in Explore, try one with a tap."
+    },
+    "comeback7": {
+     "title": "The studio misses you",
+     "body": "Shall we cook a new one in your last song's style?"
+    },
+    "announce": {
+     "title": "{title}",
+     "body": "{text}"
+    }
+   },
+   "de": {
+    "_untitled": {
+     "title": "Dein Song",
+     "body": ""
+    },
+    "song_ready": {
+     "title": "Frisch aus dem Ofen 🔥",
+     "body": "{title} ist fertig, 2 Versionen warten auf dich. Kopfhörer auf!"
+    },
+    "cover_ready": {
+     "title": "Dein Cover ist serviert 🎙️",
+     "body": "{title} wurde mit deiner Melodie neu gekocht."
+    },
+    "mashup_ready": {
+     "title": "Dein Mashup ist gemischt 🌀",
+     "body": "{title}: Vocal- und Musikschnipsel sind vereint, bereit zum Anhören."
+    },
+    "extend_ready": {
+     "title": "Dein Song wurde verlängert ⏩",
+     "body": "{title} geht weiter, bereit zum Anhören."
+    },
+    "vocals_ready": {
+     "title": "Gesang hinzugefügt 🎤",
+     "body": "{title} hat jetzt Gesang, hör gleich rein."
+    },
+    "stems_ready": {
+     "title": "Spuren getrennt 🎚️",
+     "body": "{title}: Gesang und Instrumente sind getrennt bereit."
+    },
+    "voice_ready": {
+     "title": "Deine Stimme ist bereit 🗣️",
+     "body": "Wie wär's mit deinem ersten Song mit deiner eigenen Stimme?"
+    },
+    "job_failed": {
+     "title": "In der Küche ging etwas schief ⚠️",
+     "body": "{title} konnte nicht fertiggestellt werden, {credits} Credits wurden erstattet. Tippe, um es erneut zu versuchen."
+    },
+    "credit_low": {
+     "title": "Bleib inspiriert 🎵",
+     "body": "Deine Credits gehen zur Neige. Erweitere deinen Plan, um weiterzumachen."
+    },
+    "sub_renewed": {
+     "title": "Der Herd ist an ⚡",
+     "body": "{credits} Credits wurden gutgeschrieben. Was kochen wir diesen Monat?"
+    },
+    "pay_failed": {
+     "title": "Dein Abo konnte nicht verlängert werden",
+     "body": "Prüfe deine Zahlungsmethode, damit deine Credits nicht ausbleiben."
+    },
+    "gift_reminder": {
+     "title": "Deine Geschenk-Credits warten 🎁",
+     "body": "Du hast deinen ersten Song noch nicht gekocht, er ist in einer Minute fertig."
+    },
+    "unplayed": {
+     "title": "Song vergessen? 👀",
+     "body": "{title} ist fertig, aber du hast ihn noch nicht gehört. Vielleicht ist es dein Hit."
+    },
+    "comeback3": {
+     "title": "Der Beat ruft 🎹",
+     "body": "Neue Stile in Entdecken, probier einen mit einem Tipp."
+    },
+    "comeback7": {
+     "title": "Das Studio vermisst dich",
+     "body": "Sollen wir einen neuen Song im Stil deines letzten kochen?"
+    },
+    "announce": {
+     "title": "{title}",
+     "body": "{text}"
+    }
+   },
+   "pt": {
+    "_untitled": {
+     "title": "Sua música",
+     "body": ""
+    },
+    "song_ready": {
+     "title": "Saiu do forno 🔥",
+     "body": "{title} está pronta, 2 versões te esperam. Coloque os fones!"
+    },
+    "cover_ready": {
+     "title": "Seu cover está servido 🎙️",
+     "body": "{title} foi recriada com a sua melodia."
+    },
+    "mashup_ready": {
+     "title": "Seu mashup está mixado 🌀",
+     "body": "{title}: trechos de voz e música combinados, pronto para ouvir."
+    },
+    "extend_ready": {
+     "title": "Sua música ficou maior ⏩",
+     "body": "{title} continua de onde parou, pronta para ouvir."
+    },
+    "vocals_ready": {
+     "title": "Vocal adicionado 🎤",
+     "body": "{title} agora tem vocal, ouça agora."
+    },
+    "stems_ready": {
+     "title": "Faixas separadas 🎚️",
+     "body": "{title}: voz e instrumentos prontos separadamente."
+    },
+    "voice_ready": {
+     "title": "Sua voz está pronta 🗣️",
+     "body": "Que tal criar sua primeira música com a sua própria voz?"
+    },
+    "job_failed": {
+     "title": "Algo deu errado na cozinha ⚠️",
+     "body": "{title} não pôde ser concluída, {credits} créditos foram devolvidos. Toque para tentar de novo."
+    },
+    "credit_low": {
+     "title": "Não deixe a inspiração parar 🎵",
+     "body": "Seus créditos estão acabando. Melhore seu plano para continuar criando."
+    },
+    "sub_renewed": {
+     "title": "O fogão está aceso ⚡",
+     "body": "{credits} créditos foram adicionados. O que vamos cozinhar este mês?"
+    },
+    "pay_failed": {
+     "title": "Sua assinatura não foi renovada",
+     "body": "Verifique sua forma de pagamento para não ficar sem créditos."
+    },
+    "gift_reminder": {
+     "title": "Seus créditos de presente te esperam 🎁",
+     "body": "Você ainda não criou sua primeira música, fica pronta em um minuto."
+    },
+    "unplayed": {
+     "title": "Esqueceu sua música? 👀",
+     "body": "{title} está pronta, mas você ainda não ouviu. Pode ser o seu hit."
+    },
+    "comeback3": {
+     "title": "O ritmo está chamando 🎹",
+     "body": "Novos estilos em Explorar, experimente com um toque."
+    },
+    "comeback7": {
+     "title": "O estúdio sente sua falta",
+     "body": "Vamos criar uma nova no estilo da sua última música?"
+    },
+    "announce": {
+     "title": "{title}",
+     "body": "{text}"
+    }
+   },
+   "ja": {
+    "_untitled": {
+     "title": "あなたの曲",
+     "body": ""
+    },
+    "song_ready": {
+     "title": "焼きたてができました 🔥",
+     "body": "{title}が完成、2つのバージョンが待っています。ヘッドホンをどうぞ！"
+    },
+    "cover_ready": {
+     "title": "カバーができました 🎙️",
+     "body": "{title}があなたのメロディで新しく仕上がりました。"
+    },
+    "mashup_ready": {
+     "title": "マッシュアップ完成 🌀",
+     "body": "{title}：ボーカルと音楽の断片がミックスされ、再生できます。"
+    },
+    "extend_ready": {
+     "title": "曲が延長されました ⏩",
+     "body": "{title}の続きが完成、再生できます。"
+    },
+    "vocals_ready": {
+     "title": "ボーカルを追加しました 🎤",
+     "body": "{title}にボーカルが入りました。今すぐ聴いてみて。"
+    },
+    "stems_ready": {
+     "title": "パートを分離しました 🎚️",
+     "body": "{title}：ボーカルと楽器を別々に用意しました。"
+    },
+    "voice_ready": {
+     "title": "あなたの声の準備ができました 🗣️",
+     "body": "自分の声で最初の曲を作ってみませんか？"
+    },
+    "job_failed": {
+     "title": "キッチンで問題が発生しました ⚠️",
+     "body": "{title}を完成できませんでした。{credits}クレジットを返金しました。タップして再試行。"
+    },
+    "credit_low": {
+     "title": "インスピレーションを止めないで 🎵",
+     "body": "クレジットが残りわずかです。プランをアップグレードして制作を続けましょう。"
+    },
+    "sub_renewed": {
+     "title": "コンロに火が入りました ⚡",
+     "body": "{credits}クレジットが追加されました。今月は何を作りますか？"
+    },
+    "pay_failed": {
+     "title": "サブスクリプションを更新できませんでした",
+     "body": "クレジットが止まらないよう、お支払い方法をご確認ください。"
+    },
+    "gift_reminder": {
+     "title": "プレゼントのクレジットが待っています 🎁",
+     "body": "まだ最初の曲を作っていません。1分で完成します。"
+    },
+    "unplayed": {
+     "title": "曲を忘れていませんか？ 👀",
+     "body": "{title}が完成していますが、まだ聴いていません。ヒット曲かも。"
+    },
+    "comeback3": {
+     "title": "ビートが呼んでいます 🎹",
+     "body": "「探索」に新しいスタイルが登場。タップで試してみて。"
+    },
+    "comeback7": {
+     "title": "スタジオがあなたを待っています",
+     "body": "前回の曲のスタイルで新しい曲を作りましょうか？"
+    },
+    "announce": {
+     "title": "{title}",
+     "body": "{text}"
+    }
+   }
+  }
  }
 }

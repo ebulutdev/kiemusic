@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "../firebaseAdmin";
 import { path, type TaskDoc, type TaskResult, type TaskStatus, type TaskType } from "./schema";
 import { refundCredits } from "./users";
+import { notifyTask } from "../push";
 
 const now = () => FieldValue.serverTimestamp();
 const ref = (id: string) => adminDb().doc(path.task(id));
@@ -42,6 +43,8 @@ export async function updateTask(providerTaskId: string, patch: Partial<TaskDoc>
   const data: Record<string, unknown> = { ...patch, updatedAt: now() };
   if (patch.status === "COMPLETED") data.completedAt = now();
   await ref(providerTaskId).set(data, { merge: true });
+  // Webhook ve yedek sorgu aynı yoldan geçer → "hazır" bildirimi tek yerde (lib/push.ts; tek sefer, bayrak kapalıysa gönderilmez)
+  if (patch.status === "COMPLETED") await notifyTask(providerTaskId, "done");
 }
 
 export async function setResults(providerTaskId: string, status: TaskStatus, results: TaskResult[], callbackType?: string) {
@@ -62,6 +65,7 @@ export async function failTask(providerTaskId: string, code: string, message: st
     return doRefund ? { uid: t.userId, cost: t.cost } : null;
   });
   if (refund) await refundCredits(refund.uid, refund.cost);
+  await notifyTask(providerTaskId, "failed"); // "tamamlanamadı, kredin iade edildi"
 }
 
 /** Medya kopyalama işini sahiplen — eşzamanlı isteklerde yalnız biri kopyalar. */

@@ -106,6 +106,14 @@
     "Sesin sana ait olduğunu onayla": "Confirm that this is your own voice",
     "Bu kaydın haklarına sahibim ya da kullanma iznim var. Telif ve diğer haklardan doğan sorumluluk bana aittir.": "I own the rights to this recording or have permission to use it. I'm responsible for any copyright or other rights claims.",
     "Kaydın haklarına sahip olduğunu onayla": "Confirm that you have the rights to this recording",
+    // anlık bildirim izni (app.js pushAsk)
+    "Şarkın pişince haber verelim mi? 🔥": "Shall we let you know when your song is ready? 🔥",
+    "Şarkın yaklaşık 1 dakikada hazır olacak. Uygulamayı kapatsan bile hazır olunca telefonuna bildirim gönderelim.": "Your song will be ready in about a minute. Even if you close the app, we'll send a notification to your phone when it's ready.",
+    "Bildirimler kapalı. Şarkın hazır olduğunda haber alabilmen için Ayarlar'dan CookFire bildirimlerini aç.": "Notifications are off. Turn on CookFire notifications in Settings to hear when your song is ready.",
+    "Ayarlar'ı aç": "Open Settings",
+    "Haber ver": "Notify me",
+    "Şimdi değil": "Not now",
+    "Hazır olunca haber vereceğiz 🔥": "We'll let you know when it's ready 🔥",
     // analiz (vokal + müzik, kesit tekrarı)
     "Analiz": "Analyze", "Müzik": "Music", "Kesit tekrarı": "Chop repeat", "2 sn'de bir": "Every 2 s", "3 sn'de bir": "Every 3 s", "4 sn'de bir": "Every 4 s", "5 sn'de bir": "Every 5 s",
     "Gönderilecek ses": "Audio to send", "MP3 olarak indir": "Download as MP3", "MP3 hazırlanamadı": "Couldn't prepare the MP3", "Kopyalanan kesit süresi": "Copied chop length", "1 sn": "1 s", "2 sn": "2 s", "3 sn": "3 s", "4 sn": "4 s", "İkisi": "Both", "Vokal silindi": "Vocal deleted", "Müzik silindi": "Music deleted",

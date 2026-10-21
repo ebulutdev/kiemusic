@@ -62,6 +62,10 @@ export interface AppConfig {
   // Kâr analizi (admin paneli düzenler): uygulama kredisinin $ değeri, üretim servisi kredisinin $ maliyeti,
   // servis kredisi bilinmeyen görevler için işlem başına tahmini servis kredisi
   economics?: { usdPerCredit: number; kieUsdPerCredit: number; kieCreditsEstimate: Record<string, number> };
+  // Anlık bildirimler (lib/push.ts): enabled=false iken hiç gönderilmez · quietHours: hesap/kampanya bildirimleri yalnız
+  // kullanıcının yerel saatiyle [başlangıç, bitiş) arasında · caps: kampanya için günlük/haftalık üst sınır
+  // templates[dil][tür] = { title, body } — {title} {credits} değişkenleri; dil yoksa tr
+  notify?: NotifyConfig;
   catalog: {
     styles: string[];
     ideas: string[];
@@ -117,8 +121,27 @@ export interface CreditPeriod { start: number; end: number; grant: number }
 // Aktif abonelik — yalnız sunucu yazar (mağaza makbuzu doğrulandıktan sonra). expiresAt: mağazanın yenileme tarihi (ms)
 export interface UserPlan { id: string; credits: number; expiresAt: number; store?: "apple" | "google"; tx?: string }
 
+export type NotifyGroup = "studio" | "account" | "marketing";
+export interface NotifyConfig {
+  enabled: boolean;
+  quietHours?: [number, number];
+  caps?: { day: number; week: number };
+  templates?: Record<string, Record<string, { title: string; body: string }>>;
+}
+/** users/{uid}.push — cihaz anahtarları ve tercihler (yalnız sunucu yazar; /api/me) */
+export interface UserPush {
+  lang?: string;
+  tz?: string;
+  prefs?: Partial<Record<NotifyGroup, boolean>>;
+  tokens?: Record<string, { token: string; platform: "ios" | "android"; updatedAt: number }>; // anahtar: token'ın SHA-256 özeti (16)
+  log?: { marketingAt?: number[]; lowCreditPeriod?: number };
+  inbox?: { type: string; title: string; body: string; taskId?: string; at: number }[]; // son 20
+}
+
 export interface UserDoc {
   credits: number;
+  push?: UserPush;
+  lastSeen?: number; // her açılışta /api/me yazar (geri kazanım bildirimleri)
   period?: CreditPeriod;
   plan?: UserPlan | null;
   guest?: boolean;
@@ -158,6 +181,7 @@ export interface TaskDoc {
   taskType: TaskType;
   status: TaskStatus;
   callbackType?: string | null;
+  notified?: boolean; // tamamlandı / başarısız bildirimi gönderildi (transaction ile tek sefer)
   cost: number;
   refunded: boolean;
   kieCredits?: number; // üretim servisinin bu görev için gerçekten düştüğü kredi (recordInfo.creditsConsumed)

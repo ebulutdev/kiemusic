@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireUser, errorResponse } from "@/lib/auth";
 import { ensureUser } from "@/lib/data/users";
+import { adminDb } from "@/lib/firebaseAdmin";
+import { path } from "@/lib/data/schema";
+import { registerDevice, removeDevice, setPrefs } from "@/lib/push";
+
+// Bildirim cihazı / tercihleri (isteğe bağlı): { token, platform, lang, tz } kaydet · { remove: token } sil · { prefs }
+const Push = z.object({
+  token: z.string().min(20).max(4096).optional(),
+  platform: z.enum(["ios", "android"]).optional(),
+  lang: z.string().max(5).optional(),
+  tz: z.string().max(64).optional(),
+  remove: z.string().min(20).max(4096).optional(),
+  prefs: z.object({ studio: z.boolean().optional(), account: z.boolean().optional(), marketing: z.boolean().optional() }).optional(),
+});
 
 // Kullanıcı belgesini hazırlar (uygulama her açılışta 1 kez): misafirin kredisi 0; hesabın ilk dönemi başlangıç
 // hediyesiyle açılır, dönem bitince bakiye sıfırlanır / aboneliğe göre yenilenir (users/{uid}).
@@ -10,6 +24,17 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const accepted = typeof body?.terms === "string" ? body.terms.slice(0, 40) : undefined;
     const state = await ensureUser(user.uid, user.anon, user.verified, accepted, user.giftId);
+    if (!user.anon) {
+      const p = Push.safeParse(body?.push ?? {});
+      if (p.success) {
+        const d = p.data;
+        if (d.remove) await removeDevice(user.uid, d.remove);
+        if (d.token && d.platform) await registerDevice(user.uid, { token: d.token, platform: d.platform, lang: d.lang, tz: d.tz });
+        if (d.prefs) await setPrefs(user.uid, d.prefs);
+      }
+      // Son görülme: geri kazanım bildirimleri (3 / 7 gün) için
+      await adminDb().doc(path.user(user.uid)).set({ lastSeen: Date.now() }, { merge: true }).catch(() => {});
+    }
     return NextResponse.json({ success: true, uid: user.uid, ...state });
   } catch (error) {
     return errorResponse(error, "ME_ERROR");

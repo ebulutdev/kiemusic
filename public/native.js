@@ -126,11 +126,68 @@
   // Uygulama açılınca (hesapla giriş yapılmışsa) etkin abonelik sunucuya bildirilir → yenilenen ay kredisi yüklenir
   if (IAP) window.addEventListener("fb-auth", (e) => { if (e.detail && !e.detail.anon) setTimeout(() => sendActive().catch(() => {}), 1500); });
 
+  // ── Anlık bildirimler (@capacitor-firebase/messaging → FCM / APNs)
+  //   İzin app.js'teki ara karttan sonra istenir; token /api/me'ye kaydedilir (sunucu: lib/push.ts).
+  //   Bildirime dokunma soğuk açılışta da gelir: hedef window.__pendingPush'ta bekler, app.js kütüphane ve şarkı hazır olunca açar.
+  //   Uygulama açıkken sistem bildirimi gösterilmez (capacitor.config.ts presentationOptions: []); görev sorgusu hemen tetiklenir.
+  const FM = plug("FirebaseMessaging");
+  if (FM) {
+    FM.addListener("notificationActionPerformed", (e) => {
+      const d = (e && e.notification && e.notification.data) || {};
+      window.__pendingPush = { taskId: d.taskId || "", kind: d.kind || "", at: Date.now() };
+      window.dispatchEvent(new CustomEvent("cr-push-tap", { detail: window.__pendingPush }));
+    }).catch?.(() => {});
+    FM.addListener("notificationReceived", (e) => {
+      const d = (e && e.notification && e.notification.data) || {};
+      window.dispatchEvent(new CustomEvent("cr-push-receive", { detail: d }));
+    }).catch?.(() => {});
+    FM.addListener("tokenReceived", () => { push.sync().catch(() => {}); }).catch?.(() => {});
+    if (platform === "android") {
+      // Kanallar oluşturulurken ses bağlanır (sonradan değişmez): Stüdyo = özel "pişti" sesi
+      quiet(FM.createChannel({ id: "studio", name: "Stüdyo", description: "Şarkın hazır olunca", importance: 4, sound: "cookfire_ready", visibility: 1, vibration: true }));
+      quiet(FM.createChannel({ id: "account", name: "Hesap", description: "Kredi ve abonelik", importance: 3 }));
+      quiet(FM.createChannel({ id: "marketing", name: "Kampanya", description: "Yeni tarzlar ve öneriler", importance: 2 }));
+    }
+  }
+  let lastToken = "";
+  async function me(pushBody) {
+    const h = window.FB && window.FB.headers ? await window.FB.headers({ "Content-Type": "application/json" }) : null;
+    if (!h || !h.Authorization) return;
+    await fetch(api("/api/me"), { method: "POST", headers: h, body: JSON.stringify({ push: pushBody }) });
+  }
+  const push = {
+    available: !!FM,
+    async status() { if (!FM) return "unavailable"; const r = await FM.checkPermissions(); return r.receive; }, // granted | denied | prompt
+    async request() { if (!FM) return "unavailable"; const r = await FM.requestPermissions(); return r.receive; },
+    // Token'ı (izin varsa) sunucuya kaydet: dil + saat dilimi ile — açılışta ve token yenilenince
+    async sync() {
+      if (!FM || (await push.status()) !== "granted") return false;
+      const { token } = await FM.getToken();
+      if (!token) return false;
+      lastToken = token;
+      const lang = (window.I18N && window.I18N.get && window.I18N.get()) || "tr";
+      let tz = ""; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) {}
+      await me({ token, platform, lang, tz });
+      return true;
+    },
+    // Çıkış: bu cihazın anahtarını sunucudan ve FCM'den sil · hesap silme: { server: false } (belge zaten silindi; /api/me yeniden açmasın)
+    async unregister({ server = true } = {}) {
+      if (!FM) return;
+      if (server) try { const t = lastToken || (await FM.getToken()).token; if (t) await me({ remove: t }); } catch (e) {}
+      quiet(FM.deleteToken());
+    },
+    setPrefs: (prefs) => me({ prefs }),
+    // Sistem izni reddedildiyse: uygulamanın ayar sayfası (iOS) — Android'de kullanıcı Ayarlar › Uygulamalar'dan açar
+    openSettings() { if (platform === "ios") location.href = "app-settings:"; },
+  };
+  if (FM) window.addEventListener("fb-auth", (e) => { if (e.detail && !e.detail.anon) setTimeout(() => push.sync().catch(() => {}), 2500); });
+
   window.CR = {
     native,
     platform,
     api,
     media, save, share,
     ...iap,
+    push,
   };
 })();

@@ -8,6 +8,7 @@ import { cert, getApps, initializeApp, applicationDefault, type App } from "fire
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
+import { getMessaging } from "firebase-admin/messaging";
 
 let app: App | null | undefined;
 let firestore: Firestore | undefined;
@@ -49,6 +50,7 @@ function need(): App {
 
 export const adminAuth = () => getAuth(need());
 export const adminBucket = () => getStorage(need()).bucket();
+export const adminMessaging = () => getMessaging(need()); // anlık bildirim (FCM → APNs / Android) — lib/push.ts
 // Firestore örneği uygulama başına tektir; Next her rota paketinde bu modülü ayrı yükleyebildiği için
 // settings() yalnız bir kez çağrılmalı → işaret globalThis'te tutulur.
 const G = globalThis as unknown as { __sfFirestoreReady?: boolean };

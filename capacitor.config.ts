@@ -26,6 +26,10 @@ const config: CapacitorConfig = {
       skipNativeAuth: true,
       providers: ["google.com", "apple.com"],
     },
+    // Anlık bildirimler (lib/push.ts → FCM): uygulama açıkken sistem bildirimi gösterilmez, uygulama içi toast çıkar
+    FirebaseMessaging: {
+      presentationOptions: [],
+    },
   },
 };
 

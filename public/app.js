@@ -439,8 +439,38 @@ function spawn(base,count,cost,req,kind){
   const out=bases.map((b,k)=>{const i=k+1,t=Object.assign({id:uid(),seed:hash(b.title+b.style+now+i+Math.random()),version:i,status:'gen',stage:0,phase:'QUEUED',phaseAt:now,created:now,like:0,model:S.set.model,gender:S.gender,lyrics:'',duration:150},b);if(b.seedFn)t.seed=b.seedFn(i);delete t.seedFn;return t});
   S.lib.unshift(...out.slice().reverse());save();renderAll();
   runLive(out,req,cost,kind);
+  setTimeout(pushAsk,1400);
   return out;
 }
+/* ---------- anlık bildirimler (public/native.js → CR.push · sunucu lib/push.ts) ---------- */
+// İzin: üretimden sonra kendi kartımız. "Şimdi değil" → 3 gün ya da 3 üretim sonra bir kez daha (en fazla 2 kez);
+// sistem izni reddedildiyse kart "Ayarlar'ı aç" der. İzin varsa token sessizce eşitlenir.
+async function pushAsk(){const P=window.CR&&CR.push;if(!P||!P.available||isGuest())return;
+  let st;try{st=await P.status()}catch(e){return}
+  if(st==='granted'){P.sync().catch(()=>{});return}
+  const s=store.get('sf2_push',{n:0,at:0,asked:0});s.n++;store.set('sf2_push',s);
+  if(s.asked>=2||(s.asked===1&&s.n<3&&Date.now()-s.at<3*864e5))return;
+  const denied=st==='denied';
+  openSheet(`<div class="busy"><h3>Şarkın pişince haber verelim mi? 🔥</h3><p>${denied?"Bildirimler kapalı. Şarkın hazır olduğunda haber alabilmen için Ayarlar'dan CookFire bildirimlerini aç.":"Şarkın yaklaşık 1 dakikada hazır olacak. Uygulamayı kapatsan bile hazır olunca telefonuna bildirim gönderelim."}</p>
+    <button class="primary busy-ok" type="button" data-b="ok"><span>${denied?"Ayarlar'ı aç":'Haber ver'}</span></button>
+    <button class="busy-rep" type="button" data-b="no">Şimdi değil</button></div>`);
+  const sh=$('#sheet'),later=()=>{s.asked++;s.at=Date.now();s.n=0;store.set('sf2_push',s);closeLayer(sh)};
+  sh.querySelector('[data-b=no]').onclick=later;
+  sh.querySelector('[data-b=ok]').onclick=async()=>{
+    if(denied){P.openSettings();later();return}
+    try{const r=await P.request();closeLayer(sh);if(r==='granted'){await P.sync();toast('Hazır olunca haber vereceğiz 🔥')}else later()}catch(e){later()}}}
+// Bildirime dokunma (soğuk açılış dahil): hedef bekler; kütüphanede şarkı bulununca açılır, sesi hazırsa çalar
+function pushRoute(){const p=window.__pendingPush;if(!p)return;
+  if(p.kind==='credit_low'||p.kind==='sub_renewed'||p.kind==='pay_failed'){window.__pendingPush=null;if(window.Credits)Credits.open('manual');return}
+  if(!p.taskId){window.__pendingPush=null;if(S.view!=='library')go('library');return}
+  const ts=S.lib.filter(t=>t.providerTaskId===p.taskId||t.taskId===p.taskId).sort((a,b)=>(a.version||0)-(b.version||0));
+  if(!ts.length){if(Date.now()-p.at>30e3){window.__pendingPush=null;go('library')}return}   // kütüphane henüz eşitlenmedi → bekle
+  const t=ts.find(x=>x.status==='ready'&&x.audioUrl);
+  if(!t){if(!p.shown){p.shown=1;if(S.view!=='library')go('library');toast('Hazırlanıyor…')}return}   // ses görev sorgusuyla dolunca çalar
+  window.__pendingPush=null;if(S.view!=='library')go('library');play(t.id,true,libItems().map(x=>x.id),'Kütüphane')}
+addEventListener('cr-push-tap',()=>setTimeout(pushRoute,300));
+// Uygulama açıkken gelen bildirim: görev sorgusunu beklemeden hemen sor → toast ve kütüphane anında güncellenir
+addEventListener('cr-push-receive',()=>POLLS.forEach(p=>{clearTimeout(p.timer);p.timer=setTimeout(p.step,200)}));
 /* ---------- canlı üretim (sunucu üzerinden) ---------- */
 // İyimser başlangıç: sağlık kontrolü bitmeden dokunulursa engelleme (sunucu kapalıysa istek hata verir, kredi iade edilir)
 const API={live:true};
@@ -659,7 +689,7 @@ $('#q').addEventListener('input',e=>{S.q=e.target.value;renderLib()});
 // sadece durum değişince satırları güncelle (yeniden çizmeden → kapaklar titremez)
 function markRows(){$$('#libList [data-id],#feed [data-id]').forEach(el=>{const cur=!!(P.cur&&P.cur.id===el.dataset.id);el.classList.toggle('is-cur',cur);
   const o=el.querySelector('.thumb-ov,.gc-play');if(o&&!el.classList.contains('is-gen')){const want=cur&&P.playing?'pause':'play';if(o.dataset.ic!==want){o.innerHTML=ic(want,20);o.dataset.ic=want}}})}
-function renderAll(){renderFeed();if(S.view==='library')renderLib();if(S.view==='profile')renderProfile();$$('.cr').forEach(c=>c.textContent=S.set.credits);syncMini()}
+function renderAll(){renderFeed();if(S.view==='library')renderLib();if(S.view==='profile')renderProfile();$$('.cr').forEach(c=>c.textContent=S.set.credits);syncMini();if(window.__pendingPush)pushRoute()}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const s=a.closest('[data-id]');if(!s||!s.closest('#libList,#feed'))return;const t=S.lib.find(x=>x.id===s.dataset.id);if(!t)return;
   const list=s.closest('#libList,#feed'),ids=list.id==='libList'?libItems().map(x=>x.id):[...list.querySelectorAll('[data-id]')].map(x=>x.dataset.id),name=list.id==='feed'?'Son üretilenler':S.filter==='like'?'Beğenilen şarkılar':'Kütüphane';
   if(a.dataset.act==='play')play(t.id,false,ids,name);if(a.dataset.act==='open')play(t.id,true,ids,name);if(a.dataset.act==='more')openMenu(t.id)});

@@ -349,6 +349,7 @@ const authApi = {
   async signOut() {
     clearTimeout(timer);
     await flush().catch(() => {}); // bekleyen değişiklikleri kaybetme
+    await window.CR?.push?.unregister().catch(() => {}); // bu cihaz artık bu hesabın bildirimlerini almasın (oturum kapanmadan)
     stopSync();
     uid = null;
     try { localStorage.removeItem(GUEST_KEY); } catch {}
@@ -364,6 +365,7 @@ const authApi = {
     const r = await fetch(window.CR ? window.CR.api("/api/account") : "/api/account", { method: "DELETE", headers: { Authorization: "Bearer " + (await u.getIdToken(true)) } });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || j.success === false) throw new Error(j.error || "Hesap silinemedi. Biraz sonra tekrar dene.");
+    window.CR?.push?.unregister({ server: false }).catch(() => {}); // sunucu belgesi zaten silindi; yalnız FCM anahtarını geçersiz kıl
     clearTimeout(timer);
     stopSync();
     uid = null;
