@@ -50,4 +50,12 @@ await build({
   legalComments: "inline", logLevel: "warning",
 });
 copyFileSync(join(root, "node_modules/@breezystack/lamejs/LICENSE"), join(pub, "vendor/LICENSE-lamejs.txt"));
-console.log("vendor: public/vendor/firebase.js + lame.js + public/fonts hazır");
+
+// 4) Capacitor çekirdeği → klasik betik (window.Capacitor.registerPlugin). index.html'de ilk yüklenir.
+await build({
+  entryPoints: [join(root, "scripts/capacitor-entry.js")],
+  outfile: join(pub, "vendor/capacitor.js"),
+  bundle: true, format: "iife", globalName: "CapacitorCore", minify: true, target: ["es2020", "safari15"],
+  legalComments: "none", logLevel: "warning",
+});
+console.log("vendor: public/vendor/firebase.js + lame.js + capacitor.js + public/fonts hazır");

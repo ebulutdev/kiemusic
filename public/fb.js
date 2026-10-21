@@ -287,8 +287,9 @@ async function viaProvider(provider) {
 }
 
 // ── Mobil: yerel giriş → kimlik bilgisi → bu katmanda oturum ──
-// Eklenti JS paketi gömülmez: yerel köprüden registerPlugin ile alınır (yapılandırma: capacitor.config.ts › FirebaseAuthentication)
-const NativeAuth = NATIVE && window.Capacitor.registerPlugin ? window.Capacitor.registerPlugin("FirebaseAuthentication") : null;
+// Eklenti JS paketi gömülmez: Capacitor çekirdeğinin (vendor/capacitor.js) registerPlugin'i ile alınır (yapılandırma: capacitor.config.ts › FirebaseAuthentication)
+const CAP = window.Capacitor;
+const NativeAuth = !NATIVE ? null : (CAP.Plugins && CAP.Plugins.FirebaseAuthentication) || (CAP.registerPlugin ? CAP.registerPlugin("FirebaseAuthentication") : null);
 async function nativeCredential(kind) {
   if (kind === "google") {
     const r = await NativeAuth.signInWithGoogle();

@@ -9,7 +9,9 @@
 (() => {
   const C = window.Capacitor;
   const native = !!(C && C.isNativePlatform && C.isNativePlatform());
-  const plug = (n) => (native && C.Plugins ? C.Plugins[n] : null);
+  // Eklenti vekili: Capacitor çekirdeği (vendor/capacitor.js) registerPlugin ile verir; bir kez kaydedilir, sonra önbellekten
+  const PL = {};
+  const plug = (n) => (!native ? null : PL[n] || (PL[n] = (C.Plugins && C.Plugins[n]) || (C.registerPlugin ? C.registerPlugin(n) : null)));
   const base = ((window.CR_ENV && window.CR_ENV.apiBase) || "").replace(/\/+$/, "");
   const quiet = (p) => { if (p && p.catch) p.catch(() => {}); };
 
