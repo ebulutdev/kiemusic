@@ -14,3 +14,6 @@ firebase-service-account*.json
 
 # Mobil paket: public/ kopyası (npm run mobile:build üretir)
 www/
+
+# graphify bilgi grafiği (yerel olarak üretilir: graphify update .)
+graphify-out/

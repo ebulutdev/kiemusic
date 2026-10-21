@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "../firebaseAdmin";
-import { path, type AppConfig, type CreditPeriod, type UserDoc, type UserPlan, type PersonaDoc, type VoiceDoc } from "./schema";
+import { COL, path, type AppConfig, type CreditPeriod, type UserDoc, type UserPlan, type PersonaDoc, type VoiceDoc } from "./schema";
 import { getConfig } from "./config";
 
 export class InsufficientCredits extends Error {
@@ -26,18 +26,20 @@ type Doc = Partial<UserDoc>;
 
 /**
  * Aylık kredi dönemi (saf fonksiyon). Değişiklik gerekmiyorsa null.
- *  · İlk dönem: yeni hesap (ya da misafirken 0'da tutulan) başlangıç hediyesini alır; eski hesabın bakiyesi korunur.
+ *  · İlk dönem: yeni hesap (daha önce başlangıç hediyesi almadıysa: giftClaimed=false) ömür boyu 1 kez başlangıç hediyesini alır.
  *  · Dönem bitti: aktif abonelik → bakiye plan kredisine sıfırlanır, dönem mağazanın yenileme tarihinde biter;
- *    abonelik yok → bakiye freeMonthly'ye (varsayılan 0) sıfırlanır. Kullanılmayan kredi devretmez.
+ *    abonelik yok → bakiye 0'a (freeMonthly=0) düşer ve ücretsiz hesaplara bir daha aylık kredi verilmez.
  */
-export function settlePeriod(d: Doc, p: AppConfig["pricing"], t = Date.now()): { credits: number; period: CreditPeriod } | null {
+export function settlePeriod(d: Doc, p: AppConfig["pricing"], t = Date.now(), giftClaimed = false): { credits: number; period: CreditPeriod } | null {
   const span = (p.periodDays || 30) * DAY;
   if (!d.period) {
-    const credits = typeof d.credits !== "number" || d.guest || d.unverified ? p.startCredits : d.credits;
-    return { credits, period: { start: t, end: t + span, grant: Math.max(credits, p.startCredits) } };
+    const start = giftClaimed ? 0 : p.startCredits;
+    const credits = typeof d.credits !== "number" || d.guest || d.unverified ? start : d.credits;
+    return { credits, period: { start: t, end: t + span, grant: Math.max(credits, start) } };
   }
   if (t < d.period.end) return null;
   const plan = d.plan && d.plan.expiresAt > t ? d.plan : null;
+  if (!plan && (p.freeMonthly || 0) === 0 && d.credits === 0) return null;
   const credits = plan ? plan.credits : p.freeMonthly || 0;
   return { credits, period: { start: t, end: plan ? plan.expiresAt : t + span, grant: credits } };
 }
@@ -47,9 +49,9 @@ export interface CreditState { credits: number; period: CreditPeriod | null; pla
 /**
  * Kullanıcı belgesini hazırlar, kredi durumunu döner (uygulama her açılışta 1 kez çağırır → dönem sıfırlaması burada).
  *  · Misafir (anonim): kredi her zaman 0 (guest: true işaretlenir).
- *  · Hesap: settlePeriod — ilk dönem hediyesi / dönem sonu sıfırlama.
+ *  · Hesap: settlePeriod — Apple ID / Google kimliği başına ömür boyu yalnız 1 kez başlangıç hediyesi (iap/gift_<sha256>).
  */
-export async function ensureUser(uid: string, anon = false, verified = true, acceptedTerms?: string): Promise<CreditState & { termsOk: boolean }> {
+export async function ensureUser(uid: string, anon = false, verified = true, acceptedTerms?: string, giftId?: string): Promise<CreditState & { termsOk: boolean }> {
   const { pricing, legal } = await getConfig();
   return adminDb().runTransaction(async (tx) => {
     const ref = userRef(uid);
@@ -65,7 +67,14 @@ export async function ensureUser(uid: string, anon = false, verified = true, acc
       if (d.credits !== 0 || !d.unverified) tx.set(ref, { credits: 0, unverified: true, guest: FieldValue.delete(), updatedAt: now(), ...created }, { merge: true });
       return { credits: 0, period: null, plan: null, termsOk: false };
     }
-    const patch = settlePeriod(d, pricing);
+    let giftClaimed = false;
+    const giftRef = !d.period && giftId ? adminDb().collection(COL.iap).doc(giftId) : null;
+    if (giftRef) {
+      const gSnap = await tx.get(giftRef);
+      giftClaimed = gSnap.exists;
+    }
+    const patch = settlePeriod(d, pricing, Date.now(), giftClaimed);
+    if (giftRef && !giftClaimed) tx.set(giftRef, { store: "gift", at: Date.now() });
     // Kabul kaydı: istemci yalnız kullanıcı kutuyu işaretleyince / "Kabul ediyorum"a basınca sürümü gönderir; sunucu SÜRÜMÜ güncel yayınla karşılaştırıp
     // kanıt olarak yazar (users/{uid}.terms). Eski kabul (başka sürüm) güncel sayılmaz.
     const cur = legal?.version ?? null;
@@ -85,7 +94,7 @@ export async function chargeCredits(uid: string, amount: number, verified = true
     if (legal?.version && d.terms?.version !== legal.version) throw new TermsRequired();
     // Yalnız hesaplar harcar (requireAccount) → misafirken kalan guest işareti hesabın ilk dönemini başlatır
     if (!verified && !d.period) throw new TrustedLoginRequired(); // Apple / Google ile bağlı olmayan hesap harcayamaz
-    const patch = settlePeriod(d, pricing);
+    const patch = settlePeriod(d, pricing, Date.now(), true);
     const credits = patch ? patch.credits : d.credits ?? 0;
     if (credits < amount) throw new InsufficientCredits();
     const clear = { ...(d.guest ? { guest: FieldValue.delete() } : {}), ...(d.unverified ? { unverified: FieldValue.delete() } : {}) };

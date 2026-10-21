@@ -47,9 +47,9 @@
     const grant = guest ? cfg.startCredits : Math.max((pd && pd.grant) || 0, credits);
     const pct = grant ? Math.max(0, Math.min(100, (credits / grant) * 100)) : 0;
     let meta = "";
-    if (!guest && pd && pd.end) {
-      const d = Math.ceil((pd.end - Date.now()) / DAY), w = plan ? "yenilenir" : "sıfırlanır";
-      meta = d <= 0 ? "Bugün " + w : d === 1 ? "Yarın " + w : `${d} gün sonra ${w}`;
+    if (!guest && plan && pd && pd.end) {
+      const d = Math.ceil((pd.end - Date.now()) / DAY);
+      meta = d <= 0 ? "Bugün yenilenir" : d === 1 ? "Yarın yenilenir" : `${d} gün sonra yenilenir`;
     }
     return { guest, credits, grant, pct, plan, name: plan ? (planOf(plan.id) || {}).name || "Plan" : "Ücretsiz", meta, start: cfg.startCredits };
   }

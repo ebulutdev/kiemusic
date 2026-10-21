@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { adminAuth, FirebaseNotConfigured } from "./firebaseAdmin";
 import { InsufficientCredits, TrustedLoginRequired, QuotaExceeded, TermsRequired } from "./data/users";
 import { ProviderBusy, KieUserError } from "./kie";
@@ -10,8 +11,8 @@ export class HttpError extends Error {
 }
 
 // verified: Apple ya da Google ile bağlı hesap (sağlayıcı e-postayı doğrulamış olur) → başlangıç hediyesi için şart.
-// Uygulamada e-posta / şifre girişi yok; Firebase'de açık kalsa bile o hesaplar hediye alamaz (rastgele adresle kredi toplanamaz).
-export type User = { uid: string; anon: boolean; verified: boolean };
+// giftId: Apple/Google benzersiz kimliğinin tek yönlü SHA-256 özeti → hesap silinip yeniden açılsa bile başlangıç hediyesi ömür boyu 1 kez verilir.
+export type User = { uid: string; anon: boolean; verified: boolean; giftId: string };
 
 /** İstekteki Firebase ID token'ını doğrular (Authorization: Bearer <idToken>). */
 export async function requireUser(req: Request): Promise<User> {
@@ -26,10 +27,14 @@ export async function requireUser(req: Request): Promise<User> {
     throw new HttpError(401, "Oturum geçersiz, uygulamayı yeniden açın.");
   }
   const provider = decoded.firebase?.sign_in_provider;
+  const ids = decoded.firebase?.identities || {};
+  const rawKey = ids["apple.com"]?.[0] ? `apple:${ids["apple.com"][0]}` : ids["google.com"]?.[0] ? `google:${ids["google.com"][0]}` : decoded.email ? `email:${decoded.email.toLowerCase()}` : `uid:${decoded.uid}`;
+  const giftId = "gift_" + createHash("sha256").update(rawKey).digest("hex").slice(0, 40);
   return {
     uid: decoded.uid,
     anon: provider === "anonymous",
-    verified: provider === "google.com" || provider === "apple.com" || !!(decoded.firebase?.identities?.["google.com"] || decoded.firebase?.identities?.["apple.com"]),
+    verified: provider === "google.com" || provider === "apple.com" || !!(ids["apple.com"] || ids["google.com"]),
+    giftId,
   };
 }
 
