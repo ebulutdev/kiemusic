@@ -1,60 +1,69 @@
-# CookFire · Yapılacaklar listesi
+# CookFire · Yapılacaklar ve Yayın Durumu (Claude / IDE Ortak Notu)
 
-Son güncelleme: 17 Ekim 2026. Bitenleri `[x]` yap. "Sıradaki" bölümünü tek tek birlikte yapacağız.
-
----
-
-## A. Senin yapacakların (benim yapamadıklarım)
-
-- [ ] **1. Apple girişini Firebase'de aç (zorunlu).** Firebase'de Apple sağlayıcısı yapılandırılmamış; Apple düğmesi şu an web'de de çalışmıyor.
-  - Apple Developer hesabında bir **Services ID** ve bir **Sign in with Apple anahtarı (.p8)** oluştur.
-  - Firebase Console › Authentication › Sign-in method › **Apple**: etkinleştir; Services ID, Team ID, Key ID ve anahtarı gir.
-- [ ] **2. Xcode'da imzalama ekibini seç.** `npm run mobile:ios` ile aç, Signing bölümünden ekibini seç. Bu adım "Sign in with Apple" yetkisini Apple tarafına da kaydeder. iOS'u Windows'ta derleyemediğim için sen derleyip denemelisin.
-- [ ] **3. Android yayınından önce:** yayın anahtarının ve Google Play imza anahtarının SHA-1 parmak izlerini Firebase'deki Android uygulamasına ekle, sonra `google-services.json` dosyasını yeniden indir. Yoksa Play'den inen uygulamada Google girişi çalışmaz.
-- [ ] **4. Firebase Console › Authentication › Sign-in method › Email/Password** yöntemini kapat (sunucu bu hesaplara zaten kredi vermiyor; kapatınca hiç açılamazlar).
-- [ ] **5. Mağaza abonelik ürünlerini aç:** App Store Connect ve Google Play'de aynı abonelik grubunda dört aylık ürün: `starter_monthly` (₺99 · 150 kredi), `plus_monthly` (₺249 · 420), `pro_monthly` (₺499 · 860), `max_monthly` (₺799 · 1425).
-- [ ] **6. Gizlilik politikası adresini mağazalara gir:** `https://kiemusic--rapper-fcc44.us-east4.hosted.app/privacy` (App Store Connect + Play Console). Play'de "Data safety", App Store'da "App Privacy" formlarını doldur.
-- [ ] **7. İletişim e-postasını yaz:** `public/config/app.json` › `legal.contact` (boşsa sayfalarda "yakında yayınlanacak" yazıyor) → ardından `npm run db:seed`.
-- [ ] **8. Veri sorumlusunun kimliğini belirle:** KVKK, kişi ya da şirket adı ister; yalnızca "CookFire" yetmeyebilir. Yasal metinleri yayından önce bir avukata göster.
-- [ ] **9. Canlı yayın gizlileri (App Hosting):** `kie-api-key` değerinin dolu olduğunu doğrula; `kie-webhook-hmac-key` oluştur ve backend `kiemusic` için erişim ver. Eksikse sonuç bildirimleri reddedilir.
-- [ ] **11. Eski Firebase uygulamalarını sil:** Paket kimliği `com.emircanbulut.cookfire` oldu; yeni uygulamalar CookFire iOS / CookFire Android. Firebase Console › Proje ayarları › Your apps › **CookRapper iOS** ve **CookRapper Android** → Remove this app (geri alınamaz).
-- [ ] **10. KIE anahtarını yenile:** anahtar sohbette paylaşıldı; panelden yeni anahtar üret, gizliyi güncelle.
+Son güncelleme: **19 Ekim 2026**.
 
 ---
 
-## B. Açıkta kalan sorunlar / sorular (cevap ya da karar bekliyor)
+## 1. Tamamlananlar (Kod + Bulut Panelleri)
 
-- [ ] **B1. Commit ve push bekliyor.** Bugünkü tüm işler (mashup, Uzat/Cover/stem düzeltmeleri, fiyatlar, kredi açıkları, ipuçları, zorunlu alanlar, Apple/Google girişi) commit edilmedi. `main`'e itiş canlıya yayın başlatır. → *Commit edip main'e iteyim mi?* (Proje kuralı: yalnız `main`, yeni dal yok.)
-- [ ] **B2. `google-services.json` ve `GoogleService-Info.plist` commit edilsin mi?** İstemci yapılandırması, gizli sayılmaz; ama depoda dursun mu karar ver.
-- [ ] **B3. Stem fiyatları tahmine dayanıyor** (10 / 50 kredi). Gerçek tüketim ilk stem ayırmadan sonra admin › Ayarlar'da görünür. → *Bir stem ayırmayı (10 kredi) gerçekten çalıştırayım mı?*
-- [ ] **B4. Mashup'ta söz boşken servisin sözleri sesten yazması** doküman çıkarımı, gerçek üretimle doğrulanmadı (12 kredi). → *Bir deneme mashup çalıştırayım mı?*
-- [ ] **B5. Sesten Uzat (`continue_at`) gerçek üretimle denenmedi** (12 kredi).
-- [ ] **B6. Ses yükleme kotası yok:** bir hesap sınırsız dosya yükleyip depolama maliyeti yaratabilir. → *Günlük yükleme sınırı koyayım mı?*
+### Kod & Mimari (`c66c1b2`)
+- [x] **Paket kimliği & hedef:** `com.emircanbulut.cookfire`, Team ID `Y48QM468RF`, yalnız iPhone (`TARGETED_DEVICE_FAMILY = 1`).
+- [x] **Yerel giriş (iOS & Android):** `@capacitor-firebase/authentication@8.5.2` (`skipNativeAuth: true`) ile Apple ve Google yerel girişi → Firebase Web SDK (`indexedDBLocalPersistence`) ve misafir hesabı bağlama (`public/fb.js`, `public/auth.js`). E-posta/şifre girişi kaldırıldı.
+- [x] **iOS yapılandırması:** `ios/App/App/GoogleService-Info.plist` Xcode `Resources` içinde; `REVERSED_CLIENT_ID` URL şeması `Info.plist`'te; `Sign in with Apple` `App.entitlements` içinde tanımlı.
+- [x] **Mağaza içi abonelik (StoreKit 2 + sunucu doğrulaması):** `@capgo/native-purchases` (`public/native.js` → `CR.products`, `CR.purchase`, `CR.restore`, açılışta `sendActive`) + sunucuda Apple Root CA - G3 zinciriyle JWS doğrulayan `lib/appleStore.ts` ve `app/api/billing/apple/route.ts` (`iap/{originalTransactionId}` + `startPlan`).
+- [x] **Uygulama içi hesap silme (Apple 5.1.1(v)):** Profil › "Hesabımı sil" + `DELETE /api/account`.
+- [x] **Destek ve yasal sayfalar:** `/support` (`public/support.html`), `/privacy`, `/terms` (`v2026-10-18`, iletişim `emircanbulut04@gmail.com`).
+- [x] **Codemagic yapılandırması:** `codemagic.yaml` (`APP_STORE_APPLE_ID: 6824189190`, entegrasyon adı: `CookFire ASC`).
+
+### Apple Developer (`developer.apple.com`) & Firebase Console (`rapper-fcc44`)
+- [x] **Apple App Store Small Business Program (%15 komisyon):** `Emir Bulut` (`Y48QM468RF`) için başvuru tamamlandı ve Apple'a gönderildi (`19 Ekim 2026`).
+- [x] **Ömür boyu tek seferlik 12 başlangıç kredisi (2 şarkı):** `startCredits` `28`'den `12`'ye çekildi (`public/config/app.json` + canlı Firestore `config/app` `version: 19`). Sunucuda (`lib/auth.ts`, `lib/data/users.ts`) Apple/Google kimliğinin SHA-256 özeti (`iap/gift_<hash>`) ile ömür boyu 1 kez verilecek şekilde kilitlendi (hesap silip yeniden açsa bile 2. kez hediye kredi verilmez). `public/credits.js` içinde ücretsiz kullanıcıdaki yanıltıcı `"30 gün sonra sıfırlanır"` ibaresi kaldırıldı.
+- [x] **Apple App ID:** `com.emircanbulut.cookfire` (`24RT7CH9BJ`) — *In-App Purchase* ve *Sign In with Apple* aktif.
+- [x] **Apple Services ID & Key:** `com.emircanbulut.cookfire.signin` (`SLC9HW86AL`) ve Sign in with Apple anahtarı (`7F5GD4VWBF`) oluşturuldu ve Firebase Auth › Apple sağlayıcısına girildi (**Enabled**).
+- [x] **Firebase Auth & Uygulamalar:** `CookFire iOS` (`1:807604270953:ios:7c2abe2aed7aa43f17aff8`) ve `CookFire Android` eklendi; eski `cookrapper` uygulamaları silindi; Email/Password kapatıldı.
+- [x] **Canlı Sunucu & Veritabanı:** Firestore `config/app` (`version: 19`, `startCredits: 12`, `max_monthly`: 1425 kredi / ₺799) güncellendi; App Hosting `kiemusic` üzerinde yayında.
+
+### App Store Connect (`6824189190` — CookFire)
+- [x] **Paid Apps Agreement, Banka & Vergi:** Active (`Business` altında tüm sözleşme, banka ve W-8BEN formları aktif).
+- [x] **App Privacy:** Published (6 veri tipi ve `/privacy` adresi yayında).
+- [x] **Uygulama Metinleri:** Alt başlık, açıklama (`/terms` ve `/privacy` bağlantılı), anahtar kelimeler, `/support` URL'si, yaş derecelendirmesi (`9+`) dolduruldu.
+- [x] **4 Abonelik Ürünü (`CookFire Planları` — Group ID `22490216`):**
+  - `starter_monthly` (`6824191274` — ₺99,99) — **Yeni 12 kredilik Review Screenshot yüklendi ve kaydedildi** (`19 Ekim 2026`).
+  - `plus_monthly` (`6824191573` — ₺249,99) — **Yeni 12 kredilik Review Screenshot yüklendi ve kaydedildi** (`19 Ekim 2026`).
+  - `pro_monthly` (`6824191933` — ₺499,99) — **Yeni 12 kredilik Review Screenshot yüklendi ve kaydedildi** (`19 Ekim 2026`).
+  - `max_monthly` (`6824192136` — ₺799,99) — **Yeni 12 kredilik Review Screenshot yüklendi ve kaydedildi** (`19 Ekim 2026`).
+- [x] **1290×2796 px Özgün Ekran Görüntüleri (19 Ekim 2026):**
+  Uygulamanın kendi gömülü fontları (`Grenze Gotisch`, `Bricolage Grotesque`, `Geist`) ve özgün Türkçe stüdyo arayüzüyle üretilip proje kök dizinine kaydedildi:
+  - `iap-review-screenshot.png` (iOS abonelik/kredi penceresi — 4 abonelik ürününe yüklendi)
+  - `appstore-1-ozel-studyo.png` (Özel stüdyo, Türkçe söz ve gelişmiş kontroller)
+  - `appstore-2-analiz-mashup.png` (Analiz sekmesi, çift kanal vokal+müzik ritim/kesit kesici)
+  - `appstore-3-sesten-kayit.png` (Sesten sekmesi, canlı mikrofon 48 kHz kayıt ve cover/uzat)
+  - `appstore-4-kutuphane.png` (Kütüphane ve mini oynatıcı)
 
 ---
 
-## C. Sıradaki (tek tek yapacağımız, benim yapabileceklerim)
+## 2. iOS 1.0 Yayını İçin Kalan Adımlar (Sıradaki)
 
-1. [ ] **Commit + push** (B1).
-2. [ ] **Uygulama içi hesap silme:** profile "Hesabımı sil" düğmesi + sunucu ucu (Apple zorunlu tutuyor). Şu an metinde "e-postayla talep et" yazıyor.
-3. [ ] **Mağaza içi abonelik (IAP):** `window.CR.purchase / restore / products` köprüsü (StoreKit + Play Billing eklentisi) ve sunucuda makbuz doğrulayıp krediyi yenileyen uç (`startPlan` hazır). A5 tamamlanınca yapılır.
-4. [ ] **Ses yükleme günlük kotası** (B6).
-5. [ ] **Gizlilik metninde verilen sözlerin işletilmesi:** misafir verisinin periyodik silinmesi ve silme taleplerinin 30 günde sonuçlanması için otomatik temizlik işi (şu an elle).
-6. [ ] **Gerçek üretim denemeleri:** stem (B3), mashup (B4), Sesten Uzat (B5).
-7. [ ] **Sesten Cover'a kullanıcı süresi** zaten eklendi; **Sesten Uzat** için kullanıcının devam noktası seçebilmesi (şu an kaydın sonundan devam ediyor).
-8. [ ] **Keşfet kutuları:** admin panelinden müzik yüklenmemiş; "rave hard" kutusunun etiketi "#rave hard" olarak ayarlanabilir.
+- [ ] **1. Apple Developer Sözleşme Onayı (Blocker):**
+  `developer.apple.com/account` üst bandındaki güncellenmiş **Apple Developer Program License Agreement** (ve App Store Connect › Business altındaki güncellenmiş **Free Apps Agreement**) onaylanmalı.
+- [ ] **2. App Store Connect `1.0 Prepare for Submission` Sayfası Eksikleri:**
+  - **Previews and Screenshots:** Proje kökündeki `appstore-1-ozel-studyo.png` .. `appstore-4-kutuphane.png` (`1290×2796 px`) görsellerini `iPhone 6.9" / 6.7" Display` alanına yükle.
+  - **In-App Purchases and Subscriptions:** 4 abonelik ürününü (`starter_monthly`, `plus_monthly`, `pro_monthly`, `max_monthly`) sürüm `1.0`'a bağla.
+  - **App Review Information:** İletişim bilgilerini (Ad, Soyad, Telefon, E-posta) doldur; `Sign-in required` kutusunun işaretini kaldır (veya inceleme notuna Apple/Google ile girişte tek seferlik 12 başlangıç kredisi tanımlandığını yaz).
+- [ ] **3. Codemagic → TestFlight İlk Derleme (IPA):**
+  - App Store Connect › *Users and Access › Integrations › App Store Connect API* altındaki `Codemagic CookFire` (`C7JG4MPP93`, Issuer ID `29969abb-c525-4b39-b4ea-f60072964e56`) `.p8` anahtarını indir.
+  - Codemagic'te *Team settings › Integrations › Developer Portal* altına **`CookFire ASC`** adıyla ekle ve `ios-testflight` iş akışını başlat.
+- [ ] **4. TestFlight Cihaz Testi ve Gönderim (`Add for Review`):**
+  - iPhone'da TestFlight derlemesini indirip Apple/Google girişi, Sandbox abonelik satın alma, mikrofon kaydı ve hesap silmeyi doğrula.
+  - `1.0 Prepare for Submission` › **Build** bölümünden derlemeyi seçip **Add for Review**'a bas.
+- [ ] **5. Apple Small Business Program (%15 Komisyon) Başvuru Sonucunu Kontrol Et:**
+  - 19 Ekim 2026'da `developer.apple.com/app-store/small-business-program/enroll/` üzerinden **`Emir Bulut` (`Y48QM468RF` · `emirbulutt1616@icloud.com`)** hesabı için tüm ortaklık/gelir beyanları doldurulup **Submit** edildi ve Apple'dan resmi başvuru alındı onayı (*"Thank you for your submission..."*) alındı.
+  - E-posta (`emirbulutt1616@icloud.com`) ve App Store Connect › *Business* üzerinden %15 komisyon onayının aktifleştiğini kontrol et.
 
 ---
 
-## D. Uygulamada kalan diğer eksikler (sırayla)
+## 3. Kod Tarafında İsteğe Bağlı İyileştirmeler (Yayını Engellemez)
 
-1. [ ] iOS ve Android'de gerçek cihaz testi: Apple/Google girişi, misafirden hesaba geçiş, çıkış.
-2. [ ] Android yayın imzası (keystore) ve Play Console kaydı; iOS TestFlight derlemesi.
-3. [ ] Abonelik yenileme / iptal bildirimleri (App Store Server Notifications, Play RTDN) → kredi yenileme.
-4. [ ] Dönem sonu sıfırlanmadan önce kullanıcıya hatırlatma bildirimi (isteğe bağlı).
-5. [ ] Admin panelinde kullanıcı arama / kredi ekleme-düşme aracı (destek için).
-6. [ ] Çökme ve hata izleme (şu an yok; analitik de bilerek yok).
-7. [ ] Uygulama simgesi / açılış ekranı / mağaza görselleri ve metinleri (`npm run mobile:assets` kaynakları hazır, mağaza varlıkları değil). Mağaza metninde KIE/Suno adı geçmemeli.
-8. [ ] Yaş derecelendirmesi ve içerik bildirimi akışının mağaza formlarında beyanı (uygulama içi "Bildir" var; `reports` koleksiyonunu inceleyecek kişi/süreç belirlenmeli).
-9. [ ] Hız sınırı: `/api/upload` ve `/api/media` için IP/hesap başına istek sınırı.
-10. [ ] Otomatik testler (kredi düşme/iade, dönem sıfırlama, sahiplik kontrolleri için; şu an elle betiklerle sınanıyor).
+- [ ] **Apple ilk giriş `displayName` kaydı (`public/fb.js`):** `skipNativeAuth: true` nedeniyle Apple'ın yalnız ilk girişte verdiği `fullName` bilgisi Firebase profilinde `null` kalıyor (profilde yedek olarak e-posta ön eki veya `"Sanatçı"` görünüyor).
+- [ ] **Ses yükleme günlük kotası (`/api/upload`):** `limits.upload` + `takeQuota` eklenmesi.
+- [ ] **Android yayın hazırlığı:** Yayın keystore SHA-1 parmak izinin Firebase'e eklenmesi ve Google Play Billing bağlantısı.

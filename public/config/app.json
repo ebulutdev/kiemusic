@@ -1,7 +1,7 @@
 {
- "version": 18,
+ "version": 19,
  "pricing": {
-  "startCredits": 28,
+  "startCredits": 12,
   "periodDays": 30,
   "freeMonthly": 0,
   "costs": {
