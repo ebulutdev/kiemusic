@@ -4,6 +4,7 @@ import { getConfig } from "@/lib/data/config";
 import { startPlan, endPlan, setPlanFlags } from "@/lib/data/users";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { COL } from "@/lib/data/schema";
+import { sendToUser } from "@/lib/push";
 
 export const runtime = "nodejs";
 
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
         break;
       case "DID_FAIL_TO_RENEW": // ödeme alınamadı (GRACE_PERIOD alt türünde erişim sürer)
         await setPlanFlags(uid, { billingIssue: true, ...(autoRenew === undefined ? {} : { autoRenew }) });
+        await sendToUser(uid, "pay_failed").catch((e) => console.error("PUSH_PAYFAIL_ERROR", e)); // "ödeme yöntemini kontrol et"
         break;
       case "EXPIRED":
       case "GRACE_PERIOD_EXPIRED":

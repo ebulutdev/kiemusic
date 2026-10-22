@@ -63,6 +63,12 @@
         <div><div class="lbl">Dil</div><div class="seg" id="langSeg" role="group" aria-label="Dil"><button data-v="tr" class="on" lang="tr" title="Türkçe">TR</button><button data-v="en" lang="en" title="English">EN</button><button data-v="de" lang="de" title="Deutsch">DE</button><button data-v="pt" lang="pt" title="Português">PT</button><button data-v="ja" lang="ja" title="日本語">JA</button></div></div>
         <div><div class="lbl">Tema</div><div class="seg" id="themeSeg"><button data-v="auto" class="on">Sistem</button><button data-v="light">Açık</button><button data-v="dark">Koyu</button></div></div>
         <div><div class="lbl">Varsayılan model</div><select class="inp" id="defModel"><option value="V6">Cook v1</option><option value="V6_MINI">Cook v2</option><option value="V6_WILD">Cook v3</option></select></div>      </div>
+      <!-- Bildirimler (app.js renderNotif): izin durumu · tercihler · son 20 bildirim -->
+      <div class="n-box" id="nBox" hidden>
+        <div class="n-head"><div class="lbl">Bildirimler</div><span class="n-state" id="nState"></span></div>
+        <div class="n-prefs" id="nPrefs"></div>
+        <div class="n-inbox" id="nInbox"></div>
+      </div>
       <nav class="p-legal" aria-label="Yasal"><a href="/terms" data-legal="terms" target="_blank" rel="noopener">Kullanım Koşulları</a><a href="/privacy" data-legal="privacy" target="_blank" rel="noopener">Gizlilik Politikası</a></nav>
     </section>
   </main>

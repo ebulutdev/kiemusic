@@ -7,7 +7,7 @@ export {
   getAuth, initializeAuth, indexedDBLocalPersistence, onAuthStateChanged, signInAnonymously, signOut,
   GoogleAuthProvider, OAuthProvider,
   signInWithPopup, signInWithRedirect, linkWithPopup, linkWithRedirect, getRedirectResult,
-  signInWithCredential, linkWithCredential,
+  signInWithCredential, linkWithCredential, updateProfile,
 } from "firebase/auth";
 export {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,

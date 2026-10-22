@@ -117,9 +117,9 @@ window.SF={
   resetLocal(){stopAll();S.lib=[];S.personas=[];S.voices=[];S.set.credits=0;S.set.period=S.set.plan=null;
     ['sf2_lib','sf2_personas','sf2_voices'].forEach(k=>store.set(k,[]));store.set('sf2_set',S.set);renderAll();renderStudio()},
   applyConfig(c){if(!c)return;if(window.Docs)Docs.setLegal(c.legal);SF.applyPricing(c.pricing);SF.applyCatalog(c.catalog);SF.applyEngine(c.engine)},
-  applyUser({credits,period,plan,settings,personas,voices}){if(credits!=null)S.set.credits=credits;if(period!==undefined)S.set.period=period;if(plan!==undefined)S.set.plan=plan;
+  applyUser({credits,period,plan,settings,personas,voices,push}){if(credits!=null)S.set.credits=credits;if(period!==undefined)S.set.period=period;if(plan!==undefined)S.set.plan=plan;
     if(settings){if(settings.model)S.set.model=settings.model;if(settings.theme&&settings.theme!==S.set.theme){S.set.theme=settings.theme;applyTheme()}}
-    if(personas)S.personas=personas;if(voices)S.voices=voices;
+    if(personas)S.personas=personas;if(voices)S.voices=voices;if(push){S.push=push;pushSeen()}
     store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);renderAll();if(personas||voices)renderStudio()},
   // İlk eşitlemede binlerce değişiklik gelebilir → kimlik dizini (Map) ile tek geçiş; silinenler sonda tek filtreyle
   applyRemote(kind,changes){const arr=S[kind],at=new Map(arr.map(x=>[x.id,x])),gone=new Set();
@@ -1007,7 +1007,33 @@ function renderStudio(){
 document.addEventListener('click',e=>{const t=e.target.closest('[data-tool]');if(t)openTool(t.dataset.tool)});
 
 /* ---------- profile ---------- */
-function renderProfile(){$('#pCount').textContent=S.lib.length+' parça';$('#pMode').innerHTML=API.live?'<span class="live-dot"></span>Stüdyo çevrimiçi':'Sunucuya bağlı değil';renderCredit()}
+function renderProfile(){$('#pCount').textContent=S.lib.length+' parça';$('#pMode').innerHTML=API.live?'<span class="live-dot"></span>Stüdyo çevrimiçi':'Sunucuya bağlı değil';renderCredit();renderNotif()}
+// Profil › Bildirimler: izin durumu, 3 tercih (sunucu users/{uid}.push.prefs; kampanya yalnız açık izinle), son 20 bildirim.
+// Başlık/metin sunucudan kullanıcının dilinde gelir (data-noi18n); dokununca ilgili şarkı / plan ekranı açılır (pushRoute).
+const NPREF=[['studio','Şarkın hazır olunca'],['account','Kredi ve abonelik'],['marketing','Yeni tarzlar ve öneriler']];
+let nTok=0;
+async function renderNotif(){const box=$('#nBox');if(!box)return;box.hidden=isGuest();if(box.hidden)return;
+  const tok=++nTok,P=window.CR&&CR.push,pr=(S.push&&S.push.prefs)||{},list=(S.push&&S.push.inbox)||[];
+  let st='unavailable';try{if(P&&P.available)st=await P.status()}catch(e){}
+  if(tok!==nTok)return;   // eşzamanlı çizimlerde yalnız son durum yazılır
+  $('#nState').innerHTML=st==='granted'?'<span class="live-dot"></span><span>Etkin</span>':st==='denied'?`<span>Kapalı</span><i>·</i><button type="button" class="n-link" data-n="set">Ayarlar'ı aç</button>`:st==='prompt'?`<button type="button" class="n-link" data-n="ask">Bildirimleri aç</button>`:'Bildirimler mobil uygulamada çalışır';
+  $('#nPrefs').innerHTML=NPREF.map(([k,l])=>`<label class="n-row"><span>${l}</span><input type="checkbox" data-pref="${k}"${(k==='marketing'?pr[k]===true:pr[k]!==false)?' checked':''}></label>`).join('');
+  const lang=(window.I18N&&I18N.get&&I18N.get())||'tr';let rtf=null;try{rtf=new Intl.RelativeTimeFormat(lang,{numeric:'auto'})}catch(e){}
+  const ago=t=>{const s=(t-Date.now())/1000,a=Math.abs(s);if(!rtf)return new Date(t).toLocaleString(lang);return a<60?rtf.format(0,'second'):a<3600?rtf.format(Math.round(s/60),'minute'):a<86400?rtf.format(Math.round(s/3600),'hour'):rtf.format(Math.round(s/86400),'day')};
+  $('#nInbox').innerHTML=list.length?list.map((n,i)=>`<button type="button" class="n-item" data-i="${i}"><b data-noi18n>${esc(n.title)}</b><span data-noi18n>${esc(n.body)}</span><small data-noi18n>${esc(ago(n.at))}</small></button>`).join(''):'<p class="n-empty">Henüz bildirim yok</p>'}
+$('#nPrefs')&&$('#nPrefs').addEventListener('change',async e=>{const c=e.target.closest('[data-pref]');if(!c||!window.CR||!CR.push)return;const k=c.dataset.pref,v=c.checked;
+  S.push=S.push||{prefs:{},inbox:[],unread:0};S.push.prefs={...(S.push.prefs||{}),[k]:v};
+  try{await CR.push.setPrefs({[k]:v});toast(v?'Açıldı':'Kapatıldı')}catch(x){c.checked=!v;S.push.prefs[k]=!v;toast('Kaydedilemedi')}});
+$('#nBox')&&$('#nBox').addEventListener('click',async e=>{const b=e.target.closest('[data-n],[data-i]');if(!b||!window.CR||!CR.push)return;const P=CR.push;
+  if(b.dataset.n==='set')return P.openSettings();
+  if(b.dataset.n==='ask'){try{if(await P.request()==='granted'){await P.sync();toast('Hazır olunca haber vereceğiz 🔥')}}catch(x){}return renderNotif()}
+  const n=((S.push&&S.push.inbox)||[])[+b.dataset.i];if(!n)return;
+  window.__pendingPush={taskId:n.taskId||'',kind:n.type||'',at:Date.now()};pushRoute()});
+// Bildirimler görüldü: uygulama açıkken okunmamış varsa rozet ve sayaç sıfırlanır (sunucu push.unread=0; simge rozeti temizlenir)
+let seenBusy=false;
+function pushSeen(){if(seenBusy||document.hidden||!S.push||!(S.push.unread>0)||!window.CR||!CR.push||isGuest())return;seenBusy=true;
+  CR.push.markRead().catch(()=>{}).finally(()=>{seenBusy=false})}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)pushSeen()});
 // Profil kredi kartı: bu dönemde verilen kredinin ne kadarı kaldı (çubuk), plan, sıfırlanma / yenilenme zamanı (Credits.info)
 function renderCredit(){if(!window.Credits)return;const k=Credits.info(),m=$('#meter');m.style.width=k.pct+'%';m.parentElement.classList.toggle('low',!k.guest&&k.pct<20);m.parentElement.setAttribute('aria-valuenow',Math.round(k.pct));
   $('#ccOf').textContent=k.guest||!k.grant?'':'/ '+k.grant;$('#ccPlan').textContent=k.guest?'Misafir':k.name;$('#ccPlan').classList.toggle('pro',!!k.plan);

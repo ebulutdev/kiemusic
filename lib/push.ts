@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb, adminMessaging } from "./firebaseAdmin";
-import { getConfig } from "./data/config";
+import { getConfig, getCost } from "./data/config";
 import { path, type NotifyGroup, type TaskDoc, type UserDoc, type UserPush } from "./data/schema";
 // Şablonlar derlemede gömülür (Firestore config/app'te notify.templates yoksa bunlar kullanılır)
 import seedConfig from "../public/config/app.json";
@@ -74,6 +74,25 @@ function localHour(tz?: string): number {
 const fill = (s: string, vars: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
 
 /**
+ * Gönderim kararı (saf fonksiyon — test edilir):
+ *  skip  : tercih kapalı (kampanya yalnız açık izinle) ya da kampanya sınırı doldu → hiç kaydedilmez
+ *  quiet : hesap/kampanya bildirimi sessiz saatte → yalnız gelen kutusuna düşer, telefona gitmez
+ *  push  : telefona gönderilir (cihaz varsa)
+ */
+export function decideSend(group: NotifyGroup, push: UserPush, cfg: { quietHours?: [number, number]; caps?: { day: number; week: number } } | undefined, now: number, hour: number): "skip" | "quiet" | "push" {
+  const prefs = push.prefs || {};
+  if (group === "marketing" ? prefs.marketing !== true : prefs[group] === false) return "skip";
+  if (group === "marketing") {
+    const caps = cfg?.caps || { day: 1, week: 3 };
+    const sent = (push.log?.marketingAt || []).filter((x) => now - x < 7 * 864e5);
+    if (sent.filter((x) => now - x < 864e5).length >= caps.day || sent.length >= caps.week) return "skip";
+  }
+  const [qs, qe] = cfg?.quietHours || [11, 21];
+  if (group !== "studio" && !(hour >= qs && hour < qe)) return "quiet";
+  return "push";
+}
+
+/**
  * Kullanıcıya bildirim gönderir. Dönen değer: gönderilen cihaz sayısı ya da atlama nedeni.
  * data: uygulamaya giden yük (taskId, kind) — dokununca ilgili şarkı açılır.
  */
@@ -84,37 +103,30 @@ export async function sendToUser(uid: string, type: string, vars: Record<string,
   if (!enabled) return { sent: 0, skipped: "disabled" };
 
   const snap = await userRef(uid).get();
+  if (!snap.exists) return { sent: 0, skipped: "no-user" }; // silinmiş hesap: belgeyi yeniden açma
   const push: UserPush = (snap.data() as UserDoc | undefined)?.push || {};
-  const prefs = push.prefs || {};
-  if (def.group === "marketing" ? prefs.marketing !== true : prefs[def.group] === false) return { sent: 0, skipped: "pref" };
+  const now = Date.now();
+  const decision = decideSend(def.group, push, cfg, now, localHour(push.tz));
+  if (decision === "skip") return { sent: 0, skipped: "pref-or-cap" };
 
   const lang = LANGS.includes(push.lang || "") ? push.lang! : "tr";
   const t = tpl[lang]?.[type] || tpl.tr?.[type];
   if (!t) return { sent: 0, skipped: "template" };
-  const v = { title: vars.title || tpl[lang]?._untitled?.title || "", ...vars };
+  const v = { ...vars, title: vars.title || tpl[lang]?._untitled?.title || "" };
   const title = fill(t.title, v), body = fill(t.body, v);
 
-  const now = Date.now();
+  // Gelen kutusu (son 20) + okunmamış sayacı (uygulama simgesi rozeti; uygulama açılınca /api/me read ile sıfırlanır)
+  const unread = Math.min(99, (push.unread || 0) + 1);
   const entry = { type, title, body, ...(data.taskId ? { taskId: data.taskId } : {}), at: now };
-  const patch: Record<string, unknown> = { "push.inbox": [entry, ...(push.inbox || [])].slice(0, INBOX) };
-
-  // Sessiz saat: üretim bildirimi her saatte gider (kullanıcı bekliyor); diğerleri yalnız gelen kutusuna düşer
-  const [qs, qe] = cfg?.quietHours || [11, 21];
-  const h = localHour(push.tz);
-  const quiet = def.group !== "studio" && !(h >= qs && h < qe);
-
-  // Kampanya sınırı: günde / haftada en fazla N
-  if (def.group === "marketing") {
-    const caps = cfg?.caps || { day: 1, week: 3 };
-    const sent = (push.log?.marketingAt || []).filter((x) => now - x < 7 * 864e5);
-    if (sent.filter((x) => now - x < 864e5).length >= caps.day || sent.length >= caps.week) return { sent: 0, skipped: "cap" };
-    if (!quiet) patch["push.log.marketingAt"] = [...sent, now];
+  const patch: Record<string, unknown> = { "push.inbox": [entry, ...(push.inbox || [])].slice(0, INBOX), "push.unread": unread };
+  if (def.group === "marketing" && decision === "push") {
+    patch["push.log.marketingAt"] = [...(push.log?.marketingAt || []).filter((x) => now - x < 7 * 864e5), now];
   }
 
   const entries = Object.entries(push.tokens || {});
-  if (quiet || !entries.length) {
+  if (decision === "quiet" || !entries.length) {
     await userRef(uid).update(patch);
-    return { sent: 0, skipped: quiet ? "quiet" : "no-device" };
+    return { sent: 0, skipped: decision === "quiet" ? "quiet" : "no-device" };
   }
 
   const res = await adminMessaging().sendEachForMulticast({
@@ -123,12 +135,12 @@ export async function sendToUser(uid: string, type: string, vars: Record<string,
     data: { kind: type, ...data },
     apns: {
       headers: { "apns-priority": "10", ...(data.taskId ? { "apns-collapse-id": data.taskId.slice(0, 64) } : {}) },
-      payload: { aps: { sound: def.sound ? `${SOUND}.wav` : "default", "thread-id": data.taskId || def.group } },
+      payload: { aps: { sound: def.sound ? `${SOUND}.wav` : "default", badge: unread, "thread-id": data.taskId || def.group } },
     },
     android: {
       priority: "high",
       ...(data.taskId ? { collapseKey: data.taskId.slice(0, 64) } : {}),
-      notification: { channelId: def.group, sound: def.sound ? SOUND : "default", ...(data.taskId ? { tag: data.taskId } : {}) },
+      notification: { channelId: def.group, sound: def.sound ? SOUND : "default", notificationCount: unread, ...(data.taskId ? { tag: data.taskId } : {}) },
     },
   });
 
@@ -170,6 +182,29 @@ export async function notifyTask(providerTaskId: string, outcome: "done" | "fail
   } catch (err) {
     console.error("PUSH_TASK_ERROR", err);
   }
+}
+
+/**
+ * Kredi azaldı: kalan bakiye bir şarkı üretimine yetmiyorsa, kredi dönemi başına BİR kez (push.log.lowCreditPeriod = period.start).
+ * Kredi düşümünden sonra çağrılır; hata akışı bozmaz. Bayrak kapalıyken işaret konmaz (açılınca ilk düşüşte gider).
+ */
+export async function notifyLowCredit(uid: string, left: number) {
+  try {
+    const cost = await getCost("generate");
+    if (left >= cost) return;
+    const d = (await userRef(uid).get()).data() as UserDoc | undefined;
+    const periodStart = d?.period?.start ?? 0;
+    if (!d || d.push?.log?.lowCreditPeriod === periodStart) return;
+    const r = await sendToUser(uid, "credit_low", { credits: left });
+    if (r.skipped !== "disabled") await userRef(uid).update({ "push.log.lowCreditPeriod": periodStart });
+  } catch (err) {
+    console.error("PUSH_LOWCREDIT_ERROR", err);
+  }
+}
+
+/** Bildirimler görüldü (uygulama açıldı / bildirim kutusu açıldı): rozet sayacı sıfırlanır. */
+export async function markRead(uid: string) {
+  await userRef(uid).update({ "push.unread": 0 }).catch(() => {});
 }
 
 /** Cihazı kaydeder (en fazla 5; fazlası en eskisinden silinir) + dil / saat dilimi. /api/me çağırır. */

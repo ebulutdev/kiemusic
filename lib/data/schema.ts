@@ -137,8 +137,9 @@ export interface UserPush {
   tz?: string;
   prefs?: Partial<Record<NotifyGroup, boolean>>;
   tokens?: Record<string, { token: string; platform: "ios" | "android"; updatedAt: number }>; // anahtar: token'ın SHA-256 özeti (16)
-  log?: { marketingAt?: number[]; lowCreditPeriod?: number };
+  log?: { marketingAt?: number[]; lowCreditPeriod?: number }; // lowCreditPeriod: "kredi azaldı" gönderilen dönemin start'ı
   inbox?: { type: string; title: string; body: string; taskId?: string; at: number }[]; // son 20
+  unread?: number; // okunmamış bildirim sayısı → uygulama simgesi rozeti (uygulama açılınca sıfırlanır)
 }
 
 export interface UserDoc {

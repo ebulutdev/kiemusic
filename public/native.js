@@ -149,11 +149,18 @@
       quiet(FM.createChannel({ id: "marketing", name: "Kampanya", description: "Yeni tarzlar ve öneriler", importance: 2 }));
     }
   }
+  const BADGE = plug("Badge");
   let lastToken = "";
+  // /api/me üzerinden bildirim alanları (cihaz, tercih, okundu) — başarılıysa true.
+  // En fazla 10 sn: oturum çözülmezse / ağ yoksa false döner (arayüz değişikliği geri alır, takılı kalmaz).
   async function me(pushBody) {
-    const h = window.FB && window.FB.headers ? await window.FB.headers({ "Content-Type": "application/json" }) : null;
-    if (!h || !h.Authorization) return;
-    await fetch(api("/api/me"), { method: "POST", headers: h, body: JSON.stringify({ push: pushBody }) });
+    const call = (async () => {
+      const h = window.FB && window.FB.headers ? await window.FB.headers({ "Content-Type": "application/json" }) : null;
+      if (!h || !h.Authorization) return false;
+      const r = await fetch(api("/api/me"), { method: "POST", headers: h, body: JSON.stringify({ push: pushBody }) });
+      return r.ok;
+    })();
+    return Promise.race([call.catch(() => false), new Promise((ok) => setTimeout(() => ok(false), 10_000))]);
   }
   const push = {
     available: !!FM,
@@ -176,7 +183,9 @@
       if (server) try { const t = lastToken || (await FM.getToken()).token; if (t) await me({ remove: t }); } catch (e) {}
       quiet(FM.deleteToken());
     },
-    setPrefs: (prefs) => me({ prefs }),
+    setPrefs: async (prefs) => { if (!(await me({ prefs }))) throw new Error("kaydedilemedi"); },
+    // Bildirimler görüldü: sunucudaki okunmamış sayacı sıfırla + uygulama simgesi rozetini temizle (@capawesome/capacitor-badge)
+    async markRead() { await me({ read: true }); if (BADGE) quiet(BADGE.clear()); },
     // Sistem izni reddedildiyse: uygulamanın ayar sayfası (iOS) — Android'de kullanıcı Ayarlar › Uygulamalar'dan açar
     openSettings() { if (platform === "ios") location.href = "app-settings:"; },
   };

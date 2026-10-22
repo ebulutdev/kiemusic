@@ -17,6 +17,7 @@ let package = Package(
         .package(name: "CapacitorFileTransfer", path: "../../../node_modules/@capacitor/file-transfer"),
         .package(name: "CapacitorFilesystem", path: "../../../node_modules/@capacitor/filesystem"),
         .package(name: "CapacitorShare", path: "../../../node_modules/@capacitor/share"),
+        .package(name: "CapawesomeCapacitorBadge", path: "../../../node_modules/@capawesome/capacitor-badge"),
         .package(name: "CapgoCapacitorMediaSession", path: "../../../node_modules/@capgo/capacitor-media-session"),
         .package(name: "CapgoNativePurchases", path: "../../../node_modules/@capgo/native-purchases")
     ],
@@ -31,6 +32,7 @@ let package = Package(
                 .product(name: "CapacitorFileTransfer", package: "CapacitorFileTransfer"),
                 .product(name: "CapacitorFilesystem", package: "CapacitorFilesystem"),
                 .product(name: "CapacitorShare", package: "CapacitorShare"),
+                .product(name: "CapawesomeCapacitorBadge", package: "CapawesomeCapacitorBadge"),
                 .product(name: "CapgoCapacitorMediaSession", package: "CapgoCapacitorMediaSession"),
                 .product(name: "CapgoNativePurchases", package: "CapgoNativePurchases")
             ]

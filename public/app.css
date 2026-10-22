@@ -859,6 +859,20 @@ img.fi.ld{opacity:1}
 @media (max-height:700px){.cp-hero{padding:6px 10px 14px}.cp h2{font-size:38px}}
 @media (prefers-reduced-motion:reduce){.cp,.cp *{animation:none!important;transition:none!important}}
 .cr-chip,.credit-card{cursor:pointer}
+/* Profil › Bildirimler: izin durumu, tercih anahtarları, son 20 bildirim */
+.n-box{max-width:520px;margin-top:22px}
+.n-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.n-state{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.n-state i{font-style:normal;opacity:.6}
+.n-link{color:var(--accent);font-weight:600;font-size:13px}
+.n-prefs{margin-top:8px;border-radius:14px;background:var(--surface);overflow:hidden}
+.n-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;font-size:14px;border-bottom:1px solid var(--line);cursor:pointer}
+.n-row:last-child{border-bottom:0}
+.n-row input{width:20px;height:20px;flex:none;accent-color:var(--accent)}
+.n-inbox{margin-top:10px;display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto}
+.n-item{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;background:var(--surface);color:var(--text)}
+.n-item b{font-size:14px}.n-item span{font-size:13px;color:var(--muted)}.n-item small{font-size:11px;color:var(--faint)}
+.n-empty{margin:6px 2px;font-size:13px;color:var(--faint)}
 .p-legal{display:flex;flex-wrap:wrap;gap:6px 18px;max-width:520px;margin:30px 0 8px;font-size:13px}
 .p-legal a{color:var(--muted);text-decoration:none}
 .p-legal a:hover{color:var(--text)}

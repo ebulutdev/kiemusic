@@ -114,6 +114,18 @@
     "Haber ver": "Notify me",
     "Şimdi değil": "Not now",
     "Hazır olunca haber vereceğiz 🔥": "We'll let you know when it's ready 🔥",
+    // Profil › Bildirimler
+    "Bildirimler": "Notifications",
+    "Şarkın hazır olunca": "When your song is ready",
+    "Kredi ve abonelik": "Credits and subscription",
+    "Yeni tarzlar ve öneriler": "New styles and suggestions",
+    "Kapalı": "Off",
+    "Bildirimleri aç": "Turn on notifications",
+    "Bildirimler mobil uygulamada çalışır": "Notifications work in the mobile app",
+    "Etkin": "Enabled",
+    "Henüz bildirim yok": "No notifications yet",
+    "Açıldı": "Turned on",
+    "Kapatıldı": "Turned off",
     // analiz (vokal + müzik, kesit tekrarı)
     "Analiz": "Analyze", "Müzik": "Music", "Kesit tekrarı": "Chop repeat", "2 sn'de bir": "Every 2 s", "3 sn'de bir": "Every 3 s", "4 sn'de bir": "Every 4 s", "5 sn'de bir": "Every 5 s",
     "Gönderilecek ses": "Audio to send", "MP3 olarak indir": "Download as MP3", "MP3 hazırlanamadı": "Couldn't prepare the MP3", "Kopyalanan kesit süresi": "Copied chop length", "1 sn": "1 s", "2 sn": "2 s", "3 sn": "3 s", "4 sn": "4 s", "İkisi": "Both", "Vokal silindi": "Vocal deleted", "Müzik silindi": "Music deleted",

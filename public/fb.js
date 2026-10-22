@@ -20,7 +20,7 @@ import {
   getAuth, initializeAuth, indexedDBLocalPersistence, onAuthStateChanged, signInAnonymously, signOut as fbSignOut,
   GoogleAuthProvider, OAuthProvider,
   signInWithPopup, signInWithRedirect, linkWithPopup, linkWithRedirect, getRedirectResult,
-  signInWithCredential, linkWithCredential,
+  signInWithCredential, linkWithCredential, updateProfile,
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, collection, onSnapshot, writeBatch, serverTimestamp, deleteField,
 } from "./vendor/firebase.js";
@@ -160,6 +160,8 @@ function listen() {
       settings: d.settings || null,
       personas: d.personas ? fromMap(d.personas) : null,
       voices: d.voices ? fromMap(d.voices) : null,
+      // Bildirim tercihleri + son 20 bildirim + okunmamış sayısı (yalnız sunucu yazar; Profil › Bildirimler)
+      push: { prefs: (d.push && d.push.prefs) || {}, inbox: (d.push && d.push.inbox) || [], unread: (d.push && d.push.unread) || 0 },
     });
   }));
 
@@ -296,11 +298,25 @@ async function nativeCredential(kind) {
     return GoogleAuthProvider.credential(r.credential?.idToken, r.credential?.accessToken);
   }
   const r = await NativeAuth.signInWithApple({ skipNativeAuth: true });
+  appleName = nameOf(r); // Apple adı YALNIZ ilk girişte verir → oturum açılınca profile yazılır
   return new OAuthProvider("apple.com").credential({ idToken: r.credential?.idToken, rawNonce: r.credential?.nonce });
+}
+// Yerel Apple sonucundan ad (eklenti sürümüne göre user.displayName ya da additionalUserInfo.profile alanlarında)
+let appleName = "";
+function nameOf(r) {
+  const u = r?.user, p = r?.additionalUserInfo?.profile || {};
+  const n = u?.displayName || p.name || [p.givenName || p.given_name || p.firstName, p.familyName || p.family_name || p.lastName].filter(Boolean).join(" ");
+  return String(n || "").trim().slice(0, 60);
+}
+async function keepName(user) {
+  const n = appleName; appleName = "";
+  if (n && user && !user.displayName) { try { await updateProfile(user, { displayName: n }); publish(user); } catch {} }
+  return user;
 }
 async function viaNative(kind) {
   if (!NativeAuth) throw Object.assign(new Error("native"), { code: "auth/operation-not-supported-in-this-environment" });
   let cred;
+  appleName = "";
   try { cred = await nativeCredential(kind); } catch (e) {
     // kullanıcı yerel ekranı kapattı → sessiz geç
     if (/cancel|iptal|1001|12501/i.test(String(e?.message || "") + String(e?.code || ""))) throw Object.assign(new Error("cancelled"), { code: "auth/user-cancelled" });
@@ -308,10 +324,10 @@ async function viaNative(kind) {
   }
   const cur = auth.currentUser;
   if (cur?.isAnonymous) {
-    try { const r = await linkWithCredential(cur, cred); publish(r.user); return r.user; }
-    catch (e) { return (await recover(e)).user; } // hesap zaten varsa ona giriş
+    try { const r = await linkWithCredential(cur, cred); publish(r.user); return keepName(r.user); }
+    catch (e) { return keepName((await recover(e)).user); } // hesap zaten varsa ona giriş
   }
-  return (await signInWithCredential(auth, cred)).user;
+  return keepName((await signInWithCredential(auth, cred)).user);
 }
 
 function googleProvider() {

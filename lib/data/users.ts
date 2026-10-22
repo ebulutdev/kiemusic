@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "../firebaseAdmin";
 import { COL, path, type AppConfig, type CreditPeriod, type UserDoc, type UserPlan, type PersonaDoc, type VoiceDoc } from "./schema";
 import { getConfig } from "./config";
+import { notifyLowCredit, sendToUser } from "../push";
 
 export class InsufficientCredits extends Error {
   constructor() { super("Kredi yetersiz."); }
@@ -98,7 +99,7 @@ export async function ensureUser(uid: string, anon = false, verified = true, acc
 export async function chargeCredits(uid: string, amount: number, verified = true) {
   if (amount <= 0) return;
   const { pricing, legal } = await getConfig();
-  await adminDb().runTransaction(async (tx) => {
+  const left = await adminDb().runTransaction(async (tx) => {
     const ref = userRef(uid);
     const d = ((await tx.get(ref)).data() || {}) as Doc;
     if (legal?.version && d.terms?.version !== legal.version) throw new TermsRequired();
@@ -109,7 +110,9 @@ export async function chargeCredits(uid: string, amount: number, verified = true
     if (credits < amount) throw new InsufficientCredits();
     const clear = { ...(d.guest ? { guest: FieldValue.delete() } : {}), ...(d.unverified ? { unverified: FieldValue.delete() } : {}) };
     tx.set(ref, { ...patch, ...clear, credits: credits - amount, updatedAt: now() }, { merge: true });
+    return credits - amount;
   });
+  await notifyLowCredit(uid, left); // bakiye bir üretime yetmiyorsa dönem başına 1 kez "kredi azaldı" (hata akışı bozmaz)
 }
 
 /**
@@ -124,10 +127,10 @@ export async function startPlan(uid: string, planId: string, expiresAt: number, 
   const { pricing } = await getConfig();
   const plan = pricing.plans?.find((x) => x.id === planId);
   if (!plan) throw new Error(`Plan tanımlı değil: ${planId}`);
-  await adminDb().runTransaction(async (tx) => {
+  const renewed = await adminDb().runTransaction(async (tx) => {
     const ref = userRef(uid);
     const cur = ((await tx.get(ref)).data() || {}) as Doc;
-    if (cur.plan && cur.plan.id === planId && cur.plan.expiresAt === expiresAt && cur.plan.tx === txId) return;
+    if (cur.plan && cur.plan.id === planId && cur.plan.expiresAt === expiresAt && cur.plan.tx === txId) return null;
     const t = Date.now();
     const active = !!(cur.plan && !cur.plan.endedAt && cur.plan.expiresAt > t - 60_000);
     const renewal = !!(active && cur.plan!.id === planId && cur.period && t >= cur.period.end - 60_000);
@@ -141,7 +144,10 @@ export async function startPlan(uid: string, planId: string, expiresAt: number, 
       period: { start: t, end: expiresAt, grant: credits },
       updatedAt: now(),
     }, { merge: true });
+    return renewal ? credits : null;
   });
+  // Yenileme: "kredin yüklendi" bildirimi (ilk satın almada kullanıcı zaten uygulamada → bildirim yok)
+  if (renewed != null) await sendToUser(uid, "sub_renewed", { credits: renewed }).catch((e) => console.error("PUSH_RENEW_ERROR", e));
 }
 
 /**
