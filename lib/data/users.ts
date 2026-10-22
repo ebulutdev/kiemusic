@@ -104,20 +104,28 @@ export async function chargeCredits(uid: string, amount: number, verified = true
 
 /**
  * Abonelik başladı / yenilendi / plan değişti — mağaza makbuzu SUNUCUDA doğrulandıktan sonra çağrılır.
- * Bakiye plan kredisine sıfırlanır (eski bakiye devretmez), dönem mağazanın yenileme tarihinde biter.
- * Aynı işlem (tx) ve tarih ikinci kez gelirse yok sayılır → bildirim tekrarı krediyi yeniden doldurmaz.
+ *  · Yenileme (aynı plan, önceki dönem bitti): bakiye plan kredisine sıfırlanır (kullanılmayan devretmez).
+ *  · Yeni abonelik / plan değişikliği: kullanılabilir bakiye korunur, plan kredisi ÜSTÜNE eklenir
+ *    (satın alma hiçbir zaman bakiyeyi düşürmez). Süresi geçmiş eski dönem kredisi önce settlePeriod ile sıfırlanır.
+ * Dönem mağazanın yenileme tarihinde biter. Aynı işlem (tx) ve tarih ikinci kez gelirse yok sayılır → tekrar krediyi yeniden doldurmaz.
  */
 export async function startPlan(uid: string, planId: string, expiresAt: number, store: UserPlan["store"], txId?: string) {
-  const plan = (await getConfig()).pricing.plans?.find((x) => x.id === planId);
+  const { pricing } = await getConfig();
+  const plan = pricing.plans?.find((x) => x.id === planId);
   if (!plan) throw new Error(`Plan tanımlı değil: ${planId}`);
   await adminDb().runTransaction(async (tx) => {
     const ref = userRef(uid);
     const cur = ((await tx.get(ref)).data() || {}) as Doc;
     if (cur.plan && cur.plan.id === planId && cur.plan.expiresAt === expiresAt && cur.plan.tx === txId) return;
+    const t = Date.now();
+    const renewal = !!(cur.plan && cur.plan.id === planId && cur.period && t >= cur.period.end - 60_000);
+    const settled = settlePeriod(cur, pricing, t, true);
+    const balance = Math.max(0, settled ? settled.credits : cur.credits ?? 0);
+    const credits = renewal ? plan.credits : balance + plan.credits;
     tx.set(ref, {
-      credits: plan.credits,
+      credits,
       plan: { id: plan.id, credits: plan.credits, expiresAt, store, tx: txId },
-      period: { start: Date.now(), end: expiresAt, grant: plan.credits },
+      period: { start: t, end: expiresAt, grant: credits },
       updatedAt: now(),
     }, { merge: true });
   });
