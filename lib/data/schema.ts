@@ -61,7 +61,8 @@ export interface AppConfig {
   limits?: Record<string, number>;
   // Kâr analizi (admin paneli düzenler): uygulama kredisinin $ değeri, üretim servisi kredisinin $ maliyeti,
   // servis kredisi bilinmeyen görevler için işlem başına tahmini servis kredisi
-  economics?: { usdPerCredit: number; kieUsdPerCredit: number; kieCreditsEstimate: Record<string, number> };
+  // kieLowCredits: servis bakiyesi bunun altına düşünce admin'e günlük erken uyarı (lib/data/issues.ts checkProviderBalance)
+  economics?: { usdPerCredit: number; kieUsdPerCredit: number; kieCreditsEstimate: Record<string, number>; kieLowCredits?: number };
   // Anlık bildirimler (lib/push.ts): enabled=false iken hiç gönderilmez · quietHours: hesap/kampanya bildirimleri yalnız
   // kullanıcının yerel saatiyle [başlangıç, bitiş) arasında · caps: kampanya için günlük/haftalık üst sınır
   // templates[dil][tür] = { title, body } — {title} {credits} değişkenleri; dil yoksa tr
@@ -119,7 +120,9 @@ export interface VoiceDoc {
 // Kredi dönemi (ms). grant: dönem başında verilen kredi (ilerleme çubuğu bunun içinden kalan bakiyeyi gösterir)
 export interface CreditPeriod { start: number; end: number; grant: number }
 // Aktif abonelik — yalnız sunucu yazar (mağaza makbuzu doğrulandıktan sonra). expiresAt: mağazanın yenileme tarihi (ms)
-export interface UserPlan { id: string; credits: number; expiresAt: number; store?: "apple" | "google"; tx?: string }
+// carry: plana geçerken devredilen (satın alınmamış) bakiye — plan biter / iade olursa yalnız bu kadarı kalır
+// autoRenew / billingIssue: mağaza sunucu bildirimlerinden (Apple V2) · otid: originalTransactionId
+export interface UserPlan { id: string; credits: number; expiresAt: number; store?: "apple" | "google"; tx?: string; otid?: string; carry?: number; autoRenew?: boolean; billingIssue?: boolean; endedAt?: number; endReason?: string }
 
 export type NotifyGroup = "studio" | "account" | "marketing";
 export interface NotifyConfig {

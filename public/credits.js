@@ -48,8 +48,11 @@
     const pct = grant ? Math.max(0, Math.min(100, (credits / grant) * 100)) : 0;
     let meta = "";
     if (!guest && plan && pd && pd.end) {
-      const d = Math.ceil((pd.end - Date.now()) / DAY);
-      meta = d <= 0 ? "Bugün yenilenir" : d === 1 ? "Yarın yenilenir" : `${d} gün sonra yenilenir`;
+      // Otomatik yenileme kapatıldıysa (Apple sunucu bildirimi → plan.autoRenew=false) plan dönem sonunda biter
+      const d = Math.ceil((pd.end - Date.now()) / DAY), w = plan.autoRenew === false ? "sona erer" : "yenilenir";
+      meta = d <= 0 ? (w === "yenilenir" ? "Bugün yenilenir" : "Bugün sona erer") : d === 1 ? (w === "yenilenir" ? "Yarın yenilenir" : "Yarın sona erer") : `${d} gün sonra ${w}`;
+    } else if (!guest && credits > 0) {
+      meta = "Süresi dolmaz"; // abonelik dışı kredi (hediye / devreden) kullanılana kadar kalır
     }
     return { guest, credits, grant, pct, plan, name: plan ? (planOf(plan.id) || {}).name || "Plan" : "Ücretsiz", meta, start: cfg.startCredits };
   }

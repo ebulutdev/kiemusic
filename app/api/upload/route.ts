@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAccount, errorResponse } from "@/lib/auth";
 import { saveUpload } from "@/lib/data/storage";
+import { takeQuota } from "@/lib/data/users";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
     const file = fd.get("file");
     if (!(file instanceof File)) return NextResponse.json({ success: false, error: "Dosya yok" }, { status: 400 });
     if (file.size > MAX) return NextResponse.json({ success: false, error: "En fazla 30 MB" }, { status: 413 });
+    await takeQuota(user.uid, "upload"); // günlük yükleme sınırı (config/app limits.upload; tanımsızsa sınır yok)
 
     let ext = (file.name.split(".").pop() || "").toLowerCase();
     if (!OK_EXT.includes(ext)) ext = file.type.includes("mp4") || file.type.includes("m4a") ? "m4a" : file.type.includes("webm") ? "webm" : "mp3";

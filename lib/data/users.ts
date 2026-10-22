@@ -27,8 +27,9 @@ type Doc = Partial<UserDoc>;
 /**
  * Aylık kredi dönemi (saf fonksiyon). Değişiklik gerekmiyorsa null.
  *  · İlk dönem: yeni hesap (daha önce başlangıç hediyesi almadıysa: giftClaimed=false) ömür boyu 1 kez başlangıç hediyesini alır.
- *  · Dönem bitti: aktif abonelik → bakiye plan kredisine sıfırlanır, dönem mağazanın yenileme tarihinde biter;
- *    abonelik yok → bakiye 0'a (freeMonthly=0) düşer ve ücretsiz hesaplara bir daha aylık kredi verilmez.
+ *  · Dönem bitti, aktif abonelik → plan kredisi + devredilen (satın alınmamış) bakiye; dönem mağazanın yenileme tarihinde biter.
+ *  · Dönem bitti, abonelik sona ermiş → satın alınan kredi silinir, yalnız devredilen bakiye (plan.carry) kalır.
+ *  · Hiç abone olmamış hesap → hediye / ücretsiz kredi SÜRESİZ kalır (kullanılana kadar); freeMonthly>0 ise en az o kadar.
  */
 export function settlePeriod(d: Doc, p: AppConfig["pricing"], t = Date.now(), giftClaimed = false): { credits: number; period: CreditPeriod } | null {
   const span = (p.periodDays || 30) * DAY;
@@ -38,10 +39,19 @@ export function settlePeriod(d: Doc, p: AppConfig["pricing"], t = Date.now(), gi
     return { credits, period: { start: t, end: t + span, grant: Math.max(credits, start) } };
   }
   if (t < d.period.end) return null;
+  const bal = Math.max(0, d.credits ?? 0), free = p.freeMonthly || 0;
   const plan = d.plan && d.plan.expiresAt > t ? d.plan : null;
-  if (!plan && (p.freeMonthly || 0) === 0 && d.credits === 0) return null;
-  const credits = plan ? plan.credits : p.freeMonthly || 0;
-  return { credits, period: { start: t, end: plan ? plan.expiresAt : t + span, grant: credits } };
+  if (plan) {
+    const credits = plan.credits + Math.min(bal, plan.carry ?? 0);
+    return { credits, period: { start: t, end: plan.expiresAt, grant: credits } };
+  }
+  if (d.plan) { // abonelik bitti: satın alınan kredi gider, devredilen kalır
+    const credits = Math.max(Math.min(bal, d.plan.carry ?? 0), free);
+    if (credits === bal) return null; // değişiklik yok
+    return { credits, period: { start: t, end: t + span, grant: credits } };
+  }
+  if (free <= bal) return null; // hiç abone olmamış: bakiye olduğu gibi kalır
+  return { credits: free, period: { start: t, end: t + span, grant: free } };
 }
 
 export interface CreditState { credits: number; period: CreditPeriod | null; plan: UserPlan | null }
@@ -103,13 +113,14 @@ export async function chargeCredits(uid: string, amount: number, verified = true
 }
 
 /**
- * Abonelik başladı / yenilendi / plan değişti — mağaza makbuzu SUNUCUDA doğrulandıktan sonra çağrılır.
- *  · Yenileme (aynı plan, önceki dönem bitti): bakiye plan kredisine sıfırlanır (kullanılmayan devretmez).
- *  · Yeni abonelik / plan değişikliği: kullanılabilir bakiye korunur, plan kredisi ÜSTÜNE eklenir
- *    (satın alma hiçbir zaman bakiyeyi düşürmez). Süresi geçmiş eski dönem kredisi önce settlePeriod ile sıfırlanır.
+ * Abonelik başladı / yenilendi / plan değişti — mağaza makbuzu SUNUCUDA doğrulandıktan sonra çağrılır
+ * (uygulamanın gönderdiği makbuz ya da Apple sunucu bildirimi; ikisi de buradan geçer).
+ *  · Yenileme (aynı plan, dönem bitti): satın alınan kredi sıfırlanır → plan kredisi + devredilen bakiye (carry).
+ *  · Yeni abonelik / plan değişikliği: bakiye korunur, plan kredisi ÜSTÜNE eklenir (satın alma bakiyeyi asla düşürmez).
+ *    carry = o anki satın alınmamış bakiye (aktif plandan geçişte yalnız önceki carry kadarı) → plan bitince / iade olunca kalan.
  * Dönem mağazanın yenileme tarihinde biter. Aynı işlem (tx) ve tarih ikinci kez gelirse yok sayılır → tekrar krediyi yeniden doldurmaz.
  */
-export async function startPlan(uid: string, planId: string, expiresAt: number, store: UserPlan["store"], txId?: string) {
+export async function startPlan(uid: string, planId: string, expiresAt: number, store: UserPlan["store"], txId?: string, otid?: string) {
   const { pricing } = await getConfig();
   const plan = pricing.plans?.find((x) => x.id === planId);
   if (!plan) throw new Error(`Plan tanımlı değil: ${planId}`);
@@ -118,17 +129,48 @@ export async function startPlan(uid: string, planId: string, expiresAt: number, 
     const cur = ((await tx.get(ref)).data() || {}) as Doc;
     if (cur.plan && cur.plan.id === planId && cur.plan.expiresAt === expiresAt && cur.plan.tx === txId) return;
     const t = Date.now();
-    const renewal = !!(cur.plan && cur.plan.id === planId && cur.period && t >= cur.period.end - 60_000);
+    const active = !!(cur.plan && !cur.plan.endedAt && cur.plan.expiresAt > t - 60_000);
+    const renewal = !!(active && cur.plan!.id === planId && cur.period && t >= cur.period.end - 60_000);
     const settled = settlePeriod(cur, pricing, t, true);
     const balance = Math.max(0, settled ? settled.credits : cur.credits ?? 0);
-    const credits = renewal ? plan.credits : balance + plan.credits;
+    const carry = active ? Math.min(balance, cur.plan!.carry ?? 0) : balance;
+    const credits = plan.credits + (renewal ? carry : balance);
     tx.set(ref, {
       credits,
-      plan: { id: plan.id, credits: plan.credits, expiresAt, store, tx: txId },
+      plan: { id: plan.id, credits: plan.credits, expiresAt, store, ...(txId ? { tx: txId } : {}), ...(otid ? { otid } : {}), carry, autoRenew: true, billingIssue: false },
       period: { start: t, end: expiresAt, grant: credits },
       updatedAt: now(),
     }, { merge: true });
   });
+}
+
+/**
+ * Abonelik sona erdi (süre doldu / iade / iptal edildi) — mağaza sunucu bildiriminden.
+ * Satın alınan kredi silinir, yalnız devredilen bakiye (carry) kalır. txId verilirse yalnız o işlem güncel plansa uygulanır
+ * (eski bir döneme ait iade, yenilenmiş güncel planı bozmaz).
+ */
+export async function endPlan(uid: string, reason: string, txId?: string) {
+  await adminDb().runTransaction(async (tx) => {
+    const ref = userRef(uid);
+    const cur = ((await tx.get(ref)).data() || {}) as Doc;
+    if (!cur.plan || cur.plan.endedAt) return;
+    if (txId && cur.plan.tx && cur.plan.tx !== txId) return;
+    const t = Date.now();
+    const credits = Math.min(Math.max(0, cur.credits ?? 0), cur.plan.carry ?? 0);
+    tx.set(ref, {
+      credits,
+      plan: { ...cur.plan, expiresAt: Math.min(cur.plan.expiresAt, t), endedAt: t, endReason: reason, autoRenew: false },
+      period: { start: t, end: t + 30 * DAY, grant: credits },
+      updatedAt: now(),
+    }, { merge: true });
+  });
+}
+
+/** Abonelik durum bayrakları (otomatik yenileme açık/kapalı, ödeme sorunu) — kredi değişmez. */
+export async function setPlanFlags(uid: string, flags: Partial<Pick<UserPlan, "autoRenew" | "billingIssue">>) {
+  const patch: Record<string, unknown> = { updatedAt: now() };
+  for (const [k, v] of Object.entries(flags)) if (typeof v === "boolean") patch[`plan.${k}`] = v;
+  await userRef(uid).update(patch).catch(() => {});
 }
 
 /** Günlük kota: users/{uid}.quota.{key} = { day, n } (ek koleksiyon yok). Sınır config/app limits.{key}; tanımsızsa sınır yok. */

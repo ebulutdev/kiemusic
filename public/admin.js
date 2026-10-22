@@ -103,7 +103,7 @@
       kpi("Üretim", n(T.tasks), `${n(T.completed)} tamamlandı · ${n(T.failed)} başarısız`),
       kpi("Harcanan kredi", n(T.credits), `${n(T.refunded)} iade edildi · kullanıcılarda ${n(U.creditsOutstanding)} kalan`),
       kpi("Servis maliyeti", usd(T.cost), `${nf2.format(T.kieCredits)} servis kredisi${T.estimated ? ` · ${n(T.estimated)} görev tahmini` : ""}`),
-      kpi("Servis bakiyesi", bal == null ? "—" : nf2.format(bal), bal == null ? "Okunamadı" : `kredi · ≈ ${usd(bal * E.kieUsdPerCredit)}`),
+      kpi("Servis bakiyesi", bal == null ? "—" : nf2.format(bal), bal == null ? "Okunamadı" : `${E.kieLowCredits && bal < E.kieLowCredits ? "⚠️ DÜŞÜK — yükleme yap · " : ""}kredi · ≈ ${usd(bal * E.kieUsdPerCredit)}`),
     ].join("");
     $("#tbOp").innerHTML = aggTable(data.byOp, "İşlem", (r) => h(OPS[r.key] || r.key));
     $("#tbModel").innerHTML = aggTable(data.byModel, "Model", (r) => h(r.key));

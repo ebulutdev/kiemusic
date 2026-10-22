@@ -3,6 +3,7 @@ import { adminDb } from "../firebaseAdmin";
 import { path, type TaskDoc, type TaskResult, type TaskStatus, type TaskType } from "./schema";
 import { refundCredits } from "./users";
 import { notifyTask } from "../push";
+import { checkProviderBalance } from "./issues";
 
 const now = () => FieldValue.serverTimestamp();
 const ref = (id: string) => adminDb().doc(path.task(id));
@@ -31,6 +32,7 @@ export async function createTask(input: {
     mirror: "none",
   };
   await ref(input.providerTaskId).set({ ...doc, createdAt: now(), updatedAt: now() });
+  checkProviderBalance(); // servis bakiyesi eşik altındaysa admin'e erken uyarı (arka planda, akışı beklemez)
   return doc;
 }
 

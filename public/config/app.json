@@ -68,7 +68,8 @@
   "persona": 5,
   "voice-phrase": 6,
   "voice": 3,
-  "issue": 10
+  "issue": 10,
+  "upload": 60
  },
  "catalog": {
   "styles": [
@@ -284,6 +285,7 @@
  "economics": {
   "usdPerCredit": 0.01,
   "kieUsdPerCredit": 0.005,
+  "kieLowCredits": 1000,
   "kieCreditsEstimate": {
    "generate": 12,
    "cover": 12,

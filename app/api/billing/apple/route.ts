@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       if (cur && cur.uid !== user.uid) throw new HttpError(409, "Bu abonelik başka bir CookFire hesabına bağlı.");
       if (!cur) tx.set(ref, { uid: user.uid, store: "apple", productId: t.productId, env: t.environment || null, at: now });
     });
-    await startPlan(user.uid, t.productId, t.expiresDate!, "apple", t.transactionId);
+    await startPlan(user.uid, t.productId, t.expiresDate!, "apple", t.transactionId, t.originalTransactionId);
     return NextResponse.json({ success: true, active: true, plan: t.productId, expiresAt: t.expiresDate });
   } catch (error) {
     return errorResponse(error, "BILLING_APPLE_ERROR");

@@ -34,7 +34,8 @@ export interface AppleTransaction {
 
 const b64u = (s: string) => Buffer.from(s.replace(/-/g, "+").replace(/_/g, "/"), "base64");
 
-export function verifyAppleJws(jws: string): AppleTransaction {
+/** Apple imzalı JWS'yi doğrular (x5c zinciri → Apple Root CA - G3, ES256) ve yükü döndürür. İşlem, yenileme ve sunucu bildirimi için ortak. */
+export function verifyAppleSigned(jws: string): Record<string, any> { // eslint-disable-line @typescript-eslint/no-explicit-any
   const parts = String(jws || "").split(".");
   if (parts.length !== 3) throw new Error("Geçersiz makbuz");
   const header = JSON.parse(b64u(parts[0]).toString("utf8"));
@@ -48,7 +49,11 @@ export function verifyAppleJws(jws: string): AppleTransaction {
   if (chain[2].fingerprint256 !== root.fingerprint256) throw new Error("Makbuz imzası doğrulanamadı");
   const ok = verify("sha256", Buffer.from(parts[0] + "." + parts[1]), { key: chain[0].publicKey, dsaEncoding: "ieee-p1363" }, b64u(parts[2]));
   if (!ok) throw new Error("Makbuz imzası doğrulanamadı");
-  const p = JSON.parse(b64u(parts[1]).toString("utf8"));
+  return JSON.parse(b64u(parts[1]).toString("utf8"));
+}
+
+export function verifyAppleJws(jws: string): AppleTransaction {
+  const p = verifyAppleSigned(jws);
   return {
     transactionId: String(p.transactionId),
     originalTransactionId: String(p.originalTransactionId),
