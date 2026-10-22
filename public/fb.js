@@ -223,7 +223,18 @@ function publish(u) {
 // Hesaba geçişte kimlik jetonu yenilenir ki sunucu artık misafir olmadığını görsün.
 // /api/me: kullanıcı belgesini hazırlar; kabul edilen koşul sürümü varsa sunucuya iletir (sunucu güncel sürümle doğrular)
 const acceptedTerms = () => { try { return localStorage.getItem("cf_terms") || ""; } catch { return ""; } };
-const meCall = (t, terms = acceptedTerms()) => fetch(window.CR ? window.CR.api("/api/me") : "/api/me", { method: "POST", headers: { Authorization: "Bearer " + t, "Content-Type": "application/json" }, body: JSON.stringify(terms ? { terms } : {}) });
+// Dil + saat dilimi her açılışta gider: bildirim izni olmasa da gelen kutusu kullanıcının dilinde yazılır
+const pushLocale = () => {
+  const lang = (window.I18N && window.I18N.get && window.I18N.get()) || "tr";
+  let tz = ""; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch {}
+  return { lang, tz };
+};
+const meCall = (t, terms = acceptedTerms()) => fetch(window.CR ? window.CR.api("/api/me") : "/api/me", { method: "POST", headers: { Authorization: "Bearer " + t, "Content-Type": "application/json" }, body: JSON.stringify({ ...(terms ? { terms } : {}), push: pushLocale() }) });
+// Dil değişince sunucuya hemen bildir (sonraki bildirimler yeni dilde)
+window.addEventListener("sf-lang", () => {
+  const u = auth.currentUser;
+  if (u && !u.isAnonymous) u.getIdToken().then((t) => meCall(t)).catch(() => {});
+});
 let creditKey = "";
 function syncCredits(u) {
   if (!u) { creditKey = ""; return; }

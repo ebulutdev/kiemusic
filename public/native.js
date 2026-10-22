@@ -134,7 +134,8 @@
   if (FM) {
     FM.addListener("notificationActionPerformed", (e) => {
       const d = (e && e.notification && e.notification.data) || {};
-      window.__pendingPush = { taskId: d.taskId || "", kind: d.kind || "", at: Date.now() };
+      window.__pendingPush = { taskId: d.taskId || "", kind: d.kind || "", reportOpened: d.kind || "", at: Date.now() };
+      flushOpened();
       window.dispatchEvent(new CustomEvent("cr-push-tap", { detail: window.__pendingPush }));
     }).catch?.(() => {});
     FM.addListener("notificationReceived", (e) => {
@@ -151,6 +152,14 @@
   }
   const BADGE = plug("Badge");
   let lastToken = "";
+  // Bildirime dokunuş ölçümü: soğuk açılışta oturum henüz yoksa kayıt kaybolmasın → başarısızsa fb-auth'ta yeniden denenir
+  function flushOpened() {
+    const p = window.__pendingPush;
+    if (!p || !p.reportOpened) return;
+    const kind = p.reportOpened;
+    p.reportOpened = "";
+    me({ opened: kind, source: "push" }).then((ok) => { if (!ok && !p.reportOpened) p.reportOpened = kind; });
+  }
   // /api/me üzerinden bildirim alanları (cihaz, tercih, okundu) — başarılıysa true.
   // En fazla 10 sn: oturum çözülmezse / ağ yoksa false döner (arayüz değişikliği geri alır, takılı kalmaz).
   async function me(pushBody) {
@@ -186,10 +195,12 @@
     setPrefs: async (prefs) => { if (!(await me({ prefs }))) throw new Error("kaydedilemedi"); },
     // Bildirimler görüldü: sunucudaki okunmamış sayacı sıfırla + uygulama simgesi rozetini temizle (@capawesome/capacitor-badge)
     async markRead() { await me({ read: true }); if (BADGE) quiet(BADGE.clear()); },
+    // Gelen kutusundaki bildirime dokunuş (ölçüm; telefondaki bildirim açılışından ayrı sayılır, rozete dokunmaz)
+    markOpened(kind, source = "inbox") { if (kind) quiet(me({ opened: kind, source })); },
     // Sistem izni reddedildiyse: uygulamanın ayar sayfası (iOS) — Android'de kullanıcı Ayarlar › Uygulamalar'dan açar
     openSettings() { if (platform === "ios") location.href = "app-settings:"; },
   };
-  if (FM) window.addEventListener("fb-auth", (e) => { if (e.detail && !e.detail.anon) setTimeout(() => push.sync().catch(() => {}), 2500); });
+  if (FM) window.addEventListener("fb-auth", (e) => { if (e.detail && !e.detail.anon) { flushOpened(); setTimeout(() => push.sync().catch(() => {}), 2500); } });
 
   window.CR = {
     native,

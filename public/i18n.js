@@ -114,6 +114,8 @@
     "Haber ver": "Notify me",
     "Şimdi değil": "Not now",
     "Hazır olunca haber vereceğiz 🔥": "We'll let you know when it's ready 🔥",
+    "Öneri ve hatırlatmalar da gönder": "Also send tips and reminders",
+    "Kredin iade edildi": "Your credits were refunded",
     // Profil › Bildirimler
     "Bildirimler": "Notifications",
     "Şarkın hazır olunca": "When your song is ready",

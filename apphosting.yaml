@@ -32,3 +32,9 @@ env:
   - variable: APP_URL
     value: https://kiemusic--rapper-fcc44.us-east4.hosted.app
     availability: [RUNTIME]
+
+  # Geri kazanım bildirimleri (/api/cron/notify) — Faz D canlıya alınırken: önce `firebase apphosting:secrets:set cron-secret`,
+  # sonra aşağıdaki 3 satırın yorumu kaldırılır (secret yokken açılırsa dağıtım başarısız olur). Tanımsızken uç her isteği 401 ile reddeder.
+  # - variable: CRON_SECRET
+  #   secret: cron-secret
+  #   availability: [RUNTIME]

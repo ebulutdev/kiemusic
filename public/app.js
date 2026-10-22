@@ -452,16 +452,21 @@ async function pushAsk(){const P=window.CR&&CR.push;if(!P||!P.available||isGuest
   if(s.asked>=2||(s.asked===1&&s.n<3&&Date.now()-s.at<3*864e5))return;
   const denied=st==='denied';
   openSheet(`<div class="busy"><h3>Şarkın pişince haber verelim mi? 🔥</h3><p>${denied?"Bildirimler kapalı. Şarkın hazır olduğunda haber alabilmen için Ayarlar'dan CookFire bildirimlerini aç.":"Şarkın yaklaşık 1 dakikada hazır olacak. Uygulamayı kapatsan bile hazır olunca telefonuna bildirim gönderelim."}</p>
+    ${denied?'':'<label class="n-row n-opt"><input type="checkbox" data-b="mkt"><span>Öneri ve hatırlatmalar da gönder</span></label>'}
     <button class="primary busy-ok" type="button" data-b="ok"><span>${denied?"Ayarlar'ı aç":'Haber ver'}</span></button>
     <button class="busy-rep" type="button" data-b="no">Şimdi değil</button></div>`);
   const sh=$('#sheet'),later=()=>{s.asked++;s.at=Date.now();s.n=0;store.set('sf2_push',s);closeLayer(sh)};
   sh.querySelector('[data-b=no]').onclick=later;
   sh.querySelector('[data-b=ok]').onclick=async()=>{
     if(denied){P.openSettings();later();return}
-    try{const r=await P.request();closeLayer(sh);if(r==='granted'){await P.sync();toast('Hazır olunca haber vereceğiz 🔥')}else later()}catch(e){later()}}}
+    const mkt=!!(sh.querySelector('[data-b=mkt]')||{}).checked;   // kampanya izni yalnız açıkça seçilirse ve sistem izni verilirse (Apple 4.5.4)
+    try{const r=await P.request();closeLayer(sh);if(r==='granted'){await P.sync();if(mkt){S.push=S.push||{prefs:{},inbox:[],unread:0};S.push.prefs={...(S.push.prefs||{}),marketing:true};P.setPrefs({marketing:true}).catch(()=>{})}toast('Hazır olunca haber vereceğiz 🔥')}else later()}catch(e){later()}}}
 // Bildirime dokunma (soğuk açılış dahil): hedef bekler; kütüphanede şarkı bulununca açılır, sesi hazırsa çalar
 function pushRoute(){const p=window.__pendingPush;if(!p)return;
   if(p.kind==='credit_low'||p.kind==='sub_renewed'||p.kind==='pay_failed'){window.__pendingPush=null;if(window.Credits)Credits.open('manual');return}
+  if(p.kind==='voice_ready'||p.kind==='credits_reset'){window.__pendingPush=null;if(S.view!=='studio')go('studio');return}   // ses klonu şarkı değil · yenilenen kredi → üretim
+  if(p.kind==='job_failed'){window.__pendingPush=null;if(S.view!=='library')go('library');toast('Kredin iade edildi');return}
+  if(p.kind==='gift_reminder'||p.kind==='comeback3'||p.kind==='comeback7'||p.kind==='announce'){window.__pendingPush=null;if(S.view!=='home')go('home');return}
   if(!p.taskId){window.__pendingPush=null;if(S.view!=='library')go('library');return}
   const ts=S.lib.filter(t=>t.providerTaskId===p.taskId||t.taskId===p.taskId).sort((a,b)=>(a.version||0)-(b.version||0));
   if(!ts.length){if(Date.now()-p.at>30e3){window.__pendingPush=null;go('library')}return}   // kütüphane henüz eşitlenmedi → bekle
@@ -1028,7 +1033,8 @@ $('#nBox')&&$('#nBox').addEventListener('click',async e=>{const b=e.target.close
   if(b.dataset.n==='set')return P.openSettings();
   if(b.dataset.n==='ask'){try{if(await P.request()==='granted'){await P.sync();toast('Hazır olunca haber vereceğiz 🔥')}}catch(x){}return renderNotif()}
   const n=((S.push&&S.push.inbox)||[])[+b.dataset.i];if(!n)return;
-  window.__pendingPush={taskId:n.taskId||'',kind:n.type||'',at:Date.now()};pushRoute()});
+  P.markOpened(n.type,'inbox');window.__pendingPush={taskId:n.taskId||'',kind:n.type||'',at:Date.now()};pushRoute()});
+addEventListener('sf-lang',()=>{if(S.view==='profile')renderNotif()});
 // Bildirimler görüldü: uygulama açıkken okunmamış varsa rozet ve sayaç sıfırlanır (sunucu push.unread=0; simge rozeti temizlenir)
 let seenBusy=false;
 function pushSeen(){if(seenBusy||document.hidden||!S.push||!(S.push.unread>0)||!window.CR||!CR.push||isGuest())return;seenBusy=true;

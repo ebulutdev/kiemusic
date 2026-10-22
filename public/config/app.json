@@ -357,6 +357,10 @@
      "title": "Ocak yandı ⚡",
      "body": "{credits} kredin yüklendi. Bu ay ne pişiriyoruz?"
     },
+    "credits_reset": {
+     "title": "Aylık kredin yenilendi ⚡",
+     "body": "{credits} kredin hazır. Yeni bir şarkı pişirelim mi?"
+    },
     "pay_failed": {
      "title": "Aboneliğin yenilenemedi",
      "body": "Kredilerin durmasın diye ödeme yöntemini kontrol et."
@@ -426,6 +430,10 @@
     "sub_renewed": {
      "title": "The stove is on ⚡",
      "body": "{credits} credits were added. What are we cooking this month?"
+    },
+    "credits_reset": {
+     "title": "Monthly credits refreshed ⚡",
+     "body": "{credits} credits are ready. Shall we cook a new song?"
     },
     "pay_failed": {
      "title": "Your subscription couldn't renew",
@@ -497,6 +505,10 @@
      "title": "Der Herd ist an ⚡",
      "body": "{credits} Credits wurden gutgeschrieben. Was kochen wir diesen Monat?"
     },
+    "credits_reset": {
+     "title": "Monatliche Credits erneuert ⚡",
+     "body": "{credits} Credits sind bereit. Kochen wir einen neuen Song?"
+    },
     "pay_failed": {
      "title": "Dein Abo konnte nicht verlängert werden",
      "body": "Prüfe deine Zahlungsmethode, damit deine Credits nicht ausbleiben."
@@ -567,6 +579,10 @@
      "title": "O fogão está aceso ⚡",
      "body": "{credits} créditos foram adicionados. O que vamos cozinhar este mês?"
     },
+    "credits_reset": {
+     "title": "Créditos mensais renovados ⚡",
+     "body": "{credits} créditos prontos. Vamos criar uma música nova?"
+    },
     "pay_failed": {
      "title": "Sua assinatura não foi renovada",
      "body": "Verifique sua forma de pagamento para não ficar sem créditos."
@@ -636,6 +652,10 @@
     "sub_renewed": {
      "title": "コンロに火が入りました ⚡",
      "body": "{credits}クレジットが追加されました。今月は何を作りますか？"
+    },
+    "credits_reset": {
+     "title": "今月のクレジットが更新されました ⚡",
+     "body": "{credits}クレジットが準備できました。新しい曲を作りませんか？"
     },
     "pay_failed": {
      "title": "サブスクリプションを更新できませんでした",

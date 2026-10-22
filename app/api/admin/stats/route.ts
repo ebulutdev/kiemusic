@@ -6,7 +6,8 @@ import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { getConfig } from "@/lib/data/config";
 import { getKieTask, getKieBalance } from "@/lib/kie";
 import { updateTask } from "@/lib/data/tasks";
-import type { TaskDoc } from "@/lib/data/schema";
+import { path, type TaskDoc } from "@/lib/data/schema";
+import { isControlGroup } from "@/lib/push";
 
 // Admin analizi: GET /api/admin/stats?days=30
 // Gelir  = harcanan uygulama kredisi (iade edilmeyen) × economics.usdPerCredit
@@ -149,6 +150,10 @@ export async function GET(request: Request) {
     const seenIn = (ms: number) => users.filter((u) => u.seen >= now - ms).length;
     const providers: Record<string, number> = {};
     for (const u of users) for (const p of u.anon ? ["anonymous"] : u.providers) providers[p] = (providers[p] || 0) + 1;
+    // Bildirimler: config/stats sayaçları (tek okuma) + kontrol grubu (%10, hatırlatma almaz) ile 7 gün aktiflik karşılaştırması
+    const pushStats = ((await adminDb().doc(path.stats).get().catch(() => null))?.data() as { push?: unknown } | undefined)?.push ?? null;
+    const reg = users.filter((u) => !u.anon), ctrl = reg.filter((u) => isControlGroup(u.uid)), rest = reg.filter((u) => !isControlGroup(u.uid));
+    const d7 = (l: typeof reg) => (l.length ? Math.round((l.filter((u) => u.seen >= now - 7 * DAY).length / l.length) * 1000) / 10 : null);
     const sortAgg = <T extends Agg>(m: Map<string, T>) => [...m.entries()].sort((a, b) => b[1].credits - a[1].credits || b[1].tasks - a[1].tasks);
 
     return NextResponse.json({
@@ -176,6 +181,7 @@ export async function GET(request: Request) {
         return { uid, email: u?.email ?? null, name: u?.name ?? null, anon: u?.anon ?? true, balance: credits.get(uid) ?? null, ...withMargin(a), lastAt: a.lastAt };
       }),
       daily: days_,
+      push: { stats: pushStats, d7Active: { control: d7(ctrl), notified: d7(rest), controlUsers: ctrl.length, notifiedUsers: rest.length } },
     });
   } catch (error) {
     return errorResponse(error, "ADMIN_STATS_ERROR");

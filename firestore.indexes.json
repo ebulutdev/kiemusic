@@ -1,10 +1,20 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "push.hasToken", "order": "ASCENDING" },
+        { "fieldPath": "lastSeen", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": [
     { "collectionGroup": "tasks", "fieldPath": "results", "indexes": [] },
     { "collectionGroup": "tasks", "fieldPath": "params", "indexes": [] },
     { "collectionGroup": "lyrics", "fieldPath": "words", "indexes": [] },
     { "collectionGroup": "tracks", "fieldPath": "lyrics", "indexes": [] },
-    { "collectionGroup": "tracks", "fieldPath": "prompt", "indexes": [] }
+    { "collectionGroup": "tracks", "fieldPath": "prompt", "indexes": [] },
+    { "collectionGroup": "config", "fieldPath": "push", "indexes": [] }
   ]
 }

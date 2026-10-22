@@ -4,7 +4,7 @@ import { requireUser, errorResponse } from "@/lib/auth";
 import { ensureUser } from "@/lib/data/users";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { path } from "@/lib/data/schema";
-import { registerDevice, removeDevice, setPrefs, markRead } from "@/lib/push";
+import { registerDevice, removeDevice, setPrefs, setLocale, markRead, markOpened } from "@/lib/push";
 
 // Bildirim cihazı / tercihleri (isteğe bağlı): { token, platform, lang, tz } kaydet · { remove: token } sil · { prefs }
 const Push = z.object({
@@ -15,6 +15,8 @@ const Push = z.object({
   remove: z.string().min(20).max(4096).optional(),
   prefs: z.object({ studio: z.boolean().optional(), account: z.boolean().optional(), marketing: z.boolean().optional() }).optional(),
   read: z.boolean().optional(), // bildirimler görüldü → rozet sayacı sıfır
+  opened: z.string().max(32).optional(), // dokunulan bildirimin türü (ölçüm)
+  source: z.enum(["push", "inbox"]).optional(), // telefondaki bildirim mi, uygulama içi gelen kutusu mu
 });
 
 // Kullanıcı belgesini hazırlar (uygulama her açılışta 1 kez): misafirin kredisi 0; hesabın ilk dönemi başlangıç
@@ -31,11 +33,13 @@ export async function POST(request: Request) {
         const d = p.data;
         if (d.remove) await removeDevice(user.uid, d.remove);
         if (d.token && d.platform) await registerDevice(user.uid, { token: d.token, platform: d.platform, lang: d.lang, tz: d.tz });
+        else if (d.lang || d.tz) await setLocale(user.uid, d.lang, d.tz); // izin vermemiş kullanıcının gelen kutusu da kendi dilinde
         if (d.prefs) await setPrefs(user.uid, d.prefs);
+        if (d.opened) await markOpened(user.uid, d.opened, d.source || "push");
         if (d.read) await markRead(user.uid);
       }
-      // Son görülme: geri kazanım bildirimleri (3 / 7 gün) için
-      await adminDb().doc(path.user(user.uid)).set({ lastSeen: Date.now() }, { merge: true }).catch(() => {});
+      // Son görülme (geri kazanım hatırlatmaları) + kullanıcı uygulamayı kendisi açtı → açılmayan hatırlatma sayacı sıfır
+      await adminDb().doc(path.user(user.uid)).set({ lastSeen: Date.now(), push: { log: { unopened: 0 } } }, { merge: true }).catch(() => {});
     }
     return NextResponse.json({ success: true, uid: user.uid, ...state });
   } catch (error) {

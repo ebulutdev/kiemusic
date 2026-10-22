@@ -29,7 +29,8 @@ export const COL = {
 
 export const path = {
   config: "config/app",
-  user:   (uid: string) => `${COL.users}/${uid}`,
+  stats:  "config/stats", // yalnız sunucu: günlük bildirim gönderim / açılma sayaçları (istemci okuyamaz, indeks kapalı)
+  user:  (uid: string) => `${COL.users}/${uid}`,
   track:  (uid: string, id: string) => `${COL.users}/${uid}/${COL.tracks}/${id}`,
   task:   (taskId: string) => `${COL.tasks}/${taskId}`,
   lyrics: (taskId: string, audioId: string) => `${COL.tasks}/${taskId}/${COL.lyrics}/${audioId}`,
@@ -135,11 +136,24 @@ export interface NotifyConfig {
 export interface UserPush {
   lang?: string;
   tz?: string;
+  hasToken?: boolean; // en az 1 cihaz anahtarı var mı (/api/cron/notify sorgusu: hasToken + lastSeen indeksi)
   prefs?: Partial<Record<NotifyGroup, boolean>>;
   tokens?: Record<string, { token: string; platform: "ios" | "android"; updatedAt: number }>; // anahtar: token'ın SHA-256 özeti (16)
-  log?: { marketingAt?: number[]; lowCreditPeriod?: number }; // lowCreditPeriod: "kredi azaldı" gönderilen dönemin start'ı
+  log?: {
+    marketingAt?: number[];
+    lowCreditPeriod?: number; // "kredi azaldı" gönderilen dönemin start'ı
+    remindAt?: number[]; // tüm hatırlatmaların ortak gönderim zamanları (günde ≤1, haftada ≤2)
+    unopened?: number; // arka arkaya açılmayan hatırlatma (2'de bekleme ×2, 3'te 30 gün durur ve 0'a döner)
+    cooldownUntil?: number; // hatırlatma molası bitişi (ms)
+    lastReady?: { taskId: string; title: string; at: number }; // son tamamlanan şarkı (unplayed / comeback)
+    unplayedTaskId?: string; // "dinlemedin" gönderilen son görev
+    giftReminded?: boolean; // hediye hatırlatması (ömür boyu 1 kez)
+    resetPeriod?: number; // credits_reset gönderilen dönemin end değeri
+    comeback3At?: number;
+    comeback7At?: number;
+  };
   inbox?: { type: string; title: string; body: string; taskId?: string; at: number }[]; // son 20
-  unread?: number; // okunmamış bildirim sayısı → uygulama simgesi rozeti (uygulama açılınca sıfırlanır)
+  unread?: number; // okunmamış bildirim sayısı → uygulama simgesi rozeti (yalnız markRead sıfırlar)
 }
 
 export interface UserDoc {
