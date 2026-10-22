@@ -148,7 +148,14 @@ export async function sendToUser(uid: string, type: string, vars: Record<string,
         "apns-collapse-id": collapseId,
         "apns-expiration": String(Math.floor(now / 1000) + def.ttlSec),
       },
-      payload: { aps: { sound: def.sound ? `${SOUND}.wav` : "default", badge: unread, "thread-id": def.group } },
+      payload: {
+        aps: {
+          sound: def.sound ? `${SOUND}.wav` : "default",
+          badge: unread,
+          "thread-id": def.group,
+          ...(def.group === "studio" && type !== "unplayed" && type !== "voice_ready" ? { category: type === "job_failed" ? "STUDIO_FAILED" : "STUDIO_READY" } : {}),
+        },
+      },
     },
     android: {
       priority: def.urgent ? "high" : "normal",

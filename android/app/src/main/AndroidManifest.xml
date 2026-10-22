@@ -28,11 +28,18 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- FCM varsayılan bildirim simgesi, alev turuncusu (#FF7A2F) vurgu rengi ve kanalı -->
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@mipmap/ic_launcher" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notif_accent" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="studio" />
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ (API 33+) anlık bildirim izni -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Mikrofon: Sesten (cover / uzat / vokal ekle) ve Ses klonu kayıtları (WebView getUserMedia) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />

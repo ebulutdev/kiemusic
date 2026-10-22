@@ -134,7 +134,7 @@
   if (FM) {
     FM.addListener("notificationActionPerformed", (e) => {
       const d = (e && e.notification && e.notification.data) || {};
-      window.__pendingPush = { taskId: d.taskId || "", kind: d.kind || "", reportOpened: d.kind || "", at: Date.now() };
+      window.__pendingPush = { taskId: d.taskId || "", kind: d.kind || "", actionId: (e && e.actionId) || "", reportOpened: d.kind || "", at: Date.now() };
       flushOpened();
       window.dispatchEvent(new CustomEvent("cr-push-tap", { detail: window.__pendingPush }));
     }).catch?.(() => {});

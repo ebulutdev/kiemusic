@@ -24,7 +24,7 @@
 <article lang="tr">
   <p class="lg-kicker">Gizlilik</p>
   <h1>Gizlilik Politikası<em>.</em></h1>
-  <p class="lg-meta">Yürürlük tarihi: <span class="lg-nw">18 Ekim 2026</span> · Sürüm <span class="lg-nw">2026-10-18</span></p>
+  <p class="lg-meta">Yürürlük tarihi: <span class="lg-nw">22 Ekim 2026</span> · Sürüm <span class="lg-nw">2026-10-22</span></p>
 
   <div class="lg-sum">
     <b>Kısaca</b>
@@ -85,6 +85,8 @@
     <p>Dil, tema ve ses tercihlerin ile kütüphanenin çevrimdışı kopyası cihazının yerel depolamasında tutulur. Reklam ya da izleme çerezi kullanmayız.</p>
     <h3>Mikrofon</h3>
     <p>Mikrofon yalnız kayıt düğmesine bastığında kullanılır. Kayıt, sen kaydetmeyi seçmedikçe sunucuya gönderilmez.</p>
+    <h3>Anlık bildirimler</h3>
+    <p>Bildirimlere izin verirsen, şarkın hazır olduğunda veya hesabınla ilgili önemli durumlarda (ve açıkça onay verirsen öneri ve hatırlatmalarda) bildirim gönderebilmek için cihazının bildirim jetonu (FCM/APNs), uygulama dilin, saat dilimin ve bildirim tercihlerin işlenir. Bildirimleri istediğin zaman Profil › Bildirimler ekranından ya da cihazının ayarlarından kapatabilirsin; çıkış yaptığında veya hesabını sildiğinde cihaz jetonun kaldırılır.</p>
     <p class="lg-note"><strong>Toplamadıklarımız:</strong> reklam kimliği (IDFA/AAID), konum, rehber ve fotoğraf arşivi. Üçüncü taraf analitik ya da reklam yazılımı kullanmıyoruz ve seni başka şirketlerin uygulama veya siteleri arasında izlemiyoruz.</p>
   </section>
 
@@ -95,6 +97,7 @@
       <tbody>
         <tr><td>Hesabın oluşturulması, giriş, müzik üretimi, kütüphane ve cihazlar arası eşitleme</td><td>Sözleşmenin kurulması ve ifası</td></tr>
         <tr><td>Kredi ve abonelik yönetimi, satın almaların doğrulanması</td><td>Sözleşmenin ifası; hukuki yükümlülük</td></tr>
+        <tr><td>Anlık bildirimlerin gönderilmesi (üretim tamamlanması, hesap/abonelik durumu; açık izninle öneri ve hatırlatmalar)</td><td>Sözleşmenin ifası; meşru menfaat; kampanya bildirimleri için açık rıza</td></tr>
         <tr><td>Güvenlik, dolandırıcılık ve kötüye kullanımın önlenmesi, hataların giderilmesi</td><td>Meşru menfaat</td></tr>
         <tr><td>İçerik bildirimlerinin incelenmesi, hak ihlallerinin önlenmesi, hukuki taleplere yanıt</td><td>Hukuki yükümlülük; bir hakkın tesisi, kullanılması veya korunması; meşru menfaat</td></tr>
         <tr><td>Toplu kullanım ve maliyet analizi ile Hizmetin iyileştirilmesi</td><td>Meşru menfaat</td></tr>
@@ -107,9 +110,9 @@
   <section id="tr-aktarim">
     <h2>4. Verilerin paylaşıldığı taraflar</h2>
     <ul>
-      <li><strong>Google (Firebase Authentication, Cloud Firestore, Cloud Storage, Firebase App Hosting):</strong> kimlik doğrulama, veritabanı, dosya depolama ve sunucu barındırma.</li>
+      <li><strong>Google (Firebase Authentication, Cloud Firestore, Cloud Storage, Firebase Cloud Messaging, Firebase App Hosting):</strong> kimlik doğrulama, veritabanı, dosya depolama, anlık bildirim iletimi ve sunucu barındırma.</li>
       <li><strong>Yapay zekâ müzik üretim hizmet sağlayıcıları:</strong> üretim için gereken girdiler (açıklama, söz, stil, ses dosyası, ses kaydı) ve teknik parametreler. Bu sağlayıcılar dosyaları kendi sistemlerinde sınırlı bir süre (yaklaşık 14 gün) tutabilir.</li>
-      <li><strong>Apple ve Google:</strong> Apple ile Giriş, Google ile Giriş ve uygulama içi satın almalar; bu işlemler ilgili şirketlerin kendi gizlilik politikalarına tabidir.</li>
+      <li><strong>Apple ve Google:</strong> Apple ile Giriş, Google ile Giriş, anlık bildirim servisi (Apple Push Notification service — APNs) ve uygulama içi satın almalar; bu işlemler ilgili şirketlerin kendi gizlilik politikalarına tabidir.</li>
       <li><strong>Yetkili kurum ve kuruluşlar:</strong> yasal bir zorunluluk olduğunda ya da haklarımızı korumak için gerektiğinde.</li>
     </ul>
     <p>Kişisel verilerini satmayız, kiralamayız ve reklam amacıyla üçüncü kişilerle paylaşmayız.</p>
@@ -172,7 +175,7 @@
 <article lang="en">
   <p class="lg-kicker">Privacy</p>
   <h1>Privacy Policy<em>.</em></h1>
-  <p class="lg-meta">Effective date: <span class="lg-nw">October 18, 2026</span> · Version <span class="lg-nw">2026-10-18</span></p>
+  <p class="lg-meta">Effective date: <span class="lg-nw">October 22, 2026</span> · Version <span class="lg-nw">2026-10-22</span></p>
 
   <div class="lg-sum">
     <b>In short</b>
@@ -233,6 +236,8 @@
     <p>Your language, theme and sound preferences and an offline copy of your library are kept in your device's local storage. We do not use advertising or tracking cookies.</p>
     <h3>Microphone</h3>
     <p>The microphone is used only when you tap the record button. A recording is not sent to our servers unless you choose to save it.</p>
+    <h3>Push notifications</h3>
+    <p>If you allow notifications, we process your device push token (FCM/APNs), app language, time zone and notification preferences so we can notify you when your song is ready or about important account updates (and, if you explicitly opt in, tips and reminders). You can turn off notifications at any time in Profile › Notifications or in your device settings; your device token is removed when you sign out or delete your account.</p>
     <p class="lg-note"><strong>What we don't collect:</strong> advertising identifiers (IDFA/AAID), location, contacts or your photo library. We don't use third-party analytics or advertising software, and we don't track you across other companies' apps or websites.</p>
   </section>
 
@@ -243,6 +248,7 @@
       <tbody>
         <tr><td>Creating your account, sign-in, music generation, your library and sync across devices</td><td>Performance of a contract</td></tr>
         <tr><td>Managing credits and subscriptions, verifying purchases</td><td>Performance of a contract; legal obligation</td></tr>
+        <tr><td>Sending push notifications (generation completion, account/subscription updates; tips and reminders with your explicit consent)</td><td>Performance of a contract; legitimate interests; explicit consent for marketing notifications</td></tr>
         <tr><td>Security, fraud and abuse prevention, troubleshooting</td><td>Legitimate interests</td></tr>
         <tr><td>Reviewing content reports, preventing rights infringements, responding to legal claims</td><td>Legal obligation; establishing, exercising or defending legal claims; legitimate interests</td></tr>
         <tr><td>Aggregated usage and cost analysis to improve the Service</td><td>Legitimate interests</td></tr>
@@ -255,9 +261,9 @@
   <section id="en-share">
     <h2>4. Who we share data with</h2>
     <ul>
-      <li><strong>Google (Firebase Authentication, Cloud Firestore, Cloud Storage, Firebase App Hosting):</strong> authentication, database, file storage and server hosting.</li>
+      <li><strong>Google (Firebase Authentication, Cloud Firestore, Cloud Storage, Firebase Cloud Messaging, Firebase App Hosting):</strong> authentication, database, file storage, push notification delivery and server hosting.</li>
       <li><strong>AI music generation service providers:</strong> the inputs needed for generation (descriptions, lyrics, style, audio files, voice recordings) and technical parameters. These providers may keep files on their systems for a limited time (about 14 days).</li>
-      <li><strong>Apple and Google:</strong> Sign in with Apple, Google Sign-In and in-app purchases, which are governed by those companies' own privacy policies.</li>
+      <li><strong>Apple and Google:</strong> Sign in with Apple, Google Sign-In, push notification delivery (Apple Push Notification service — APNs) and in-app purchases, which are governed by those companies' own privacy policies.</li>
       <li><strong>Competent authorities:</strong> where required by law or necessary to protect our rights.</li>
     </ul>
     <p>We do not sell or rent your personal data or share it with third parties for advertising.</p>

@@ -465,14 +465,14 @@ async function pushAsk(){const P=window.CR&&CR.push;if(!P||!P.available||isGuest
 function pushRoute(){const p=window.__pendingPush;if(!p)return;
   if(p.kind==='credit_low'||p.kind==='sub_renewed'||p.kind==='pay_failed'){window.__pendingPush=null;if(window.Credits)Credits.open('manual');return}
   if(p.kind==='voice_ready'||p.kind==='credits_reset'){window.__pendingPush=null;if(S.view!=='studio')go('studio');return}   // ses klonu şarkı değil · yenilenen kredi → üretim
-  if(p.kind==='job_failed'){window.__pendingPush=null;if(S.view!=='library')go('library');toast('Kredin iade edildi');return}
+  if(p.kind==='job_failed'){window.__pendingPush=null;if(S.view!=='library')go('library');toast('Kredin iade edildi');if(p.actionId==='retry')openCreate('custom');return}
   if(p.kind==='gift_reminder'||p.kind==='comeback3'||p.kind==='comeback7'||p.kind==='announce'){window.__pendingPush=null;if(S.view!=='home')go('home');return}
   if(!p.taskId){window.__pendingPush=null;if(S.view!=='library')go('library');return}
   const ts=S.lib.filter(t=>t.providerTaskId===p.taskId||t.taskId===p.taskId).sort((a,b)=>(a.version||0)-(b.version||0));
   if(!ts.length){if(Date.now()-p.at>30e3){window.__pendingPush=null;go('library')}return}   // kütüphane henüz eşitlenmedi → bekle
   const t=ts.find(x=>x.status==='ready'&&x.audioUrl);
   if(!t){if(!p.shown){p.shown=1;if(S.view!=='library')go('library');toast('Hazırlanıyor…')}return}   // ses görev sorgusuyla dolunca çalar
-  window.__pendingPush=null;if(S.view!=='library')go('library');play(t.id,true,libItems().map(x=>x.id),'Kütüphane')}
+  const act=p.actionId;window.__pendingPush=null;if(S.view!=='library')go('library');play(t.id,true,libItems().map(x=>x.id),'Kütüphane');if(act==='share')share(t)}
 addEventListener('cr-push-tap',()=>setTimeout(pushRoute,300));
 // Uygulama açıkken gelen bildirim: görev sorgusunu beklemeden hemen sor → toast ve kütüphane anında güncellenir
 addEventListener('cr-push-receive',()=>POLLS.forEach(p=>{clearTimeout(p.timer);p.timer=setTimeout(p.step,200)}));

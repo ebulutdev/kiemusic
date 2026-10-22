@@ -1,5 +1,6 @@
 import UIKit
 import AVFoundation
+import UserNotifications
 import Capacitor
 
 @UIApplicationMain
@@ -16,6 +17,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } catch {
             print("AVAudioSession ayarlanamadı: \(error)")
         }
+        // Bildirim eylem düğmeleri (Faz C): kilit ekranında basılı tutunca "▶ Dinle" / "Paylaş" ve "Tekrar dene"
+        let playAct = UNNotificationAction(identifier: "play", title: "▶ Dinle", options: [.foreground])
+        let shareAct = UNNotificationAction(identifier: "share", title: "Paylaş", options: [.foreground])
+        let retryAct = UNNotificationAction(identifier: "retry", title: "Tekrar dene", options: [.foreground])
+        let readyCat = UNNotificationCategory(identifier: "STUDIO_READY", actions: [playAct, shareAct], intentIdentifiers: [], options: [])
+        let failCat = UNNotificationCategory(identifier: "STUDIO_FAILED", actions: [retryAct], intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([readyCat, failCat])
         return true
     }
 

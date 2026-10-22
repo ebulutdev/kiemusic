@@ -51,6 +51,24 @@
 
   <section class="ad-pane" data-pane="inbox" hidden>
     <div class="ad-bar"><button class="ad-ghost" id="adInboxReload">Yenile</button><label class="ad-chk"><input type="checkbox" id="adInboxAll"> İncelenenleri de göster</label></div>
+    <div class="ad-card"><div class="ad-card-h"><b>Anlık bildirim performansı & kontrol grubu</b><small>config/stats toplamları · telefondan açılan (push) ve uygulama içi kutudan açılan (inbox)</small></div><div class="ad-scroll" id="tbPushStats"></div></div>
+    <form class="ad-card ad-form" id="adAnnounce">
+      <div class="ad-card-h"><b>Duyuru gönder (Kampanya izinli kitle)</b><small>Yalnızca bildirim izni ve açık kampanya onayı (prefs.marketing=true) olan kullanıcılara gider</small></div>
+      <div class="ad-est">
+        <label>Dil<select name="lang"><option value="all">Tüm diller</option><option value="tr">Türkçe (TR)</option><option value="en">English (EN)</option><option value="de">Deutsch (DE)</option><option value="pt">Português (PT)</option><option value="ja">日本語 (JA)</option></select></label>
+        <label>Plan<select name="plan"><option value="all">Tüm kullanıcılar</option><option value="sub">Aktif aboneler</option><option value="free">Ücretsiz kullanıcılar</option></select></label>
+        <label>Son giriş<select name="activity"><option value="all">Tümü</option><option value="active7">Son 7 günde giren</option><option value="active30">Son 30 günde giren</option><option value="inactive7">7+ gündür girmeyen</option></select></label>
+      </div>
+      <label>Başlık (A)<input name="title" maxlength="80" placeholder="Yeni tarzlar Keşfet'te 🔥" required></label>
+      <label>Alternatif Başlık (B — isteğe bağlı, %50/%50 A/B testi)<input name="titleB" maxlength="80" placeholder="Bu hafta ne pişiriyoruz? 🎹"></label>
+      <label>Duyuru metni<input name="body" maxlength="240" placeholder="Yeni ses ve tarzları hemen dene." required></label>
+      <div class="ad-actions">
+        <button class="ad-ghost" type="button" data-nact="preview">Kitleyi hesapla</button>
+        <button class="ad-ghost" type="button" data-nact="test">Bana test gönder</button>
+        <button class="ad-primary" type="button" data-nact="send">Kitleye gönder</button>
+        <span class="ad-note" id="adAnnounceMsg"></span>
+      </div>
+    </form>
     <div class="ad-card"><div class="ad-card-h"><b>Kullanıcı bildirimleri ve sistem uyarıları</b><small>"Bildir" düğmesi ve otomatik uyarılar (üretim servisi kredisi bitti vb.)</small></div><div class="ad-scroll" id="tbIssues"></div></div>
     <div class="ad-card"><div class="ad-card-h"><b>İçerik şikâyetleri</b><small>Parçalarda "Bildir" ile gelenler</small></div><div class="ad-scroll" id="tbReports"></div></div>
   </section>

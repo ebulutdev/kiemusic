@@ -59,7 +59,7 @@
   }
  },
  "legal": {
-  "version": "2026-10-18",
+  "version": "2026-10-22",
   "terms": "/terms",
   "privacy": "/privacy",
   "contact": "emircanbulut04@gmail.com"
@@ -302,7 +302,7 @@
   }
  },
  "notify": {
-  "enabled": false,
+  "enabled": true,
   "quietHours": [
    11,
    21

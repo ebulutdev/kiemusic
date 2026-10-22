@@ -75,6 +75,7 @@
   async function loadStats() {
     data = await api(`/api/admin/stats?days=${days}`);
     renderStats();
+    renderPushStats();
     fillSettings();
   }
   $("#adRange").addEventListener("click", async (e) => {
@@ -203,16 +204,43 @@
     } catch (er) { card.innerHTML = h(er.message); }
   });
 
-  // ══ Bildirimler ═════════════════════════════════════════
+  // ══ Bildirimler & Duyuru ════════════════════════════════
   let inbox = { issues: [], reports: [] };
   const KIND = { busy: "Sistem yoğun (kullanıcı)", other: "Diğer (kullanıcı)", "provider-credits": "Üretim servisi kredisi / yoğunluk (otomatik)" };
   const REASON = { offensive: "Saldırgan içerik", copyright: "Telif", impersonation: "Taklit", sexual: "Uygunsuz içerik", other: "Diğer" };
+  const NTYPE = {
+    song_ready: "Şarkı hazır", cover_ready: "Cover hazır", mashup_ready: "Mashup hazır", extend_ready: "Uzatma hazır",
+    vocals_ready: "Vokal eklendi", stems_ready: "Stem ayrıldı", voice_ready: "Ses klonu hazır", job_failed: "Üretim başarısız",
+    credit_low: "Kredi azaldı", sub_renewed: "Abonelik yenilendi", pay_failed: "Ödeme sorunu", credits_reset: "Aylık kredi yenilendi",
+    unplayed: "Dinlenmeyen şarkı", gift_reminder: "Hediye hatırlatması", comeback3: "3. gün geri dön", comeback7: "7. gün geri dön", announce: "Yönetici duyurusu",
+  };
   const when = (t) => (t ? new Date(t).toLocaleString("tr-TR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—");
+
+  function renderPushStats() {
+    const box = $("#tbPushStats");
+    if (!box) return;
+    const p = data?.push || {}, st = p.stats?.totals || {}, sent = st.sent || {}, opened = st.opened || {}, inb = st.inboxOpened || {};
+    const d7 = p.d7Active || {};
+    const keys = [...new Set([...Object.keys(sent), ...Object.keys(opened), ...Object.keys(inb)])];
+    const head = `<p class="ad-note" style="padding:8px 12px"><b>7 Günlük Aktiflik (D7):</b> Bildirim grubu (%90): <b>${d7.notified != null ? "%" + d7.notified : "—"}</b> (${n(d7.notifiedUsers || 0)} kullanıcı) · Kontrol grubu (%10, hatırlatma almaz): <b>${d7.control != null ? "%" + d7.control : "—"}</b> (${n(d7.controlUsers || 0)} kullanıcı)</p>`;
+    if (!keys.length) {
+      box.innerHTML = head + '<p class="ad-note" style="padding:0 12px 10px">Henüz gönderilen bildirim kaydı yok.</p>';
+      return;
+    }
+    box.innerHTML = head + `<table class="ad-table ad-left"><thead><tr><th>Bildirim türü</th><th>Gönderilen (Push)</th><th>Telefondan açılan</th><th>Açılma oranı</th><th>Gelen kutusu tıklaması</th></tr></thead><tbody>${
+      keys.map((k) => {
+        const s = sent[k] || 0, o = opened[k] || 0, ib = inb[k] || 0;
+        return `<tr><td>${h(NTYPE[k] || k)}</td><td>${n(s)}</td><td>${n(o)}</td><td>${s > 0 ? pct(o / s) : "—"}</td><td>${n(ib)}</td></tr>`;
+      }).join("")
+    }</tbody></table>`;
+  }
+
   async function loadInbox() {
     inbox = await api("/api/admin/issues");
     const open = inbox.issues.filter((x) => x.status === "open").length + inbox.reports.filter((x) => x.status === "open").length;
     const b = $("#adInboxN"); b.hidden = !open; b.textContent = open;
     drawInbox();
+    renderPushStats();
   }
   function drawInbox() {
     const all = $("#adInboxAll").checked, vis = (x) => all || x.status === "open";
@@ -222,8 +250,33 @@
     $("#tbReports").innerHTML = Rr.length ? `<table class="ad-table ad-left"><thead><tr><th>Zaman</th><th>Neden</th><th>Parça</th><th>Bildiren</th><th>Not</th><th></th></tr></thead><tbody>${Rr.map((x) => `<tr class="${x.status}"><td>${when(x.at)}</td><td>${h(REASON[x.reason] || x.reason)}</td><td>${h(x.title || "—")}</td><td>${h(x.user || "—")}</td><td>${h(x.note || "")}</td><td>${btn("reports", x)}</td></tr>`).join("")}</tbody></table>` : '<p class="ad-note">Şikâyet yok.</p>';
   }
   $("#adInboxAll").addEventListener("change", drawInbox);
-  $("#adInboxReload").addEventListener("click", () => loadInbox().catch((e) => toast(e.message)));
+  $("#adInboxReload").addEventListener("click", () => Promise.all([loadInbox(), loadStats()]).catch((e) => toast(e.message)));
   $("[data-pane=inbox]").addEventListener("click", async (e) => {
+    const nb = e.target.closest("[data-nact]");
+    if (nb) {
+      const f = $("#adAnnounce"), msg = $("#adAnnounceMsg"), mode = nb.dataset.nact;
+      const payload = {
+        mode,
+        lang: f.lang.value,
+        plan: f.plan.value,
+        activity: f.activity.value,
+        title: f.title.value.trim(),
+        titleB: f.titleB.value.trim(),
+        body: f.body.value.trim(),
+      };
+      if (mode !== "preview" && (!payload.title || !payload.body)) { msg.textContent = "Başlık ve metin gerekli"; return; }
+      if (mode === "send" && !confirm("Seçili kitleye anlık bildirim gönderilsin mi?")) return;
+      nb.disabled = true;
+      msg.textContent = "İşleniyor…";
+      try {
+        const j = await api("/api/admin/notify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        if (mode === "preview") msg.textContent = `Uygun kitle: ${n(j.eligible)} kullanıcı (toplam jetonlu: ${n(j.totalWithToken)})`;
+        else if (mode === "test") msg.textContent = `Test gönderildi ✓ (${j.sent} cihaz + gelen kutusu)`;
+        else msg.textContent = `Gönderildi ✓ — ${n(j.sent)} / ${n(j.eligible)} kullanıcı${payload.titleB ? ` (A: ${n(j.sentA)}, B: ${n(j.sentB)})` : ""}`;
+      } catch (er) { msg.textContent = er.message; }
+      finally { nb.disabled = false; }
+      return;
+    }
     const b = e.target.closest("[data-st]"); if (!b) return;
     const [col, id, status] = b.dataset.st.split("|");
     try { await api("/api/admin/issues", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ col, id, status }) }); await loadInbox(); } catch (er) { toast(er.message); }
