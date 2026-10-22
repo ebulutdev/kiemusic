@@ -161,7 +161,7 @@ export async function sendToUser(uid: string, type: string, vars: Record<string,
       priority: def.urgent ? "high" : "normal",
       ttl: def.ttlSec * 1000,
       collapseKey: collapseId,
-      notification: { channelId: def.group, sound: def.sound ? SOUND : "default", notificationCount: unread, tag: collapseId },
+      notification: { channelId: def.group, icon: "ic_stat_cookfire", color: "#FF7A2F", sound: def.sound ? SOUND : "default", notificationCount: unread, tag: collapseId },
     },
   });
 

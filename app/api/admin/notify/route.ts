@@ -63,7 +63,7 @@ export async function POST(request: Request) {
           notification: { title: f.title, body: f.body },
           data: { kind: "announce" },
           apns: { headers: { "apns-priority": "10" }, payload: { aps: { sound: "default", "thread-id": "marketing" } } },
-          android: { priority: "high", notification: { channelId: "marketing", sound: "default" } },
+          android: { priority: "high", notification: { channelId: "marketing", icon: "ic_stat_cookfire", color: "#FF7A2F", sound: "default" } },
         });
         sent = res.successCount;
       }
