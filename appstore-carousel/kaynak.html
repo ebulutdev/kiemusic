@@ -1,0 +1,148 @@
+<!doctype html>
+<!-- App Store ekran görüntüleri (carousel / panorama). Tek sayfa, ?i=0..4&w=1290&h=2796 ile bir kare çizilir.
+     Üret: node appstore-carousel/uret.mjs  (Chrome headless ile PNG) -->
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<style>
+@font-face{font-family:'Grenze Gotisch';font-weight:100 900;src:url(../public/fonts/grenze-gotisch-latin-ext-wght-normal.woff2) format('woff2-variations');unicode-range:U+0100-02AF,U+0304,U+0308,U+0329,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:'Grenze Gotisch';font-weight:100 900;src:url(../public/fonts/grenze-gotisch-latin-wght-normal.woff2) format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Bricolage';font-weight:200 800;src:url(../public/fonts/bricolage-grotesque-latin-ext-opsz-normal.woff2) format('woff2-variations');unicode-range:U+0100-02AF,U+1E00-1EFF}
+@font-face{font-family:'Bricolage';font-weight:200 800;src:url(../public/fonts/bricolage-grotesque-latin-opsz-normal.woff2) format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F}
+@font-face{font-family:'GMono';font-weight:100 900;src:url(../public/fonts/geist-mono-latin-ext-wght-normal.woff2) format('woff2-variations');unicode-range:U+0100-02AF,U+1E00-1EFF}
+@font-face{font-family:'GMono';font-weight:100 900;src:url(../public/fonts/geist-mono-latin-wght-normal.woff2) format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+2000-206F}
+
+:root{--gold:#F5B83D;--flame:#FF7A2F;--amber:#FFC86B;--ember:#C2261D;--ivory:#F3ECDF;--ink:#0B0A09}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:var(--W);height:var(--H);overflow:hidden;background:var(--ink)}
+body{position:relative;font-family:'Bricolage',system-ui,sans-serif;color:var(--ivory)}
+/* Panorama: 5 kare genişliğinde tek zemin; her kare kendi dilimini gösterir → yan yana kesintisiz akar */
+.pano{position:absolute;top:0;left:calc(var(--i) * var(--W) * -1);width:calc(var(--W) * 5);height:var(--H);
+  background:
+    radial-gradient(40% 22% at 10% 30%, rgba(255,122,47,.20), transparent 70%),
+    radial-gradient(35% 20% at 34% 62%, rgba(245,184,61,.16), transparent 70%),
+    radial-gradient(40% 24% at 58% 28%, rgba(194,38,29,.22), transparent 70%),
+    radial-gradient(35% 22% at 82% 58%, rgba(255,122,47,.18), transparent 70%),
+    radial-gradient(60% 40% at 50% 100%, rgba(255,122,47,.10), transparent 70%),
+    linear-gradient(180deg,#120D09 0%,#0B0A09 45%,#100A07 100%)}
+.pano svg{position:absolute;inset:0;width:100%;height:100%}
+.grain{position:absolute;inset:0;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.slide{position:absolute;inset:0}
+.head{position:absolute;left:0;right:0;top:calc(var(--W) * .115);text-align:center;padding:0 calc(var(--W) * .07)}
+.kick{display:inline-flex;align-items:center;gap:calc(var(--W) * .018);font-family:'GMono',monospace;font-weight:500;
+  font-size:calc(var(--W) * .029);letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+.kick::before,.kick::after{content:"";width:calc(var(--W) * .055);height:2px;background:linear-gradient(90deg,transparent,var(--gold))}
+.kick::after{transform:scaleX(-1)}
+h1{margin-top:calc(var(--W) * .035);font-family:'Grenze Gotisch',serif;font-weight:700;font-size:calc(var(--W) * .128);
+  line-height:.98;letter-spacing:-.005em;color:var(--ivory);text-shadow:0 6px 40px rgba(0,0,0,.6)}
+h1 em{font-style:normal;background:linear-gradient(100deg,var(--amber) 0%,var(--gold) 35%,var(--flame) 75%,#FF5A2A 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 24px rgba(255,122,47,.35))}
+.sub{margin:calc(var(--W) * .032) auto 0;max-width:24ch;font-size:calc(var(--W) * .036);line-height:1.35;font-weight:400;color:rgba(243,236,223,.66)}
+
+/* Telefon: gerçek ekran görüntüsü, alt kenardan taşar */
+.phone{position:absolute;left:50%;width:calc(var(--W) * .80);aspect-ratio:1290/2796;transform:translateX(-50%);
+  top:calc(var(--H) * .37);border-radius:calc(var(--W) * .118);padding:calc(var(--W) * .021);
+  background:linear-gradient(145deg,#3A3129 0%,#17120E 22%,#0E0B09 60%,#2A221B 100%);
+  box-shadow:0 0 0 2px rgba(255,214,150,.16),0 calc(var(--W) * .04) calc(var(--W) * .14) rgba(0,0,0,.75),0 0 calc(var(--W) * .16) rgba(255,122,47,.20)}
+.phone::before{content:"";position:absolute;inset:calc(var(--W) * .006);border-radius:calc(var(--W) * .112);border:1px solid rgba(255,255,255,.07);pointer-events:none}
+.screen{position:relative;width:100%;height:100%;border-radius:calc(var(--W) * .098);overflow:hidden;background:#000}
+.screen img{display:block;width:100%;height:100%;object-fit:cover}
+.island{position:absolute;top:calc(var(--W) * .022);left:50%;transform:translateX(-50%);width:calc(var(--W) * .25);height:calc(var(--W) * .068);border-radius:99px;background:#000;z-index:2}
+.screen .bar{position:relative;height:calc(var(--W) * .11);background:#0A0908}
+/* Ekran görüntülerinde durum çubuğu yok → üstte saat/şebeke çizilir */
+.status{position:absolute;inset:0 calc(var(--W) * .07);display:flex;align-items:center;justify-content:space-between;font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-weight:600;font-size:calc(var(--W) * .036);color:#fff;padding-top:calc(var(--W) * .01)}
+.status i{display:inline-flex;gap:calc(var(--W) * .012);align-items:center}
+.status b{display:inline-block;width:calc(var(--W) * .058);height:calc(var(--W) * .028);border:2px solid rgba(255,255,255,.55);border-radius:6px;position:relative}
+.status b::after{content:"";position:absolute;inset:2px;right:20%;background:#fff;border-radius:3px}
+.screen .shot{height:calc(100% - var(--W) * .11)}
+.screen .shot img{object-position:top}
+
+/* 1. kare: iki telefon + marka */
+.brand{display:flex;align-items:center;justify-content:center;gap:calc(var(--W) * .03);margin-bottom:calc(var(--W) * .045)}
+.brand img{width:calc(var(--W) * .135);height:calc(var(--W) * .135);border-radius:calc(var(--W) * .032);box-shadow:0 10px 40px rgba(255,122,47,.35),0 0 0 1px rgba(255,214,150,.18)}
+.brand span{font-family:'Grenze Gotisch',serif;font-weight:700;font-size:calc(var(--W) * .075);letter-spacing:.01em}
+.hero .phone.back{transform:translateX(-50%) translateX(calc(var(--W) * -.17)) rotate(-7deg) scale(.8);top:calc(var(--H) * .405);filter:saturate(.85) brightness(.5)}
+.hero .phone.front{transform:translateX(-50%) translateX(calc(var(--W) * .1)) rotate(3deg) scale(.88);top:calc(var(--H) * .395)}
+.hero h1{font-size:calc(var(--W) * .15)}
+
+/* Rozetler (farkı hissettiren kısa özellik etiketleri) */
+.chips{position:absolute;left:0;right:0;display:flex;flex-wrap:nowrap;justify-content:center;gap:calc(var(--W) * .018);padding:0 calc(var(--W) * .05)}
+.chip{white-space:nowrap;font-family:'Bricolage',sans-serif;font-weight:600;font-size:calc(var(--W) * .031);padding:calc(var(--W) * .016) calc(var(--W) * .034);border-radius:99px;
+  color:var(--ivory);background:rgba(20,15,11,.72);border:1px solid rgba(245,184,61,.32);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.chip.hot{background:linear-gradient(100deg,rgba(245,184,61,.95),rgba(255,122,47,.95));color:#1A0F07;border-color:transparent;font-weight:700}
+</style>
+</head>
+<body>
+<div class="pano">
+  <!-- Kesintisiz alev şeridi: 5 kareyi baştan sona geçer -->
+  <svg viewBox="0 0 5000 2000" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="rib" x1="0" x2="1">
+        <stop offset="0" stop-color="#C2261D" stop-opacity="0"/>
+        <stop offset=".08" stop-color="#C2261D"/>
+        <stop offset=".3" stop-color="#FF7A2F"/>
+        <stop offset=".52" stop-color="#F5B83D"/>
+        <stop offset=".74" stop-color="#FF7A2F"/>
+        <stop offset=".94" stop-color="#C2261D"/>
+        <stop offset="1" stop-color="#C2261D" stop-opacity="0"/>
+      </linearGradient>
+      <filter id="glow" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="38"/></filter>
+      <filter id="soft" x="-10%" y="-50%" width="120%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+    </defs>
+    <path d="M-100 1180 C 400 900, 700 1450, 1100 1150 S 1800 820, 2150 1080 S 2800 1500, 3150 1120 S 3800 760, 4150 1060 S 4700 1350, 5100 1000"
+      fill="none" stroke="url(#rib)" stroke-width="150" stroke-linecap="round" filter="url(#glow)" opacity=".55"/>
+    <path d="M-100 1180 C 400 900, 700 1450, 1100 1150 S 1800 820, 2150 1080 S 2800 1500, 3150 1120 S 3800 760, 4150 1060 S 4700 1350, 5100 1000"
+      fill="none" stroke="url(#rib)" stroke-width="16" stroke-linecap="round" filter="url(#soft)" opacity=".9"/>
+    <path d="M-100 1240 C 420 980, 720 1500, 1120 1210 S 1820 900, 2170 1140 S 2820 1560, 3170 1180 S 3820 840, 4170 1120 S 4720 1410, 5100 1060"
+      fill="none" stroke="url(#rib)" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+    <g id="embers" fill="#FFB45A"></g>
+  </svg>
+  <div class="grain"></div>
+</div>
+
+<div id="root"></div>
+
+<script>
+const q = new URLSearchParams(location.search);
+const I = +(q.get("i") || 0), W = +(q.get("w") || 1290), H = +(q.get("h") || 2796);
+document.documentElement.style.setProperty("--W", W + "px");
+document.documentElement.style.setProperty("--H", H + "px");
+document.documentElement.style.setProperty("--i", I);
+
+// Kıvılcımlar (sabit tohum → her karede aynı yerde, panorama kesintisiz)
+let s = 7; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+const g = document.getElementById("embers");
+for (let k = 0; k < 140; k++) {
+  const x = rnd() * 5000, y = 700 + rnd() * 900, r = 1.5 + rnd() * 5;
+  g.insertAdjacentHTML("beforeend", `<circle cx="${x.toFixed(0)}" cy="${y.toFixed(0)}" r="${r.toFixed(1)}" opacity="${(.15 + rnd() * .55).toFixed(2)}"/>`);
+}
+
+const shot = (f) => `<div class="screen"><div class="island"></div><div class="bar"><div class="status"><span>9:41</span><i>
+  <svg width="${W*.04}" height="${W*.026}" viewBox="0 0 20 13" fill="#fff"><rect x="0" y="9" width="3.5" height="4" rx="1"/><rect x="5.5" y="6" width="3.5" height="7" rx="1"/><rect x="11" y="3" width="3.5" height="10" rx="1"/><rect x="16.5" y="0" width="3.5" height="13" rx="1"/></svg>
+  <svg width="${W*.038}" height="${W*.027}" viewBox="0 0 18 13" fill="#fff"><path d="M9 2.5c2.6 0 5 1 6.8 2.7l1.4-1.5A11.7 11.7 0 0 0 9 .5 11.7 11.7 0 0 0 .8 3.7l1.4 1.5A9.7 9.7 0 0 1 9 2.5Zm0 4c1.5 0 2.9.6 4 1.5l1.4-1.5A7.7 7.7 0 0 0 9 4.5a7.7 7.7 0 0 0-5.4 2l1.4 1.5c1.1-.9 2.5-1.5 4-1.5Zm0 4 2-2.1a3 3 0 0 0-4 0Z"/></svg>
+  <b></b></i></div></div><div class="shot"><img src="../${f}"></div></div>`;
+const phone = (f, cls = "") => `<div class="phone ${cls}">${shot(f)}</div>`;
+
+const SLIDES = [
+  { hero: true, kick: "Yapay zekâ müzik stüdyosu", h: "Sahne <em>senin.</em>", sub: "Fikrini yaz, sesini kaydet; dakikalar içinde gerçek bir şarkı.",
+    back: "appstore-1-ozel-studyo.png", front: "appstore-4-kutuphane.png" },
+  { kick: "Tam kontrol", h: "Sözü sen yaz,<br><em>ateşi biz yakalım.</em>", f: "appstore-1-ozel-studyo.png", chips: ["Türkçe sözler", "Vokal ya da beat", "Stil · tempo · ses"] },
+  { kick: "Kendi sesinden", h: "Mırıldan.<br><em>Şarkı olsun.</em>", f: "appstore-3-sesten-kayit.png", chips: ["Cover", "Uzat", "Vokal ekle"] },
+  { kick: "Yalnız CookFire'da", h: "Kes, birleştir,<br><em>mashup'ını pişir.</em>", f: "appstore-2-analiz-mashup.png", chips: ["Vokal + müzik", "Kesit tekrarı", "MP3 indir"], hot: 0 },
+  { kick: "Kütüphane", h: "Her şarkın<br><em>tek rafta.</em>", sub: "Dinle, beğen, paylaş; vokal ve enstrümanı ayrı ayrı indir.", f: "appstore-4-kutuphane.png" },
+];
+
+const d = SLIDES[I];
+const head = `<div class="head">${d.hero ? `<div class="brand"><img src="../resources/icon.png"><span>CookFire</span></div>` : ""}
+  <div class="kick">${d.kick}</div><h1>${d.h}</h1>${d.sub ? `<p class="sub">${d.sub}</p>` : ""}</div>`;
+const chips = d.chips ? `<div class="chips" style="top:calc(var(--H) * .292)">${d.chips.map((c, k) => `<span class="chip${d.hot === k ? " hot" : ""}">${c}</span>`).join("")}</div>` : "";
+const body = d.hero ? phone(d.back, "back") + phone(d.front, "front") : phone(d.f);
+document.getElementById("root").innerHTML = `<div class="slide${d.hero ? " hero" : ""}">${body}${head}${chips}</div>`;
+// Yazı tipleri ve görseller hazır olunca işaret → üretici bekler
+Promise.all([document.fonts.ready, ...[...document.images].map((im) => im.decode().catch(() => {}))]).then(() => document.body.dataset.ready = "1");
+</script>
+</body>
+</html>
