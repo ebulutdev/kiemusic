@@ -97,10 +97,11 @@
     return j;
   }
   const jwsOf = (list) => (list || []).map((t) => t && t.jwsRepresentation).filter(Boolean);
-  async function sendActive() {
+  // intent: "sync" (açılış — başka hesaba bağlı abonelik taşınmaz) · "restore" / "purchase" (kullanıcı eylemi — bu hesaba taşınır)
+  async function sendActive(intent = "sync") {
     const r = await IAP.getPurchases({ productType: "subs" }).catch(() => ({ purchases: [] }));
     const jws = jwsOf(r.purchases);
-    return jws.length ? billing("POST", { jws }) : { active: false };
+    return jws.length ? billing("POST", { jws, intent }) : { active: false };
   }
   const iap = IAP ? {
     async products(ids) {
@@ -114,13 +115,13 @@
       catch (e) { if (/cancel/i.test(String((e && (e.message || e.code)) || ""))) throw new Error("cancelled"); throw e; }
       const jws = jwsOf([t]);
       if (!jws.length) throw new Error("Satın alma doğrulanamadı. \"Satın alımları geri yükle\" ile tekrar dene.");
-      const j = await billing("POST", { jws });
+      const j = await billing("POST", { jws, intent: "purchase" });
       if (!j.active) throw new Error("Abonelik etkinleşmedi. \"Satın alımları geri yükle\" ile tekrar dene.");
       return j;
     },
     async restore() {
       await IAP.restorePurchases().catch(() => {});
-      return (await sendActive()).active;
+      return (await sendActive("restore")).active;
     },
   } : {};
   // Uygulama açılınca (hesapla giriş yapılmışsa) etkin abonelik sunucuya bildirilir → yenilenen ay kredisi yüklenir

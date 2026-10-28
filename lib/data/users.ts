@@ -133,8 +133,9 @@ export async function chargeCredits(uid: string, amount: number, verified = true
  *    carry = o anki satın alınmamış bakiye (aktif plandan geçişte yalnız önceki carry kadarı) → plan bitince / iade olunca kalan.
  * Dönem mağazanın yenileme tarihinde biter. Aynı işlem (tx) ve tarih ikinci kez gelirse yok sayılır → tekrar krediyi yeniden doldurmaz.
  */
-// grant=false: abonelik başka hesaptan taşındı ve bu dönemin kredisi zaten verilmişti → plan bağlanır, kredi eklenmez (tekrar tekrar taşıyarak kredi çoğaltılamaz)
-export async function startPlan(uid: string, planId: string, expiresAt: number, store: UserPlan["store"], txId?: string, otid?: string, grant = true) {
+// grant=false: abonelik başka hesaptan taşındı ve bu dönemin kredisi zaten verilmişti → plan kredisi yeniden eklenmez (taşıyarak çoğaltılamaz);
+// extra: eski hesaptan taşınan, bu dönemden kalan satın alınmış kredi (abonelik nereye giderse kalan kredisi de oraya gider)
+export async function startPlan(uid: string, planId: string, expiresAt: number, store: UserPlan["store"], txId?: string, otid?: string, grant = true, extra = 0) {
   const { pricing } = await getConfig();
   const plan = pricing.plans?.find((x) => x.id === planId);
   if (!plan) throw new Error(`Plan tanımlı değil: ${planId}`);
@@ -148,7 +149,7 @@ export async function startPlan(uid: string, planId: string, expiresAt: number, 
     const settled = settlePeriod(cur, pricing, t, true);
     const balance = Math.max(0, settled ? settled.credits : cur.credits ?? 0);
     const carry = active ? Math.min(balance, cur.plan!.carry ?? 0) : balance;
-    const credits = (grant ? plan.credits : 0) + (renewal ? carry : balance);
+    const credits = (grant ? plan.credits : 0) + Math.max(0, extra) + (renewal ? carry : balance);
     tx.set(ref, {
       credits,
       plan: { id: plan.id, credits: plan.credits, expiresAt, store, ...(txId ? { tx: txId } : {}), ...(otid ? { otid } : {}), carry, autoRenew: true, billingIssue: false },
