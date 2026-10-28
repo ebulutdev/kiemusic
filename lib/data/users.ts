@@ -15,6 +15,15 @@ export class TrustedLoginRequired extends Error {
 export class TermsRequired extends Error {
   constructor() { super("Güncel Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmeniz gerekmektedir."); }
 }
+// Girdiler (açıklama, söz, ses) üçüncü taraf yapay zekâ servisine gönderilmeden önce açık izin (Apple 5.1.1 / 5.1.2)
+export class AiConsentRequired extends Error {
+  constructor() { super("Şarkı üretebilmek için yapay zekâ servisiyle veri paylaşımına izin vermeniz gerekiyor."); }
+}
+/** Yapay zekâ servisine veri gönderen ücretsiz uçlar (persona, ses klonu) için izin kontrolü — ücretli uçlarda chargeCredits yapar. */
+export async function requireAiConsent(uid: string) {
+  const d = (await userRef(uid).get()).data() as Doc | undefined;
+  if (!d?.aiConsent) throw new AiConsentRequired();
+}
 // Ücretsiz uçların (persona, ses klonu) kötüye kullanımına karşı günlük sınır
 export class QuotaExceeded extends Error {
   constructor() { super("Bugünlük sınıra ulaştın, yarın tekrar dene."); }
@@ -103,6 +112,7 @@ export async function chargeCredits(uid: string, amount: number, verified = true
     const ref = userRef(uid);
     const d = ((await tx.get(ref)).data() || {}) as Doc;
     if (legal?.version && d.terms?.version !== legal.version) throw new TermsRequired();
+    if (!d.aiConsent) throw new AiConsentRequired();
     // Yalnız hesaplar harcar (requireAccount) → misafirken kalan guest işareti hesabın ilk dönemini başlatır
     if (!verified && !d.period) throw new TrustedLoginRequired(); // Apple / Google ile bağlı olmayan hesap harcayamaz
     const patch = settlePeriod(d, pricing, Date.now(), true);
@@ -123,7 +133,8 @@ export async function chargeCredits(uid: string, amount: number, verified = true
  *    carry = o anki satın alınmamış bakiye (aktif plandan geçişte yalnız önceki carry kadarı) → plan bitince / iade olunca kalan.
  * Dönem mağazanın yenileme tarihinde biter. Aynı işlem (tx) ve tarih ikinci kez gelirse yok sayılır → tekrar krediyi yeniden doldurmaz.
  */
-export async function startPlan(uid: string, planId: string, expiresAt: number, store: UserPlan["store"], txId?: string, otid?: string) {
+// grant=false: abonelik başka hesaptan taşındı ve bu dönemin kredisi zaten verilmişti → plan bağlanır, kredi eklenmez (tekrar tekrar taşıyarak kredi çoğaltılamaz)
+export async function startPlan(uid: string, planId: string, expiresAt: number, store: UserPlan["store"], txId?: string, otid?: string, grant = true) {
   const { pricing } = await getConfig();
   const plan = pricing.plans?.find((x) => x.id === planId);
   if (!plan) throw new Error(`Plan tanımlı değil: ${planId}`);
@@ -137,7 +148,7 @@ export async function startPlan(uid: string, planId: string, expiresAt: number, 
     const settled = settlePeriod(cur, pricing, t, true);
     const balance = Math.max(0, settled ? settled.credits : cur.credits ?? 0);
     const carry = active ? Math.min(balance, cur.plan!.carry ?? 0) : balance;
-    const credits = plan.credits + (renewal ? carry : balance);
+    const credits = (grant ? plan.credits : 0) + (renewal ? carry : balance);
     tx.set(ref, {
       credits,
       plan: { id: plan.id, credits: plan.credits, expiresAt, store, ...(txId ? { tx: txId } : {}), ...(otid ? { otid } : {}), carry, autoRenew: true, billingIssue: false },

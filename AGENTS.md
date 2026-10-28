@@ -31,6 +31,7 @@ Yanıt dili: Türkçe. Hedef: iOS/Android mağaza uygulaması (appId `com.emirca
 - Beat = `instrumental: true` + `catalog.beatTags`. Sesi olmayan parça çalınmaz.
 - Yeni arayüz metni Türkçe; EN `i18n.js`, DE/PT/JA `i18n-langs.js` (dördü birlikte); kullanıcı içeriğine `data-noi18n`.
 - Tasarım: siyah/fildişi + altın #F5B83D, alev turuncusu #FF7A2F, kehribar, koyu kırmızı; başlık Grenze Gotisch; mor/mavi yok.
+- Yapay zekâ veri paylaşımı izni (Apple 5.1.2): `users/{uid}.aiConsent` (`/api/me` `aiConsent: true|false`) yoksa `chargeCredits` / `requireAiConsent` → `AiConsentRequired` (403 `aiConsent`); istemci `jpost` izin penceresini (`aiConsentAsk`) açar, izin verilirse isteği yineler · Profil › Yapay zekâ veri paylaşımı (`renderAi`). Abonelik başka hesaba bağlıysa taşınır (`billing/apple`, eski plan `endPlan("transfer")`, aynı dönem kredisi bir kez).
 - Yasal metin değişirse sayfa sürümü + `legal.version` birlikte. Güncel sürüm kabul edilmeden harcama `TermsRequired`.
 - Yeni koleksiyon/dinleyici yerine mevcut belgeye alan ekle. Uzak kod/font yok (çevrimdışı paket). Webhook HMAC production'da zorunlu.
 - Gizli: `.env`, `firebase-service-account.json` — okuma, commit etme.

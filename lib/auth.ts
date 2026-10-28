@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { adminAuth, FirebaseNotConfigured } from "./firebaseAdmin";
-import { InsufficientCredits, TrustedLoginRequired, QuotaExceeded, TermsRequired } from "./data/users";
+import { InsufficientCredits, TrustedLoginRequired, QuotaExceeded, TermsRequired, AiConsentRequired } from "./data/users";
 import { ProviderBusy, KieUserError } from "./kie";
 
 // İşlem maliyetleri: config/app.pricing (lib/data/config.ts)
@@ -59,6 +59,7 @@ export function errorResponse(error: unknown, tag: string) {
   if (error instanceof InsufficientCredits) return json(402, error.message);
   if (error instanceof TrustedLoginRequired) return json(403, error.message);
   if (error instanceof TermsRequired) return NextResponse.json({ success: false, error: error.message, terms: true }, { status: 403 });
+  if (error instanceof AiConsentRequired) return NextResponse.json({ success: false, error: error.message, aiConsent: true }, { status: 403 });
   if (error instanceof QuotaExceeded) return json(429, error.message);
   if (error instanceof KieUserError) return json(422, error.message);
   if (error instanceof ProviderBusy) return NextResponse.json({ success: false, error: error.message, busy: true }, { status: 503 });

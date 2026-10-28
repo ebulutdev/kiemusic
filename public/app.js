@@ -99,7 +99,9 @@ const fbWait=()=>window.FB?Promise.resolve(window.FB):new Promise(r=>{const t=se
 // API adresi: web'de aynı sunucu, mobil uygulamada tam adres (public/native.js → CR.api)
 const apiUrl=u=>window.CR?CR.api(u):u;
 async function api(url,o={}){const fb=await fbWait();const headers=fb?await fb.headers(o.headers||{}):(o.headers||{});return fetch(apiUrl(url),{...o,headers})}
-const jpost=(url,body)=>api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+// Sunucu yapay zekâ veri paylaşımı iznini isterse (403 aiConsent) izin penceresi açılır; izin verilirse istek bir kez yinelenir
+const jpost=async(url,body)=>{const send=()=>api(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});let r=await send();
+  if(r.status===403){const j=await r.clone().json().catch(()=>({}));if(j.aiConsent&&await aiConsentAsk())r=await send()}return r};
 window.SF={
   state:()=>S,
   applyCatalog(c){if(!c)return;const put=(a,v)=>{if(Array.isArray(v)&&v.length)a.splice(0,a.length,...v)};
@@ -117,7 +119,7 @@ window.SF={
   resetLocal(){stopAll();S.lib=[];S.personas=[];S.voices=[];S.set.credits=0;S.set.period=S.set.plan=null;
     ['sf2_lib','sf2_personas','sf2_voices'].forEach(k=>store.set(k,[]));store.set('sf2_set',S.set);renderAll();renderStudio()},
   applyConfig(c){if(!c)return;if(window.Docs)Docs.setLegal(c.legal);SF.applyPricing(c.pricing);SF.applyCatalog(c.catalog);SF.applyEngine(c.engine)},
-  applyUser({credits,period,plan,settings,personas,voices,push}){if(credits!=null)S.set.credits=credits;if(period!==undefined)S.set.period=period;if(plan!==undefined)S.set.plan=plan;
+  applyUser({credits,period,plan,settings,personas,voices,push,aiConsent}){if(aiConsent!==undefined){S.aiConsent=aiConsent;renderAi()}if(credits!=null)S.set.credits=credits;if(period!==undefined)S.set.period=period;if(plan!==undefined)S.set.plan=plan;
     if(settings){if(settings.model)S.set.model=settings.model;if(settings.theme&&settings.theme!==S.set.theme){S.set.theme=settings.theme;applyTheme()}}
     if(personas)S.personas=personas;if(voices)S.voices=voices;if(push){S.push=push;pushSeen()}
     store.set('sf2_set',S.set);store.set('sf2_personas',S.personas);store.set('sf2_voices',S.voices);renderAll();if(personas||voices)renderStudio()},
@@ -1012,7 +1014,30 @@ function renderStudio(){
 document.addEventListener('click',e=>{const t=e.target.closest('[data-tool]');if(t)openTool(t.dataset.tool)});
 
 /* ---------- profile ---------- */
-function renderProfile(){$('#pCount').textContent=S.lib.length+' parça';$('#pMode').innerHTML=API.live?'<span class="live-dot"></span>Stüdyo çevrimiçi':'Sunucuya bağlı değil';renderCredit();renderNotif()}
+function renderProfile(){$('#pCount').textContent=S.lib.length+' parça';$('#pMode').innerHTML=API.live?'<span class="live-dot"></span>Stüdyo çevrimiçi':'Sunucuya bağlı değil';renderCredit();renderNotif();renderAi()}
+// Yapay zekâ veri paylaşımı izni (Apple 5.1.1 / 5.1.2): ne gönderildiği, kime gittiği, ne kadar saklandığı → açık izin; Profil'den geri alınır
+let aiWait=null;
+function aiConsentAsk(){if(aiWait)return aiWait;
+  aiWait=new Promise(res=>{openSheet(`<div class="busy ai-consent"><h3>Yapay zekâ ile üretim izni</h3>
+    <p>Şarkını üretebilmemiz için aşağıdaki bilgiler üçüncü taraf bir yapay zekâ müzik üretim servisine gönderilir:</p>
+    <ul class="ai-list"><li>Şarkı açıklaması, söz, tarz ve başlık</li><li>Yüklediğin ya da kaydettiğin sesler (cover, uzatma, vokal, ses klonu)</li></ul>
+    <p>Servis bu bilgileri yalnız şarkını üretmek için kullanır; dosyalar yaklaşık 14 gün sonra silinir. Sunucuları yurt dışında (ABD dahil) bulunabilir. E-posta adın, adın ve ödeme bilgilerin gönderilmez.</p>
+    <p>İznini istediğin zaman Profil › Yapay zekâ veri paylaşımı bölümünden geri alabilirsin. İzin vermezsen şarkı üretilemez.</p>
+    <div class="busy-links"><a href="/privacy" data-legal="privacy" target="_blank" rel="noopener">Gizlilik Politikası</a></div>
+    <button class="primary busy-ok" type="button" data-b="ok"><span>İzin ver ve devam et</span></button>
+    <button class="busy-rep" type="button" data-b="no">Vazgeç</button></div>`);
+    const sh=$('#sheet'),done=v=>{sh._onClose=null;aiWait=null;res(v)};sh._onClose=()=>done(false);
+    sh.querySelector('[data-b=no]').onclick=()=>closeLayer(sh);
+    const b=sh.querySelector('[data-b=ok]');b.onclick=async()=>{b.disabled=true;
+      try{const r=await api('/api/me',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({aiConsent:true})});if(!r.ok)throw 0;
+        S.aiConsent=true;renderAi();sh._onClose=null;closeLayer(sh);done(true)}catch(x){b.disabled=false;toast('Kaydedilemedi, lütfen tekrar deneyiniz.')}}});
+  return aiWait}
+function renderAi(){const box=$('#aiBox');if(!box)return;box.hidden=isGuest();const t=$('#aiToggle');if(t)t.checked=!!S.aiConsent}
+$('#aiToggle')&&$('#aiToggle').addEventListener('change',async e=>{const c=e.target;
+  if(c.checked){c.checked=!!S.aiConsent;await aiConsentAsk();return renderAi()}
+  try{const r=await api('/api/me',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({aiConsent:false})});if(!r.ok)throw 0;S.aiConsent=false;toast('İzin geri alındı')}
+  catch(x){toast('Kaydedilemedi')}renderAi()});
+$('#aiInfo')&&$('#aiInfo').addEventListener('click',()=>{if(!S.aiConsent)aiConsentAsk().then(renderAi);else window.Docs?Docs.open('privacy'):open('/privacy','_blank')});
 // Profil › Bildirimler: izin durumu, 3 tercih (sunucu users/{uid}.push.prefs; kampanya yalnız açık izinle), son 20 bildirim.
 // Başlık/metin sunucudan kullanıcının dilinde gelir (data-noi18n); dokununca ilgili şarkı / plan ekranı açılır (pushRoute).
 const NPREF=[['studio','Şarkın hazır olunca'],['account','Kredi ve abonelik'],['marketing','Yeni tarzlar ve öneriler']];

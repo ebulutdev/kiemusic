@@ -166,6 +166,7 @@ export interface UserDoc {
   unverified?: boolean; // Apple / Google ile bağlı olmayan hesap: başlangıç hediyesi yok (kredi 0)
   quota?: Record<string, { day: string; n: number }>; // ücretsiz uçların günlük sayaçları (yalnız sunucu yazar)
   terms?: { version: string | null; at?: unknown; prev?: string | null }; // hesap açılışında kabul edilen Kullanım Koşulları / Gizlilik sürümü (yalnız sunucu yazar)
+  aiConsent?: { at: number } | null; // girdilerin üçüncü taraf yapay zekâ servisine gönderilmesine açık izin (Apple 5.1.2) — yoksa üretim yapılamaz; Profil'den geri alınır
   settings?: { model?: string; theme?: string };
   personas?: Record<string, PersonaDoc>; // id → persona
   voices?: Record<string, VoiceDoc>;     // id → ses

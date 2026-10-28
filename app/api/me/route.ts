@@ -28,6 +28,10 @@ export async function POST(request: Request) {
     const accepted = typeof body?.terms === "string" ? body.terms.slice(0, 40) : undefined;
     const state = await ensureUser(user.uid, user.anon, user.verified, accepted, user.giftId);
     if (!user.anon) {
+      // Yapay zekâ veri paylaşımı izni (Apple 5.1.2): true → izin verildi (zaman damgası), false → geri alındı
+      if (typeof body?.aiConsent === "boolean") {
+        await adminDb().doc(path.user(user.uid)).set({ aiConsent: body.aiConsent ? { at: Date.now() } : null }, { merge: true });
+      }
       const p = Push.safeParse(body?.push ?? {});
       if (p.success) {
         const d = p.data;

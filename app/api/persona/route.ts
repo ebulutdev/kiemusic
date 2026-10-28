@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { personaSchema } from "@/lib/validation";
 import { createKieTask } from "@/lib/kie";
 import { requireAccount, errorResponse } from "@/lib/auth";
-import { savePersona, takeQuota } from "@/lib/data/users";
+import { savePersona, takeQuota, requireAiConsent } from "@/lib/data/users";
 import { createTask, getTask, updateTask } from "@/lib/data/tasks";
 import { extraResult } from "@/lib/results";
 
@@ -23,6 +23,7 @@ export async function POST(request: Request) {
     if (!src || src.userId !== user.uid) return NextResponse.json({ success: false, error: "Kaynak parça bulunamadı" }, { status: 404 });
     if (src.status !== "COMPLETED") return NextResponse.json({ success: false, error: "Parça henüz tamamlanmadı" }, { status: 409 });
 
+    await requireAiConsent(user.uid); // girdiler yapay zekâ servisine gider → açık izin
     await takeQuota(user.uid, "persona"); // günlük sınır (config/app limits)
     const id = clientId || crypto.randomUUID();
     const kie = await createKieTask("persona", {

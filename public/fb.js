@@ -162,6 +162,7 @@ function listen() {
       voices: d.voices ? fromMap(d.voices) : null,
       // Bildirim tercihleri + son 20 bildirim + okunmamış sayısı (yalnız sunucu yazar; Profil › Bildirimler)
       push: { prefs: (d.push && d.push.prefs) || {}, inbox: (d.push && d.push.inbox) || [], unread: (d.push && d.push.unread) || 0 },
+      aiConsent: !!d.aiConsent, // yapay zekâ veri paylaşımı izni (yalnız sunucu yazar; /api/me)
     });
   }));
 
