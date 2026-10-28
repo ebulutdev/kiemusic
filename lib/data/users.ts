@@ -152,7 +152,8 @@ export async function startPlan(uid: string, planId: string, expiresAt: number, 
     const credits = (grant ? plan.credits : 0) + Math.max(0, extra) + (renewal ? carry : balance);
     tx.set(ref, {
       credits,
-      plan: { id: plan.id, credits: plan.credits, expiresAt, store, ...(txId ? { tx: txId } : {}), ...(otid ? { otid } : {}), carry, autoRenew: true, billingIssue: false },
+      // merge yazımı eski alanları korur → önceki bitişin işaretleri (endedAt / endReason) silinir, yoksa yeniden etkinleşen plan "bitmiş" sayılır
+      plan: { id: plan.id, credits: plan.credits, expiresAt, store, ...(txId ? { tx: txId } : {}), ...(otid ? { otid } : {}), carry, autoRenew: true, billingIssue: false, endedAt: FieldValue.delete(), endReason: FieldValue.delete() },
       period: { start: t, end: expiresAt, grant: credits },
       updatedAt: now(),
     }, { merge: true });
