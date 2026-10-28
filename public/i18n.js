@@ -115,7 +115,7 @@
     "Şimdi değil": "Not now",
     "Hazır olunca haber vereceğiz 🔥": "We'll let you know when it's ready 🔥",
     "Yapay zekâ ile üretim izni": "Permission for AI generation",
-    "Şarkını üretebilmemiz için aşağıdaki bilgiler üçüncü taraf bir yapay zekâ müzik üretim servisine gönderilir:": "To create your song, the following information is sent to a third-party AI music generation service:",
+    "Şarkını üretebilmemiz için aşağıdaki bilgiler üçüncü taraf yapay zekâ müzik üretim servisi kie.ai'ye (Suno tabanlı müzik modelleri) gönderilir:": "To create your song, the following information is sent to the third-party AI music generation service kie.ai (Suno-based music models):",
     "Şarkı açıklaması, söz, tarz ve başlık": "Song description, lyrics, style and title",
     "Yüklediğin ya da kaydettiğin sesler (cover, uzatma, vokal, ses klonu)": "Audio you upload or record (cover, extend, vocals, voice clone)",
     "Servis bu bilgileri yalnız şarkını üretmek için kullanır; dosyalar yaklaşık 14 gün sonra silinir. Sunucuları yurt dışında (ABD dahil) bulunabilir. E-posta adın, adın ve ödeme bilgilerin gönderilmez.": "The service uses this information only to create your song; files are deleted after about 14 days. Its servers may be located abroad (including the United States). Your email address, name and payment details are not sent.",

@@ -1019,7 +1019,7 @@ function renderProfile(){$('#pCount').textContent=S.lib.length+' parça';$('#pMo
 let aiWait=null;
 function aiConsentAsk(){if(aiWait)return aiWait;
   aiWait=new Promise(res=>{openSheet(`<div class="busy ai-consent"><h3>Yapay zekâ ile üretim izni</h3>
-    <p>Şarkını üretebilmemiz için aşağıdaki bilgiler üçüncü taraf bir yapay zekâ müzik üretim servisine gönderilir:</p>
+    <p>Şarkını üretebilmemiz için aşağıdaki bilgiler üçüncü taraf yapay zekâ müzik üretim servisi kie.ai'ye (Suno tabanlı müzik modelleri) gönderilir:</p>
     <ul class="ai-list"><li>Şarkı açıklaması, söz, tarz ve başlık</li><li>Yüklediğin ya da kaydettiğin sesler (cover, uzatma, vokal, ses klonu)</li></ul>
     <p>Servis bu bilgileri yalnız şarkını üretmek için kullanır; dosyalar yaklaşık 14 gün sonra silinir. Sunucuları yurt dışında (ABD dahil) bulunabilir. E-posta adın, adın ve ödeme bilgilerin gönderilmez.</p>
     <p>İznini istediğin zaman Profil › Yapay zekâ veri paylaşımı bölümünden geri alabilirsin. İzin vermezsen şarkı üretilemez.</p>

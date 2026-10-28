@@ -1,6 +1,6 @@
 # CookFire — yapay zekâ müzik stüdyosu (mobil PWA + Capacitor 8 + Next.js 15 API + Firebase)
 
-Yanıt dili: Türkçe. Hedef: iOS/Android mağaza uygulaması (appId `com.emircanbulut.cookfire`). Arayüzde ve mağaza metninde KIE/Suno adı geçmez (yalnız sunucu kodunda).
+Yanıt dili: Türkçe. Hedef: iOS/Android mağaza uygulaması (appId `com.emircanbulut.cookfire`). Arayüzde ve mağaza metninde KIE/Suno adı geçmez (yalnız sunucu kodunda) — tek istisna: yapay zekâ veri paylaşımı izin penceresi (`aiConsentAsk`) ve gizlilik politikası; Apple 5.1.2 verinin kime gittiğinin adıyla yazılmasını ister.
 
 ## Bağlam tasarrufu
 - Önce bu haritaya bak, yalnız ilgili dosyayı aç; bilinmeyen yer → `Grep`, sonra `Read` offset/limit. Özellik ayrıntısı gerekiyorsa `docs/ozellikler.md`'nin yalnız o bölümü.
