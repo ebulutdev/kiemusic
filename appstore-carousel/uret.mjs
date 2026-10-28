@@ -9,7 +9,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const chrome = ["C:/Program Files/Google/Chrome/Application/chrome.exe", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/usr/bin/google-chrome"].find(existsSync);
 if (!chrome) throw new Error("Chrome bulunamadı");
 const SIZES = { "6.9": [1290, 2796], "6.3": [1206, 2622] };
-const NAMES = ["1-sahne-senin", "2-tam-kontrol", "3-kendi-sesinden", "4-mashup", "5-kutuphane"];
+const NAMES = ["1-sahne-senin", "2-tam-kontrol", "3-kendi-sesinden", "4-kutuphane"];
 const src = pathToFileURL(resolve(here, "kaynak.html")).href;
 
 for (const [dir, [w, h]] of Object.entries(SIZES)) {

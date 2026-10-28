@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- App Store ekran görüntüleri (carousel / panorama). Tek sayfa, ?i=0..4&w=1290&h=2796 ile bir kare çizilir.
+<!-- App Store ekran görüntüleri (carousel / panorama). Tek sayfa, ?i=0..3&w=1290&h=2796 ile bir kare çizilir.
      Üret: node appstore-carousel/uret.mjs  (Chrome headless ile PNG) -->
 <html lang="tr">
 <head>
@@ -16,8 +16,8 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:var(--W);height:var(--H);overflow:hidden;background:var(--ink)}
 body{position:relative;font-family:'Bricolage',system-ui,sans-serif;color:var(--ivory)}
-/* Panorama: 5 kare genişliğinde tek zemin; her kare kendi dilimini gösterir → yan yana kesintisiz akar */
-.pano{position:absolute;top:0;left:calc(var(--i) * var(--W) * -1);width:calc(var(--W) * 5);height:var(--H);
+/* Panorama: 4 kare genişliğinde tek zemin; her kare kendi dilimini gösterir → yan yana kesintisiz akar */
+.pano{position:absolute;top:0;left:calc(var(--i) * var(--W) * -1);width:calc(var(--W) * 4);height:var(--H);
   background:
     radial-gradient(40% 22% at 10% 30%, rgba(255,122,47,.20), transparent 70%),
     radial-gradient(35% 20% at 34% 62%, rgba(245,184,61,.16), transparent 70%),
@@ -77,7 +77,7 @@ h1 em{font-style:normal;background:linear-gradient(100deg,var(--amber) 0%,var(--
 </head>
 <body>
 <div class="pano">
-  <!-- Kesintisiz alev şeridi: 5 kareyi baştan sona geçer -->
+  <!-- Kesintisiz alev şeridi: 4 kareyi baştan sona geçer -->
   <svg viewBox="0 0 5000 2000" preserveAspectRatio="none">
     <defs>
       <linearGradient id="rib" x1="0" x2="1">
@@ -131,7 +131,6 @@ const SLIDES = [
     back: "appstore-1-ozel-studyo.png", front: "appstore-4-kutuphane.png" },
   { kick: "Tam kontrol", h: "Sözü sen yaz,<br><em>ateşi biz yakalım.</em>", f: "appstore-1-ozel-studyo.png", chips: ["Türkçe sözler", "Vokal ya da beat", "Stil · tempo · ses"] },
   { kick: "Kendi sesinden", h: "Mırıldan.<br><em>Şarkı olsun.</em>", f: "appstore-3-sesten-kayit.png", chips: ["Cover", "Uzat", "Vokal ekle"] },
-  { kick: "Yalnız CookFire'da", h: "Kes, birleştir,<br><em>mashup'ını pişir.</em>", f: "appstore-2-analiz-mashup.png", chips: ["Vokal + müzik", "Kesit tekrarı", "MP3 indir"], hot: 0 },
   { kick: "Kütüphane", h: "Her şarkın<br><em>tek rafta.</em>", sub: "Dinle, beğen, paylaş; vokal ve enstrümanı ayrı ayrı indir.", f: "appstore-4-kutuphane.png" },
 ];
 
